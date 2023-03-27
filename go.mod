@@ -1,16 +1,13 @@
-module github.com/spikeekips/mitum-currency
+module github.com/ProtoconNet/mitum-currency/v2
 
 go 1.19
 
-replace github.com/spikeekips/mitum => /workspace/mitum
-
 require (
+	github.com/ProtoconNet/mitum2 v0.0.0-20230327234451-801228e1e81f
 	github.com/alecthomas/kong v0.7.1
 	github.com/arl/statsviz v0.5.1
 	github.com/bluele/gcache v0.0.2
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2
-	github.com/btcsuite/btcd/btcutil v1.1.3
-	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.2
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/ethereum/go-ethereum v1.11.5
 	github.com/gorilla/handlers v1.5.1
@@ -22,8 +19,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rainycape/memcache v0.0.0-20150622160815-1031fa0ce2f2
 	github.com/rs/zerolog v1.29.0
-	github.com/spikeekips/mitum v0.0.0-00010101000000-000000000000
-	github.com/stretchr/testify v1.8.1
 	go.mongodb.org/mongo-driver v1.11.0
 	golang.org/x/crypto v0.5.0
 	golang.org/x/net v0.6.0
@@ -36,6 +31,8 @@ require (
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/beevik/ntp v0.3.0 // indirect
+	github.com/btcsuite/btcd/btcutil v1.1.3 // indirect
+	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.2 // indirect
 	github.com/bytedance/sonic v1.7.0 // indirect
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
@@ -100,6 +97,7 @@ require (
 	github.com/rs/xid v1.4.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529 // indirect
+	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
