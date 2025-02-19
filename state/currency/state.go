@@ -209,7 +209,7 @@ func GetDesignFromState(st base.State) (types.CurrencyDesign, error) {
 }
 
 func BalanceStateKeyPrefix(a base.Address, cid types.CurrencyID) string {
-	return fmt.Sprintf("%s-%s", a.String(), cid)
+	return fmt.Sprintf("%s:%s", a.String(), cid)
 }
 
 func AccountStateKey(a base.Address) string {
@@ -247,12 +247,12 @@ func ParseBalanceStateKey(key string) (*[3]string, error) {
 		return nil, errors.Errorf("State Key, %v not include BalanceStateKeySuffix, %s", key, BalanceStateKeySuffix)
 	}
 	sp := strings.Split(key, ":")
-	nsp := strings.Split(sp[0], "-")
-	if len(nsp) < 2 {
+	//nsp := strings.Split(sp[0], "-")
+	if len(sp) < 3 {
 		return nil, errors.Errorf("invalid state Key, %v", key)
 	}
-	addr := strings.TrimSuffix(sp[0], "-"+nsp[len(nsp)-1])
-	return &[3]string{addr, nsp[len(nsp)-1], sp[1]}, nil
+	//addr := strings.TrimSuffix(sp[0], "-"+nsp[len(nsp)-1])
+	return &[3]string{sp[0], sp[1], sp[2]}, nil
 }
 
 func IsDesignStateKey(key string) bool {
