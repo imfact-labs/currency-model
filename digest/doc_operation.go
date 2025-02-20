@@ -1,7 +1,9 @@
 package digest
 
 import (
+	"github.com/ProtoconNet/mitum-currency/v3/operation/extras"
 	"github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/pkg/errors"
 	"time"
 
 	mongodbst "github.com/ProtoconNet/mitum-currency/v3/digest/mongodb"
@@ -36,6 +38,29 @@ func NewOperationDoc(
 		addresses = make([]string, len(as))
 		for i := range as {
 			addresses[i] = as[i].String()
+		}
+	}
+	if opExt, ok := op.(extras.OperationExtensions); ok {
+		iSettlement := opExt.Extension(extras.SettlementExtensionType)
+		iProxyPayer := opExt.Extension(extras.ProxyPayerExtensionType)
+		if iSettlement != nil {
+			settlement, ok := iSettlement.(extras.Settlement)
+			if !ok {
+				return OperationDoc{}, errors.Errorf("expected Settlement, but %T", iSettlement)
+			}
+			opSender := settlement.OpSender()
+			if opSender != nil {
+				addresses = append(addresses, opSender.String())
+			}
+		}
+		if iProxyPayer != nil {
+			proxyPayer, ok := iProxyPayer.(extras.ProxyPayer)
+			if !ok {
+				return OperationDoc{}, errors.Errorf("expected ProxyPayer, but %T", iProxyPayer)
+			}
+			if proxyPayer := proxyPayer.ProxyPayer(); proxyPayer != nil {
+				addresses = append(addresses, proxyPayer.String())
+			}
 		}
 	}
 
