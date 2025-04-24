@@ -9,6 +9,7 @@
 *.json
 *.csv
 *.toml
+*.exe
 *.py
 .*.sw?
 .sw?
@@ -33,8 +34,9 @@ tests/*/*/coverage/
 /sh
 /.vscode
 /mitum-data*
-/yml
+/yml8
 .envrc
 .golangci.excludes.txt
 /config.yml
 /genesis.yml
+/yml*
