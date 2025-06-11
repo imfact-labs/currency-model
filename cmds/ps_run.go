@@ -23,11 +23,11 @@ func DefaultRunPS() *ps.PS {
 		AddOK(launch.PNameStorage, launch.PStorage, nil, launch.PNameLocal).
 		AddOK(launch.PNameProposalMaker, PProposalMaker, nil, launch.PNameStorage).
 		AddOK(launch.PNameNetwork, launch.PNetwork, nil, launch.PNameStorage).
-		AddOK(launch.PNameMemberlist, launch.PMemberlist, nil, launch.PNameNetwork).
+		AddOK(launch.PNameMemberlist, PMemberlist, nil, launch.PNameNetwork).
 		AddOK(launch.PNameBlockItemReaders, launch.PBlockItemReaders, nil, launch.PNameDesign).
 		AddOK(launch.PNameStartStorage, launch.PStartStorage, launch.PCloseStorage, launch.PNameStartNetwork).
 		AddOK(launch.PNameStartNetwork, launch.PStartNetwork, launch.PCloseNetwork, launch.PNameStates).
-		AddOK(launch.PNameStartMemberlist, launch.PStartMemberlist, launch.PCloseMemberlist, launch.PNameStartNetwork).
+		AddOK(launch.PNameStartMemberlist, PStartMemberlist, PCloseMemberlist, launch.PNameStartNetwork).
 		AddOK(launch.PNameStartSyncSourceChecker, launch.PStartSyncSourceChecker, launch.PCloseSyncSourceChecker, launch.PNameStartNetwork).
 		AddOK(launch.PNameStartLastConsensusNodesWatcher,
 			launch.PStartLastConsensusNodesWatcher, launch.PCloseLastConsensusNodesWatcher, launch.PNameStartNetwork).
@@ -73,7 +73,7 @@ func DefaultRunPS() *ps.PS {
 		PreAddOK(launch.PNameLastConsensusNodesWatcher, launch.PLastConsensusNodesWatcher).
 		PreAddOK(launch.PNameRateLimiterContextKey, launch.PNetworkRateLimiter).
 		PostAddOK(launch.PNameBallotbox, launch.PBallotbox).
-		PostAddOK(launch.PNameLongRunningMemberlistJoin, launch.PLongRunningMemberlistJoin).
+		PostAddOK(launch.PNameLongRunningMemberlistJoin, PLongRunningMemberlistJoin).
 		PostAddOK(launch.PNameSuffrageVoting, launch.PSuffrageVoting).
 		PostAddOK(launch.PNameEventLoggingNetworkHandlers, launch.PEventLoggingNetworkHandlers)
 
@@ -87,7 +87,7 @@ func DefaultRunPS() *ps.PS {
 		PostAddOK(launch.PNamePatchLastConsensusNodesWatcher, launch.PPatchLastConsensusNodesWatcher).
 		PostAddOK(launch.PNameStatesSetHandlers, launch.PStatesSetHandlers).
 		PostAddOK(launch.PNameNetworkHandlersReadWriteNode, launch.PNetworkHandlersReadWriteNode).
-		PostAddOK(launch.PNamePatchMemberlist, launch.PPatchMemberlist).
+		PostAddOK(launch.PNamePatchMemberlist, PPatchMemberlist).
 		PostAddOK(launch.PNameStatesNetworkHandlers, PStatesNetworkHandlers).
 		PostAddOK(launch.PNameHandoverNetworkHandlers, launch.PHandoverNetworkHandlers)
 

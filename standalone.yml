@@ -11,7 +11,7 @@ digest:
     bind: http://0.0.0.0:54320
     url: http://localhost:54320
   database:
-    uri: mongodb://127.0.0.1:27017/mc?replicaSet=mitum
+    uri: mongodb://127.0.0.1:37017/mc?directConnection=true
 parameters:
   misc:
     max_message_size: 3000000
@@ -21,3 +21,9 @@ parameters:
     interval_broadcast_ballot: 1.5s
     wait_preparing_init_ballot: 3s
     min_wait_next_block_init_ballot: 3s
+  memberlist:
+    retransmit_mult: 10
+    gossip_interval: 1s
+    gossip_nodes: 7
+    broadcast_timer_mult: 8
+    user_msg_loop_interval: 22ms
