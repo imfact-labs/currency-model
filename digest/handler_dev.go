@@ -1,5 +1,5 @@
-//go:build !dev
-// +build !dev
+//go:build dev
+// +build dev
 
 package digest
 
@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 
@@ -57,6 +58,7 @@ var (
 	HandelrPathEventOperation             = `/event/operation/{hash:(?i)[0-9a-z][0-9a-z]+}`
 	HandelrPathEventAccount               = `/event/account/{address:(?i)` + types.REStringAddressString + `}`
 	HandlerPathEventContract              = `/event/contract/{address:(?i)` + types.REStringAddressString + `}`
+	HandlerPathResource                   = `/resource`
 )
 
 var (
@@ -171,6 +173,7 @@ func (hd *Handlers) Handler() http.Handler {
 }
 
 func (hd *Handlers) setHandlers() {
+	runtime.SetBlockProfileRate(1)
 	post := 5
 	postQueue := 10000
 	get := 1000
@@ -221,6 +224,8 @@ func (hd *Handlers) setHandlers() {
 	_ = hd.setHandler(HandlerPathQueueSend, hd.handleQueueSend, false, postQueue, postQueue).
 		Methods(http.MethodOptions, http.MethodPost)
 	_ = hd.setHandler(HandlerPathNodeInfo, hd.handleNodeInfo, true, get, get).
+		Methods(http.MethodOptions, "GET")
+	_ = hd.setHandler(HandlerPathResource, hd.handleResource, true, get, get).
 		Methods(http.MethodOptions, "GET")
 }
 
