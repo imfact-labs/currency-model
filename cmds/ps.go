@@ -450,7 +450,7 @@ func PLoadDigestDesign(pctx context.Context) (context.Context, error) {
 		}
 
 		var m struct {
-			Digest *digest.YamlDigestDesign
+			Digest *digest.YamlDigestDesign `yaml:"api"`
 		}
 
 		nb, err := util.ReplaceEnvVariables(b)

@@ -6,9 +6,9 @@ import (
 )
 
 var (
-	PNameDigest           = ps.Name("digest")
-	PNameDigestStart      = ps.Name("digest_star")
-	PNameMongoDBsDataBase = ps.Name("mongodb_database")
+	PNameAPI              = ps.Name("api")
+	PNameStartAPI         = ps.Name("start_api")
+	PNameDigesterDataBase = ps.Name("digester_database")
 )
 
 func DefaultRunPS() *ps.PS {
@@ -20,11 +20,11 @@ func DefaultRunPS() *ps.PS {
 		AddOK(PNameDigestDesign, PLoadDigestDesign, nil, launch.PNameEncoder).
 		AddOK(launch.PNameTimeSyncer, launch.PStartTimeSyncer, launch.PCloseTimeSyncer, launch.PNameDesign).
 		AddOK(launch.PNameLocal, launch.PLocal, nil, launch.PNameDesign).
-		AddOK(launch.PNameStorage, launch.PStorage, nil, launch.PNameLocal).
+		AddOK(launch.PNameBlockItemReaders, launch.PBlockItemReaders, nil, launch.PNameDesign).
+		AddOK(launch.PNameStorage, launch.PStorage, nil, launch.PNameLocal, launch.PNameBlockItemReaders).
 		AddOK(launch.PNameProposalMaker, PProposalMaker, nil, launch.PNameStorage).
 		AddOK(launch.PNameNetwork, launch.PNetwork, nil, launch.PNameStorage).
 		AddOK(launch.PNameMemberlist, PMemberlist, nil, launch.PNameNetwork).
-		AddOK(launch.PNameBlockItemReaders, launch.PBlockItemReaders, nil, launch.PNameDesign).
 		AddOK(launch.PNameStartStorage, launch.PStartStorage, launch.PCloseStorage, launch.PNameStartNetwork).
 		AddOK(launch.PNameStartNetwork, launch.PStartNetwork, launch.PCloseNetwork, launch.PNameStates).
 		AddOK(launch.PNameStartMemberlist, PStartMemberlist, PCloseMemberlist, launch.PNameStartNetwork).
@@ -39,9 +39,9 @@ func DefaultRunPS() *ps.PS {
 			launch.PNameStartMemberlist,
 			launch.PNameStartNetwork,
 			launch.PNameStates).
-		AddOK(PNameMongoDBsDataBase, ProcessDatabase, nil, PNameDigestDesign, launch.PNameStorage).
-		AddOK(PNameDigest, ProcessDigestAPI, nil, PNameDigestDesign, PNameMongoDBsDataBase, launch.PNameMemberlist).
-		AddOK(PNameDigestStart, ProcessStartDigestAPI, nil, PNameDigest)
+		AddOK(PNameDigesterDataBase, ProcessDigesterDatabase, nil, PNameDigestDesign, launch.PNameStorage).
+		AddOK(PNameAPI, ProcessAPI, nil, PNameDigestDesign, PNameDigesterDataBase, launch.PNameMemberlist).
+		AddOK(PNameStartAPI, ProcessStartAPI, nil, PNameAPI)
 
 	_ = pps.POK(launch.PNameDesign).
 		PostAddOK(launch.PNameCheckDesign, launch.PCheckDesign).

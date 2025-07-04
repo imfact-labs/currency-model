@@ -3,7 +3,6 @@ package cmds
 import (
 	"context"
 	"crypto/tls"
-
 	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	isaacnetwork "github.com/ProtoconNet/mitum2/isaac/network"
 	"github.com/ProtoconNet/mitum2/launch"
@@ -13,7 +12,7 @@ import (
 	"github.com/ProtoconNet/mitum2/util/logging"
 )
 
-func ProcessStartDigestAPI(ctx context.Context) (context.Context, error) {
+func ProcessStartAPI(ctx context.Context) (context.Context, error) {
 	var nt *digest.HTTP2Server
 	if err := util.LoadFromContext(ctx, digest.ContextValueDigestNetwork, &nt); err != nil {
 		return ctx, err
@@ -25,14 +24,14 @@ func ProcessStartDigestAPI(ctx context.Context) (context.Context, error) {
 	return ctx, nt.Start(ctx)
 }
 
-func ProcessDigestAPI(ctx context.Context) (context.Context, error) {
+func ProcessAPI(ctx context.Context) (context.Context, error) {
 	var design digest.YamlDigestDesign
-	if err := util.LoadFromContext(ctx, digest.ContextValueDigestDesign, &design); err != nil {
-		return ctx, err
-	}
-
 	var log *logging.Logging
-	if err := util.LoadFromContextOK(ctx, launch.LoggingContextKey, &log); err != nil {
+
+	if err := util.LoadFromContext(ctx,
+		digest.ContextValueDigestDesign, &design,
+		launch.LoggingContextKey, &log,
+	); err != nil {
 		return ctx, err
 	}
 
@@ -42,16 +41,16 @@ func ProcessDigestAPI(ctx context.Context) (context.Context, error) {
 		return ctx, nil
 	}
 
-	var st *digest.Database
-	if err := util.LoadFromContextOK(ctx, digest.ContextValueDigestDatabase, &st); err != nil {
-		log.Log().Debug().Err(err).Msg("digest api disabled; empty database")
-
-		return ctx, nil
-	} else if st == nil {
-		log.Log().Debug().Msg("digest api disabled; empty database")
-
-		return ctx, nil
-	}
+	//var st *digest.Database
+	//if err := util.LoadFromContextOK(ctx, digest.ContextValueDigestDatabase, &st); err != nil {
+	//	log.Log().Debug().Err(err).Msg("digest api disabled; empty database")
+	//
+	//	return ctx, nil
+	//} else if st == nil {
+	//	log.Log().Debug().Msg("digest api disabled; empty database")
+	//
+	//	return ctx, nil
+	//}
 
 	log.Log().Info().
 		Str("bind", design.Network().Bind().String()).

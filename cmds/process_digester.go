@@ -21,17 +21,24 @@ const (
 
 func ProcessDigester(ctx context.Context) (context.Context, error) {
 	var vs util.Version
-	if err := util.LoadFromContextOK(ctx, launch.VersionContextKey, &vs); err != nil {
-		return ctx, err
-	}
-
 	var log *logging.Logging
-	if err := util.LoadFromContextOK(ctx, launch.LoggingContextKey, &log); err != nil {
+	var digestDesign digest.YamlDigestDesign
+
+	if err := util.LoadFromContextOK(ctx,
+		launch.VersionContextKey, &vs,
+		launch.LoggingContextKey, &log,
+		digest.ContextValueDigestDesign, &digestDesign,
+	); err != nil {
 		return ctx, err
 	}
 
+	if !digestDesign.Digest {
+		return ctx, nil
+	}
 	var st *digest.Database
-	if err := util.LoadFromContext(ctx, digest.ContextValueDigestDatabase, &st); err != nil {
+	if err := util.LoadFromContextOK(ctx,
+		digest.ContextValueDigestDatabase, &st,
+	); err != nil {
 		return ctx, err
 	}
 
@@ -40,7 +47,9 @@ func ProcessDigester(ctx context.Context) (context.Context, error) {
 	}
 
 	var design launch.NodeDesign
-	if err := util.LoadFromContext(ctx, launch.DesignContextKey, &design); err != nil {
+	if err := util.LoadFromContext(ctx,
+		launch.DesignContextKey, &design,
+	); err != nil {
 		return ctx, err
 	}
 	root := launch.LocalFSDataDirectory(design.Storage.Base)
@@ -72,10 +81,18 @@ func ProcessDigester(ctx context.Context) (context.Context, error) {
 
 func ProcessStartDigester(ctx context.Context) (context.Context, error) {
 	var di *digest.Digester
-	if err := util.LoadFromContext(ctx, digest.ContextValueDigester, &di); err != nil {
+	var digestDesign digest.YamlDigestDesign
+
+	if err := util.LoadFromContext(ctx,
+		digest.ContextValueDigester, &di,
+		digest.ContextValueDigestDesign, &digestDesign,
+	); err != nil {
 		return ctx, err
 	}
-	if di == nil {
+
+	if !digestDesign.Digest {
+		return ctx, nil
+	} else if di == nil {
 		return ctx, nil
 	}
 
@@ -91,14 +108,23 @@ func PdigesterFollowUp(ctx context.Context) (context.Context, error) {
 	log.Log().Debug().Msg("digester trying to follow up")
 
 	var mst *isaacdatabase.Center
-	if err := util.LoadFromContextOK(ctx, launch.CenterDatabaseContextKey, &mst); err != nil {
+	var digestDesign digest.YamlDigestDesign
+	if err := util.LoadFromContextOK(ctx,
+		launch.CenterDatabaseContextKey, &mst,
+		digest.ContextValueDigestDesign, &digestDesign,
+	); err != nil {
 		return ctx, err
+	}
+
+	if !digestDesign.Digest {
+		return ctx, nil
 	}
 
 	var st *digest.Database
 	if err := util.LoadFromContext(ctx, digest.ContextValueDigestDatabase, &st); err != nil {
 		return ctx, err
 	}
+
 	if st == nil {
 		return ctx, nil
 	}

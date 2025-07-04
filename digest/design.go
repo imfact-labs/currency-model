@@ -44,6 +44,7 @@ type YamlDigestDesign struct {
 	CacheYAML    *string               `yaml:"cache,omitempty"`
 	DatabaseYAML *config.DatabaseYAML  `yaml:"database"`
 	ConnInfo     []quicstream.ConnInfo `yaml:"conn_info,omitempty"`
+	Digest       bool                  `yaml:"digest"`
 	network      config.LocalNetwork
 	database     config.BaseDatabase
 	cache        *url.URL
@@ -168,6 +169,10 @@ func (d YamlDigestDesign) Equal(b YamlDigestDesign) bool {
 	}
 
 	if d.DatabaseYAML != b.DatabaseYAML {
+		return false
+	}
+
+	if d.Digest != b.Digest {
 		return false
 	}
 

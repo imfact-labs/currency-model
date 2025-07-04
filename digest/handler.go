@@ -1,6 +1,3 @@
-//go:build !dev
-// +build !dev
-
 package digest
 
 import (
@@ -135,7 +132,7 @@ func NewHandlers(
 	}
 }
 
-func (hd *Handlers) Initialize() error {
+func (hd *Handlers) Initialize(digest bool) error {
 	cors := handlers.CORS(
 		handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"}),
 		handlers.AllowedHeaders([]string{"content-type"}),
@@ -144,7 +141,7 @@ func (hd *Handlers) Initialize() error {
 	)
 	hd.router.Use(cors)
 
-	hd.setHandlers()
+	hd.setHandlers(digest)
 
 	return nil
 }
@@ -169,60 +166,6 @@ func (hd *Handlers) Routes() map[string]*mux.Route {
 
 func (hd *Handlers) Handler() http.Handler {
 	return network.HTTPLogHandler(hd.router, hd.Logger)
-}
-
-func (hd *Handlers) setHandlers() {
-	post := 5
-	postQueue := 10000
-	get := 1000
-	_ = hd.setHandler(HandlerPathCurrencies, hd.handleCurrencies, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathCurrency, hd.handleCurrency, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathManifests, hd.handleManifests, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathOperations, hd.handleOperations, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathOperationsByHash, hd.handleOperationsByHash, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathOperation, hd.handleOperation, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathOperationsByHeight, hd.handleOperationsByHeight, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathManifestByHeight, hd.handleManifestByHeight, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathManifestByHash, hd.handleManifestByHash, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathBlockByHeight, hd.handleBlock, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathBlockByHash, hd.handleBlock, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathAccount, hd.handleAccount, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathAccountOperations, hd.handleAccountOperations, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathAccounts, hd.handleAccounts, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathDIDData, hd.handleDIDData, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathDIDDesign, hd.handleDIDDesign, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathDIDDocument, hd.handleDIDDocument, true, get, get).
-		Methods(http.MethodOptions, "GET")
-	// _ = hd.setHandler(HandlerPathOperationBuildFactTemplate, hd.handleOperationBuildFactTemplate, true).
-	// 	Methods(http.MethodOptions, "GET")
-	// _ = hd.setHandler(HandlerPathOperationBuildFact, hd.handleOperationBuildFact, false).
-	// 	Methods(http.MethodOptions, http.MethodPost)
-	// _ = hd.setHandler(HandlerPathOperationBuildSign, hd.handleOperationBuildSign, false).
-	// 	Methods(http.MethodOptions, http.MethodPost)
-	// _ = hd.setHandler(HandlerPathOperationBuild, hd.handleOperationBuild, true).
-	// 	Methods(http.MethodOptions, http.MethodGet, http.MethodPost)
-	_ = hd.setHandler(HandlerPathSend, hd.handleSend, false, post, post).
-		Methods(http.MethodOptions, http.MethodPost)
-	_ = hd.setHandler(HandlerPathQueueSend, hd.handleQueueSend, false, postQueue, postQueue).
-		Methods(http.MethodOptions, http.MethodPost)
-	_ = hd.setHandler(HandlerPathNodeInfo, hd.handleNodeInfo, true, get, get).
-		Methods(http.MethodOptions, "GET")
 }
 
 func (hd *Handlers) setHandler(prefix string, h network.HTTPHandlerFunc, useCache bool, rps, burst int) *mux.Route {

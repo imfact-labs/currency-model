@@ -16,7 +16,7 @@ var (
 	TransferHint     = hint.MustNewHint("mitum-currency-transfer-operation-v0.0.1")
 )
 
-var MaxTransferItems uint = 100
+var MaxTransferItems uint = 3000
 
 type TransferItem interface {
 	hint.Hinter

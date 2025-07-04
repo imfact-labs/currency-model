@@ -13,27 +13,28 @@ import (
 	"github.com/pkg/errors"
 )
 
-func ProcessDatabase(ctx context.Context) (context.Context, error) {
-	var l digest.YamlDigestDesign
-	if err := util.LoadFromContext(ctx, digest.ContextValueDigestDesign, &l); err != nil {
+func ProcessDigesterDatabase(ctx context.Context) (context.Context, error) {
+	var design digest.YamlDigestDesign
+	if err := util.LoadFromContext(ctx, digest.ContextValueDigestDesign, &design); err != nil {
 		return ctx, err
 	}
 
-	if l.Equal(digest.YamlDigestDesign{}) {
+	if !design.Digest {
 		return ctx, nil
 	}
-	conf := l.Database()
+
+	conf := design.Database()
 
 	switch {
 	case conf.URI().Scheme == "mongodb", conf.URI().Scheme == "mongodb+srv":
-		return processMongodbDatabase(ctx, l)
+		return processMongodbDatabase(ctx, design)
 	default:
 		return ctx, errors.Errorf("Unsupported database type, %v", conf.URI().Scheme)
 	}
 }
 
-func processMongodbDatabase(ctx context.Context, l digest.YamlDigestDesign) (context.Context, error) {
-	conf := l.Database()
+func processMongodbDatabase(ctx context.Context, design digest.YamlDigestDesign) (context.Context, error) {
+	conf := design.Database()
 
 	/*
 		ca, err := cache.NewCacheFromURI(conf.Cache().String())
