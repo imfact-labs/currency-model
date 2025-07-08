@@ -31,6 +31,7 @@ import (
 var (
 	HTTP2EncoderHintHeader = http.CanonicalHeaderKey("x-mitum-encoder-hint")
 	HALMimetype            = "application/hal+json; charset=utf-8"
+	PlainTextMimetype      = "text/plain; charset=utf-8"
 )
 
 var (
@@ -55,10 +56,13 @@ var (
 	HandlerPathOperationBuild             = `/builder/operation`
 	HandlerPathSend                       = `/builder/send`
 	HandlerPathQueueSend                  = `/builder/send/queue`
-	HandelrPathEventOperation             = `/event/operation/{hash:(?i)[0-9a-z][0-9a-z]+}`
-	HandelrPathEventAccount               = `/event/account/{address:(?i)` + types.REStringAddressString + `}`
-	HandlerPathEventContract              = `/event/contract/{address:(?i)` + types.REStringAddressString + `}`
 	HandlerPathResource                   = `/resource`
+	HandlerPathPProfProfile               = `/pprof/profile`
+	HandlerPathPProfGoroutine             = `/pprof/goroutine`
+	HandlerPathPProfHeap                  = `/pprof/heap`
+	HandlerPathPProfBlock                 = `/pprof/block`
+	HandlerPathPProfMutex                 = `/pprof/mutex`
+	HandlerPathPProfAllocs                = `/pprof/allocs`
 )
 
 var (
@@ -226,6 +230,16 @@ func (hd *Handlers) setHandlers() {
 	_ = hd.setHandler(HandlerPathNodeInfo, hd.handleNodeInfo, true, get, get).
 		Methods(http.MethodOptions, "GET")
 	_ = hd.setHandler(HandlerPathResource, hd.handleResource, true, get, get).
+		Methods(http.MethodOptions, "GET")
+	_ = hd.setHandler(HandlerPathPProfProfile, hd.handlePProfProfile, true, get, get).
+		Methods(http.MethodOptions, "GET")
+	_ = hd.setHandler(HandlerPathPProfHeap, hd.handlePProfHeap, true, get, get).
+		Methods(http.MethodOptions, "GET")
+	_ = hd.setHandler(HandlerPathPProfAllocs, hd.handlePProfAllocs, true, get, get).
+		Methods(http.MethodOptions, "GET")
+	_ = hd.setHandler(HandlerPathPProfGoroutine, hd.handlePProfGoroutine, true, get, get).
+		Methods(http.MethodOptions, "GET")
+	_ = hd.setHandler(HandlerPathPProfBlock, hd.handlePProfBlock, true, get, get).
 		Methods(http.MethodOptions, "GET")
 }
 

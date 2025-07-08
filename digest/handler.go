@@ -30,6 +30,7 @@ import (
 var (
 	HTTP2EncoderHintHeader = http.CanonicalHeaderKey("x-mitum-encoder-hint")
 	HALMimetype            = "application/hal+json; charset=utf-8"
+	PlainTextMimetype      = "text/plain; charset=utf-8"
 )
 
 var (
