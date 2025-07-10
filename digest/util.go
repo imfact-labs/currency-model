@@ -92,6 +92,10 @@ func ParseStringQuery(s string) string {
 	return strings.TrimSpace(s)
 }
 
+func ParseCSVStringQuery(s string) []string {
+	return strings.Split(strings.TrimSpace(s), ",")
+}
+
 func ParseRequest(_ http.ResponseWriter, r *http.Request, v string) (string, error, int) {
 	s, found := mux.Vars(r)[v]
 	if !found {

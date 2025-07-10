@@ -19,12 +19,12 @@ parameters:
     object_cache_size: 3000000
   isaac:
     threshold: "100"
-    interval_broadcast_ballot: 1.5s
-    wait_preparing_init_ballot: 3s
-    min_wait_next_block_init_ballot: 3s
+    interval_broadcast_ballot: 0.2s
+    wait_preparing_init_ballot: 0.05s
+    min_wait_next_block_init_ballot: 2s
   memberlist:
-    retransmit_mult: 10
-    gossip_interval: 1s
-    gossip_nodes: 7
-    broadcast_timer_mult: 8
-    user_msg_loop_interval: 22ms
+    retransmit_mult: 3
+    gossip_interval: 0.02s
+    gossip_nodes: 4
+    broadcast_timer_mult: 5
+    user_msg_loop_interval: 11ms
