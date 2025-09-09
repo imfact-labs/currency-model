@@ -35,7 +35,7 @@ func ProcessAPI(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	if design.Network() == nil {
+	if design.Equal(digest.YamlDigestDesign{}) {
 		log.Log().Debug().Msg("digest api disabled; empty network")
 
 		return ctx, nil

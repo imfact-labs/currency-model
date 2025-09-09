@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"sync"
 	"time"
-	
+
 	"github.com/ProtoconNet/mitum-currency/v3/digest/network"
 	dutil "github.com/ProtoconNet/mitum-currency/v3/digest/util"
 	"github.com/ProtoconNet/mitum2/base"
@@ -314,37 +314,7 @@ func (sv *HTTP2Server) sendOperation(v interface{}) error {
 				return err
 			}
 		}
-		return nil
 	}
-
-	//client, memberList, err := sv.client()
-	//
-	//switch {
-	//case err != nil:
-	//	return err
-	//
-	//default:
-	//	ctx, cancel := context.WithTimeout(context.Background(), time.Second*9)
-	//	defer cancel()
-
-	// var nodeList []quicstream.ConnInfo
-	// memberList.Members(func(node quicmemberlist.Member) bool {
-	// 	nodeList = append(nodeList, node.ConnInfo())
-	// 	return true
-	// })
-	// for i := range nodeList {
-	// 	_, err := client.SendOperation(ctx, nodeList[i], op)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
-	//	for i := range memberList {
-	//		_, err := client.SendOperation(ctx, memberList[i], op)
-	//		if err != nil {
-	//			return err
-	//		}
-	//	}
-	//}
 
 	return nil
 }
@@ -354,11 +324,6 @@ func (sv *HTTP2Server) buildHal(op base.Operation) (Hal, error) {
 
 	return hal, nil
 }
-
-// func (sv *HTTP2Server) SetNetworkClientFunc(f func() (*isaacnetwork.BaseClient, *quicmemberlist.Memberlist, error)) *HTTP2Server {
-// 	sv.client = f
-// 	return sv
-// }
 
 func (sv *HTTP2Server) SetNetworkClientFunc(f func() (*isaacnetwork.BaseClient, *quicmemberlist.Memberlist, []quicstream.ConnInfo, error)) *HTTP2Server {
 	sv.client = f
@@ -385,17 +350,3 @@ func (ln tcpKeepAliveListener) Accept() (net.Conn, error) {
 
 	return tc, nil
 }
-
-//func RateLimiter(rps int, burst int) mux.MiddlewareFunc {
-//	limiter := rate.NewLimiter(rate.Limit(rps), burst)
-//
-//	return func(next http.Handler) http.Handler {
-//		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//			if !limiter.Allow() {
-//				http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
-//				return
-//			}
-//			next.ServeHTTP(w, r)
-//		})
-//	}
-//}

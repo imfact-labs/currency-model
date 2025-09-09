@@ -461,18 +461,21 @@ func PLoadDigestDesign(pctx context.Context) (context.Context, error) {
 
 		if err := yaml.Unmarshal(nb, &m); err != nil {
 			return pctx, e.Wrap(err)
-		} else if m.API == nil {
-			return pctx, nil
-		} else if i, err := m.API.Set(pctx); err != nil {
-			return pctx, e.Wrap(err)
-		} else {
-			pctx = i
+		} else if m.API != nil {
+			if i, err := m.API.Set(pctx); err != nil {
+				return pctx, e.Wrap(err)
+			} else {
+				pctx = i
+			}
 		}
 
-		pctx = context.WithValue(pctx, digest.ContextValueDigestDesign, *m.API)
+		if m.API == nil {
+			pctx = context.WithValue(pctx, digest.ContextValueDigestDesign, digest.YamlDigestDesign{})
+		} else {
+			pctx = context.WithValue(pctx, digest.ContextValueDigestDesign, *m.API)
+			log.Log().Debug().Object("design", *m.API).Msg("digest design loaded")
+		}
 		//pctx = context.WithValue(pctx, digest.ContextValueSequencerDesign, *m.Sequencer)
-
-		log.Log().Debug().Object("design", *m.API).Msg("digest design loaded")
 	default:
 		return pctx, e.Errorf("Unknown digest design uri, %q", flag.URL())
 	}

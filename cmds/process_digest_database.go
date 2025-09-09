@@ -19,7 +19,7 @@ func ProcessDigesterDatabase(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	if !design.Digest {
+	if design.Equal(digest.YamlDigestDesign{}) || !design.Digest {
 		return ctx, nil
 	}
 

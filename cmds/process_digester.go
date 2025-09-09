@@ -32,7 +32,7 @@ func ProcessDigester(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	if !digestDesign.Digest {
+	if digestDesign.Equal(digest.YamlDigestDesign{}) || !digestDesign.Digest {
 		return ctx, nil
 	}
 	var st *digest.Database
@@ -90,9 +90,7 @@ func ProcessStartDigester(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	if !digestDesign.Digest {
-		return ctx, nil
-	} else if di == nil {
+	if digestDesign.Equal(digest.YamlDigestDesign{}) || !digestDesign.Digest || di == nil {
 		return ctx, nil
 	}
 
@@ -116,7 +114,7 @@ func PdigesterFollowUp(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	if !digestDesign.Digest {
+	if digestDesign.Equal(digest.YamlDigestDesign{}) || !digestDesign.Digest {
 		return ctx, nil
 	}
 

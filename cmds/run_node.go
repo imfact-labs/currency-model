@@ -194,7 +194,7 @@ func (cmd *RunCommand) pWhenNewBlockSavedInSyncingStateFunc(pctx context.Context
 	}
 
 	var f func(height base.Height)
-	if design.Digest {
+	if !design.Equal(digest.YamlDigestDesign{}) && design.Digest {
 		var di *digest.Digester
 		if err := util.LoadFromContextOK(pctx,
 			digest.ContextValueDigester, &di,
@@ -274,7 +274,7 @@ func (cmd *RunCommand) pWhenNewBlockConfirmed(pctx context.Context) (context.Con
 	}
 
 	var f func(height base.Height)
-	if design.Digest {
+	if !design.Equal(digest.YamlDigestDesign{}) && design.Digest {
 		f = func(height base.Height) {
 			l := log.Log().With().Interface("height", height).Logger()
 			err := digestFollowup(pctx, height)
@@ -418,19 +418,6 @@ func (cmd *RunCommand) setDigestAPINetworkClient(
 	params *launch.LocalParams,
 	handlers *digest.Handlers,
 ) (*digest.Handlers, error) {
-	var design digest.YamlDigestDesign
-	if err := util.LoadFromContext(ctx, digest.ContextValueDigestDesign, &design); err != nil {
-		if errors.Is(err, util.ErrNotFound) {
-			return handlers, nil
-		}
-
-		return nil, err
-	}
-
-	if design.Equal(digest.YamlDigestDesign{}) {
-		return handlers, nil
-	}
-
 	var memberList *quicmemberlist.Memberlist
 	if err := util.LoadFromContextOK(ctx, launch.MemberlistContextKey, &memberList); err != nil {
 		return nil, err
@@ -443,6 +430,25 @@ func (cmd *RunCommand) setDigestAPINetworkClient(
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	handlers = handlers.SetNetworkClientFunc(
+		func() (*quicstream.ConnectionPool, *quicmemberlist.Memberlist, []quicstream.ConnInfo, error) { // nolint:contextcheck
+			return connectionPool, memberList, []quicstream.ConnInfo{}, nil
+		},
+	)
+
+	var design digest.YamlDigestDesign
+	if err := util.LoadFromContext(ctx, digest.ContextValueDigestDesign, &design); err != nil {
+		if errors.Is(err, util.ErrNotFound) {
+			return handlers, nil
+		}
+
+		return nil, err
+	}
+
+	if design.Equal(digest.YamlDigestDesign{}) {
+		return handlers, nil
 	}
 
 	//handlers = handlers.SetConnectionPool(connectionPool)
