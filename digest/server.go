@@ -283,7 +283,7 @@ func (sv *HTTP2Server) sendOperation(v interface{}) error {
 
 	default:
 		var wg sync.WaitGroup
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*9)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 		defer cancel()
 
 		connInfo := make(map[string]quicstream.ConnInfo)
