@@ -2,6 +2,7 @@ package digest
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (hd *Handlers) handleNodeInfo(w http.ResponseWriter, r *http.Request) {
+func (hd *Handlers) handleNodeMetric(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	self := ParseBoolQuery(r.URL.Query().Get("self"))
 
@@ -23,11 +24,11 @@ func (hd *Handlers) handleNodeInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if v, err, shared := hd.rg.Do(cacheKey, func() (interface{}, error) {
-		i, err := hd.handleNodeInfoInGroup(self)
+		i, err := hd.handleNodeMetricInGroup(self)
 
 		return i, err
 	}); err != nil {
-		hd.Log().Err(err).Msg("get node info")
+		hd.Log().Err(err).Msg("get node metric")
 
 		HTTP2HandleError(w, err)
 	} else {
@@ -39,7 +40,7 @@ func (hd *Handlers) handleNodeInfo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (hd *Handlers) handleNodeInfoInGroup(self bool) (interface{}, error) {
+func (hd *Handlers) handleNodeMetricInGroup(self bool) (interface{}, error) {
 	connectionPool, memberList, nodeList, err := hd.client()
 	client := isaacnetwork.NewBaseClient( //nolint:gomnd //...
 		hd.encs, hd.enc,
@@ -54,7 +55,7 @@ func (hd *Handlers) handleNodeInfoInGroup(self bool) (interface{}, error) {
 		_ = client.Close()
 	}()
 
-	var nodeInfoList []isaacnetwork.NodeInfo
+	var nodeMetricList []map[string]interface{}
 	connInfo := make(map[string]quicstream.ConnInfo)
 
 	if !self {
@@ -68,31 +69,32 @@ func (hd *Handlers) handleNodeInfoInGroup(self bool) (interface{}, error) {
 	} else {
 		connInfo[hd.node.String()] = hd.node
 	}
-
 	for i := range connInfo {
-		nodeInfo, err := NodeInfo(client, connInfo[i])
+		nodeMetric, err := NodeMetric(client, connInfo[i])
 
 		if err != nil {
 			continue
 		}
 
-		nodeInfoList = append(nodeInfoList, *nodeInfo)
+		nm := map[string]interface{}{"node-metric": nodeMetric, "conn-info": connInfo[i]}
+
+		nodeMetricList = append(nodeMetricList, nm)
 	}
 
-	if i, err := hd.buildNodeInfoHal(nodeInfoList); err != nil {
+	if i, err := hd.buildNodeMetricHal(nodeMetricList); err != nil {
 		return nil, err
 	} else {
 		return hd.enc.Marshal(i)
 	}
 }
 
-func (hd *Handlers) buildNodeInfoHal(ni []isaacnetwork.NodeInfo) (Hal, error) {
-	var hal Hal = NewBaseHal(ni, NewHalLink(HandlerPathNodeInfo, nil))
+func (hd *Handlers) buildNodeMetricHal(ni []map[string]interface{}) (Hal, error) {
+	var hal Hal = NewBaseHal(ni, NewHalLink(HandlerPathNodeMetric, nil))
 
 	return hal, nil
 }
 
-func NodeInfo(client *isaacnetwork.BaseClient, connInfo quicstream.ConnInfo) (*isaacnetwork.NodeInfo, error) {
+func NodeMetric(client *isaacnetwork.BaseClient, connInfo quicstream.ConnInfo) (*isaacnetwork.NodeMetrics, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 	defer cancel()
 
@@ -105,9 +107,9 @@ func NodeInfo(client *isaacnetwork.BaseClient, connInfo quicstream.ConnInfo) (*i
 		_ = client.Close()
 	}()
 
-	header := isaacnetwork.NewNodeInfoRequestHeader()
+	header := isaacnetwork.NewNodeMetricsRequestHeader("1m")
 
-	var nodeInfo *isaacnetwork.NodeInfo
+	var nodeMetric *isaacnetwork.NodeMetrics
 	err = stream(ctx, func(ctx context.Context, broker *quicstreamheader.ClientBroker) error {
 		if err := broker.WriteRequestHead(ctx, header); err != nil {
 			return err
@@ -145,15 +147,16 @@ func NodeInfo(client *isaacnetwork.BaseClient, connInfo quicstream.ConnInfo) (*i
 
 			h, err := enc.Decode(b)
 			if err != nil {
+				fmt.Println(err)
 				return err
 			}
 
-			ni, ok := h.(isaacnetwork.NodeInfo)
+			ni, ok := h.(isaacnetwork.NodeMetrics)
 			if !ok {
-				return errors.Errorf("expected isaacnetwork.NodeInfo, not %T", v)
+				return errors.Errorf("expected isaacnetwork.NodeMetrics, not %T", v)
 			}
 
-			nodeInfo = &ni
+			nodeMetric = &ni
 
 			return nil
 		}
@@ -162,5 +165,5 @@ func NodeInfo(client *isaacnetwork.BaseClient, connInfo quicstream.ConnInfo) (*i
 		return nil, err
 	}
 
-	return nodeInfo, nil
+	return nodeMetric, nil
 }

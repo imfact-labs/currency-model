@@ -2,6 +2,8 @@ package cmds
 
 import (
 	"context"
+	"time"
+
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/isaac"
 	isaacdatabase "github.com/ProtoconNet/mitum2/isaac/database"
@@ -18,7 +20,6 @@ import (
 	"github.com/ProtoconNet/mitum2/util/ps"
 	"github.com/hashicorp/memberlist"
 	"github.com/pkg/errors"
-	"time"
 )
 
 func PMemberlist(pctx context.Context) (context.Context, error) {
@@ -72,8 +73,8 @@ func PMemberlist(pctx context.Context) (context.Context, error) {
 		params.ISAAC.NetworkID(),
 		headerdial,
 	)
-	args.BroadcastTimerMult = params.Memberlist.BroadcastTimerMult()
-	args.UserMsgLoopInterval = params.Memberlist.UserMsgLoopInterval()
+	args.BroadcastTimerMult = params.Memberlist.BroadcastTimerMult
+	args.UserMsgLoopInterval = params.Memberlist.UserMsgLoopInterval
 
 	m, err := quicmemberlist.NewMemberlist(localnode, args)
 	if err != nil {
@@ -101,11 +102,21 @@ func PMemberlist(pctx context.Context) (context.Context, error) {
 
 func PStartMemberlist(pctx context.Context) (context.Context, error) {
 	var m *quicmemberlist.Memberlist
-	if err := util.LoadFromContextOK(pctx, launch.MemberlistContextKey, &m); err != nil {
+	var collector *isaacnetwork.NetworkMetricsCollector
+
+	if err := util.LoadFromContextOK(pctx,
+		launch.MemberlistContextKey, &m,
+		launch.MetricsCollectorContextKey, &collector,
+	); err != nil {
 		return pctx, err
 	}
 
-	return pctx, m.Start(context.Background())
+	ctx := context.Background()
+	if collector != nil {
+		ctx = quicstream.WithMetricsCollector(ctx, collector)
+	}
+
+	return pctx, m.Start(ctx)
 }
 
 func PCloseMemberlist(pctx context.Context) (context.Context, error) {
@@ -372,7 +383,7 @@ func memberlistConfig(
 
 	delegate := quicmemberlist.NewDelegate(localnode, nil, func([]byte) {
 		panic("set notifyMsgFunc")
-	}, params.RetransmitMult())
+	}, params.RetransmitMult)
 
 	alive, err := memberlistAlive(pctx)
 	if err != nil {

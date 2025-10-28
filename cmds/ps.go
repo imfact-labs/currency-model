@@ -2,10 +2,11 @@ package cmds
 
 import (
 	"context"
-	"github.com/ProtoconNet/mitum-currency/v3/digest"
-	did "github.com/ProtoconNet/mitum-currency/v3/operation/did-registry"
 	"os"
 	"path/filepath"
+
+	"github.com/ProtoconNet/mitum-currency/v3/digest"
+	did "github.com/ProtoconNet/mitum-currency/v3/operation/did-registry"
 
 	bsonenc "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/currency"
@@ -501,6 +502,7 @@ func PNetworkHandlers(pctx context.Context) (context.Context, error) {
 	var ballotBox *isaacstates.Ballotbox
 	var filterNotifyMsg quicmemberlist.FilterNotifyMsgFunc
 	var lvps *isaac.LastVoteproofsHandler
+	var metricsCollector *isaacnetwork.NetworkMetricsCollector
 
 	if err := util.LoadFromContextOK(pctx,
 		launch.LoggingContextKey, &log,
@@ -518,6 +520,7 @@ func PNetworkHandlers(pctx context.Context) (context.Context, error) {
 		launch.BallotboxContextKey, &ballotBox,
 		launch.FilterMemberlistNotifyMsgFuncContextKey, &filterNotifyMsg,
 		launch.LastVoteproofsHandlerContextKey, &lvps,
+		launch.MetricsCollectorContextKey, &metricsCollector,
 	); err != nil {
 		return pctx, e.Wrap(err)
 	}
@@ -608,6 +611,13 @@ func PNetworkHandlers(pctx context.Context) (context.Context, error) {
 	launch.EnsureHandlerAdd(pctx, &gerror,
 		isaacnetwork.HandlerNameNodeInfo,
 		isaacnetwork.QuicstreamHandlerNodeInfo(launch.QuicstreamHandlerGetNodeInfoFunc(enc, nodeinfo)), nil)
+
+	launch.EnsureHandlerAdd(pctx, &gerror,
+		isaacnetwork.HandlerNameNodeMetrics,
+		isaacnetwork.QuicstreamHandlerNodeMetrics(
+			launch.QuicstreamHandlerGetNodeMetricsFunc(encs.Default(), metricsCollector),
+		),
+		nil)
 
 	launch.EnsureHandlerAdd(pctx, &gerror,
 		isaacnetwork.HandlerNameSendBallots,

@@ -30,6 +30,8 @@ func (hd *Handlers) setHandlers(digest bool) {
 		Methods(http.MethodOptions, http.MethodPost)
 	_ = hd.setHandler(HandlerPathNodeInfo, hd.handleNodeInfo, true, get, get).
 		Methods(http.MethodOptions, "GET")
+	_ = hd.setHandler(HandlerPathNodeMetric, hd.handleNodeMetric, true, get, get).
+		Methods(http.MethodOptions, "GET")
 	_ = hd.setHandler(HandlerPathResource, hd.handleResource, true, get, get).
 		Methods(http.MethodOptions, "GET")
 	_ = hd.setHandler(HandlerPathPProfProfile, hd.handlePProfProfile, true, get, get).

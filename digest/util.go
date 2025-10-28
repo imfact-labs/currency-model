@@ -2,6 +2,11 @@ package digest
 
 import (
 	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/ProtoconNet/mitum-currency/v3/state/currency"
 	"github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum2/base"
@@ -12,10 +17,6 @@ import (
 	"github.com/gorilla/mux"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var JSON = jsoniter.Config{
@@ -122,7 +123,7 @@ func stringHashesQuery(hashes string) string {
 }
 
 func ParseBoolQuery(s string) bool {
-	return s == "1"
+	return s == "1" || s == "true"
 }
 
 func StringBoolQuery(key string, v bool) string { // nolint:unparam
@@ -243,3 +244,5 @@ func HTTP2HandleError(w http.ResponseWriter, err error) {
 }
 
 type NodeInfoHandler func() (isaacnetwork.NodeInfo, error)
+
+type NodeMetricHandler func() (isaacnetwork.NodeMetrics, error)

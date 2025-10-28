@@ -2,6 +2,12 @@ package cmds
 
 import (
 	"context"
+	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/isaac"
@@ -16,11 +22,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"net"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 type RunCommand struct { //nolint:govet //...
@@ -391,9 +392,13 @@ func (cmd *RunCommand) setDigestAPIDefaultHandlers(
 	router *mux.Router,
 	queue chan digest.RequestWrapper,
 ) (*digest.Handlers, error) {
+	var nodeDesign launch.NodeDesign
 	var design digest.YamlDigestDesign
 	var st *digest.Database
-	if err := util.LoadFromContext(ctx, digest.ContextValueDigestDesign, &design); err != nil {
+	if err := util.LoadFromContext(ctx,
+		launch.DesignContextKey, &nodeDesign,
+		digest.ContextValueDigestDesign, &design,
+	); err != nil {
 		return nil, err
 	}
 	if design.Digest {
@@ -402,7 +407,12 @@ func (cmd *RunCommand) setDigestAPIDefaultHandlers(
 		}
 	}
 
-	handlers := digest.NewHandlers(ctx, params.ISAAC.NetworkID(), encs, enc, st, cache, router, queue)
+	node, err := quicstream.NewConnInfoFromStringAddr(nodeDesign.Network.PublishString, nodeDesign.Network.TLSInsecure)
+	if err != nil {
+		return nil, err
+	}
+
+	handlers := digest.NewHandlers(ctx, params.ISAAC.NetworkID(), encs, enc, st, cache, router, queue, node)
 
 	h, err := cmd.setDigestAPINetworkClient(ctx, params, handlers)
 	if err != nil {

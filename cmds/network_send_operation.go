@@ -20,14 +20,15 @@ type NetworkClientCommand struct { //nolint:govet //...
 	//revive:disable:line-length-limit
 	//revive:disable:nested-structs
 	NodeInfo       launchcmd.NetworkClientNodeInfoCommand     `cmd:"" name:"node-info" help:"remote node info"`
+	NodeMetric     launchcmd.NetworkClientNodeMetricsCommand  `cmd:"" name:"node-metric" help:"remote node metrics"`
 	SendOperation  NetworkClientSendOperationCommand          `cmd:"" name:"send-operation" help:"send operation"`
 	State          NetworkClientStateCommand                  `cmd:"" name:"state" help:"get state"`
 	LastBlockMap   launchcmd.NetworkClientLastBlockMapCommand `cmd:"" name:"last-blockmap" help:"get last blockmap"`
 	BlockItemFiles NetworkClientBlockItemFilesCommand         `cmd:"" name:"block-item-files" help:"download block item files"`
 	BlockItemFile  NetworkClientBlockItemFileCommand          `cmd:"" name:"block-item-file" help:"download block item file"`
 	Node           struct {
-		Read  launchcmd.NetworkClientReadNodeCommand  `cmd:"" name:"read" help:"read node value"`
-		Write launchcmd.NetworkClientWriteNodeCommand `cmd:"" name:"write" help:"write node value"`
+		Read  NetworkClientReadNodeCommand  `cmd:"" name:"read" help:"read node value"`
+		Write NetworkClientWriteNodeCommand `cmd:"" name:"write" help:"write node value"`
 	} `cmd:"" name:"node" help:""`
 	Event launchcmd.NetworkClientEventLoggingCommand `cmd:"" name:"event" help:"event log"`
 	//revive:enable:nested-structs

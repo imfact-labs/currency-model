@@ -32,6 +32,7 @@ var (
 
 var (
 	HandlerPathNodeInfo                   = `/`
+	HandlerPathNodeMetric                 = `/metrics`
 	HandlerPathCurrencies                 = `/currency`
 	HandlerPathCurrency                   = `/currency/{currency_id:` + types.ReCurrencyID + `}`
 	HandlerPathManifests                  = `/block/manifests`
@@ -80,16 +81,15 @@ func init() {
 
 type Handlers struct {
 	*zerolog.Logger
-	networkID       base.NetworkID
-	encs            *encoder.Encoders
-	enc             encoder.Encoder
-	database        *Database
-	cache           Cache
-	queue           chan RequestWrapper
-	nodeInfoHandler NodeInfoHandler
-	send            func(interface{}) (base.Operation, error)
-	client          func() (*quicstream.ConnectionPool, *quicmemberlist.Memberlist, []quicstream.ConnInfo, error)
-	//connectionPool  *quicstream.ConnectionPool
+	networkID        base.NetworkID
+	encs             *encoder.Encoders
+	enc              encoder.Encoder
+	database         *Database
+	cache            Cache
+	queue            chan RequestWrapper
+	node             quicstream.ConnInfo
+	send             func(interface{}) (base.Operation, error)
+	client           func() (*quicstream.ConnectionPool, *quicmemberlist.Memberlist, []quicstream.ConnInfo, error)
 	router           *mux.Router
 	routes           map[ /* path */ string]*mux.Route
 	itemsLimiter     func(string /* request type */) int64
@@ -108,6 +108,7 @@ func NewHandlers(
 	cache Cache,
 	router *mux.Router,
 	queue chan RequestWrapper,
+	node quicstream.ConnInfo,
 ) *Handlers {
 	var log *logging.Logging
 	if err := util.LoadFromContextOK(ctx, launch.LoggingContextKey, &log); err != nil {
@@ -122,6 +123,7 @@ func NewHandlers(
 		database:         st,
 		cache:            cache,
 		queue:            queue,
+		node:             node,
 		router:           router,
 		routes:           map[string]*mux.Route{},
 		itemsLimiter:     DefaultItemsLimiter,

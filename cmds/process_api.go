@@ -3,6 +3,7 @@ package cmds
 import (
 	"context"
 	"crypto/tls"
+
 	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	isaacnetwork "github.com/ProtoconNet/mitum2/isaac/network"
 	"github.com/ProtoconNet/mitum2/launch"
@@ -25,10 +26,12 @@ func ProcessStartAPI(ctx context.Context) (context.Context, error) {
 }
 
 func ProcessAPI(ctx context.Context) (context.Context, error) {
+	var nodeDesign launch.NodeDesign
 	var design digest.YamlDigestDesign
 	var log *logging.Logging
 
 	if err := util.LoadFromContext(ctx,
+		launch.DesignContextKey, &nodeDesign,
 		digest.ContextValueDigestDesign, &design,
 		launch.LoggingContextKey, &log,
 	); err != nil {
