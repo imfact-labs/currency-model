@@ -54,7 +54,7 @@ func (cmd *baseNetworkClientRWNodeCommand) printValue(ctx context.Context, key s
 		return err
 	}
 
-	switch i, found, err := launch.ReadNodeFromNetworkHandler(
+	switch i, found, err := ReadNodeFromNetworkHandler(
 		ctx,
 		cmd.priv,
 		base.NetworkID(cmd.NetworkID),
@@ -158,7 +158,7 @@ func (cmd *NetworkClientWriteNodeCommand) Run(pctx context.Context) error {
 		_ = cmd.Client.Close()
 	}()
 
-	switch updated, err := launch.WriteNodeFromNetworkHandler(
+	switch updated, err := WriteNodeFromNetworkHandler(
 		ctx,
 		cmd.priv,
 		base.NetworkID(cmd.NetworkID),
