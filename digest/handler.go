@@ -28,11 +28,14 @@ var (
 	HTTP2EncoderHintHeader = http.CanonicalHeaderKey("x-mitum-encoder-hint")
 	HALMimetype            = "application/hal+json; charset=utf-8"
 	PlainTextMimetype      = "text/plain; charset=utf-8"
+	PrometheusTextMimetype = "text/plain; version=0.0.4"
 )
 
 var (
 	HandlerPathNodeInfo                   = `/`
+	HandlerPathNodeInfoProm               = `/info/prom`
 	HandlerPathNodeMetric                 = `/metrics`
+	HandlerPathNodeMetricProm             = `/metrics/prom`
 	HandlerPathCurrencies                 = `/currency`
 	HandlerPathCurrency                   = `/currency/{currency_id:` + types.ReCurrencyID + `}`
 	HandlerPathManifests                  = `/block/manifests`

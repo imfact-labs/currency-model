@@ -6,9 +6,15 @@ package digest
 import (
 	"net/http"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 )
+
+type resourceMetrics struct {
+	memInfo map[string]MemoryMetric
+	raw     runtime.MemStats
+}
 
 func (hd *Handlers) handleResource(w http.ResponseWriter, r *http.Request) {
 	memUnit := ParseStringQuery(r.URL.Query().Get("unit"))
@@ -31,6 +37,25 @@ func (hd *Handlers) handleResource(w http.ResponseWriter, r *http.Request) {
 }
 
 func (hd *Handlers) handleResourceInGroup(unit string, keys []string) (interface{}, error) {
+	rm, err := hd.collectResourceMetrics(unit, keys)
+	if err != nil {
+		return nil, err
+	}
+
+	var payload struct {
+		MemInfo map[string]MemoryMetric `json:"mem"`
+	}
+
+	payload.MemInfo = rm.memInfo
+
+	hal, err := hd.buildResourceHal(payload)
+	if err != nil {
+		return nil, err
+	}
+	return hd.enc.Marshal(hal)
+}
+
+func (hd *Handlers) collectResourceMetrics(unit string, keys []string) (*resourceMetrics, error) {
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
 
@@ -57,10 +82,6 @@ func (hd *Handlers) handleResourceInGroup(unit string, keys []string) (interface
 
 	convert := func(b uint64) float64 {
 		return float64(b) / Unit
-	}
-
-	var m struct {
-		MemInfo map[string]MemoryMetric `json:"mem"`
 	}
 
 	MemInfoKeys := map[string]string{
@@ -92,7 +113,7 @@ func (hd *Handlers) handleResourceInGroup(unit string, keys []string) (interface
 		"debuggc":       "DebugGC",
 	}
 
-	m.MemInfo = map[string]MemoryMetric{
+	memInfo := map[string]MemoryMetric{
 		"Alloc": {
 			Value:       convert(mem.Alloc),
 			Unit:        UnitStr,
@@ -229,29 +250,270 @@ func (hd *Handlers) handleResourceInGroup(unit string, keys []string) (interface
 	case len(keys) == 1 && keys[0] == "":
 	case len(keys) < 1:
 	default:
-		memInfo := make(map[string]MemoryMetric)
+		selected := make(map[string]MemoryMetric)
 		for _, key := range keys {
 			k, found := MemInfoKeys[key]
 			if found {
-				memInfo[k] = m.MemInfo[k]
+				if metric, ok := memInfo[k]; ok {
+					selected[k] = metric
+				}
 			}
 		}
 
-		m.MemInfo = memInfo
+		memInfo = selected
 	}
 
-	hal, err := hd.buildResourceHal(m)
+	return &resourceMetrics{
+		memInfo: memInfo,
+		raw:     mem,
+	}, nil
+}
+
+func (hd *Handlers) handleResourceProm(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	memUnit := ParseStringQuery(r.URL.Query().Get("unit"))
+	keys := ParseCSVStringQuery(strings.ToLower(r.URL.Query().Get("keys")))
+
+	rm, err := hd.collectResourceMetrics(memUnit, keys)
 	if err != nil {
-		return nil, err
-	}
-	return hd.enc.Marshal(hal)
+		HTTP2HandleError(w, err)
 
+		return
+	}
+
+	var b strings.Builder
+	writePromResource(&b, rm)
+
+	w.Header().Set("Content-Type", PrometheusTextMimetype)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(b.String()))
 }
 
 func (hd *Handlers) buildResourceHal(resource interface{}) (Hal, error) {
 	hal := NewBaseHal(resource, NewHalLink(HandlerPathResource, nil))
 
 	return hal, nil
+}
+
+type resourcePromMetric struct {
+	key   string
+	name  string
+	value func(mem *runtime.MemStats) (string, bool)
+}
+
+var resourcePromMetrics = []resourcePromMetric{
+	{
+		key:  "Alloc",
+		name: "mitum_resource_memory_alloc_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.Alloc, 10), true
+		},
+	},
+	{
+		key:  "TotalAlloc",
+		name: "mitum_resource_memory_total_alloc_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.TotalAlloc, 10), true
+		},
+	},
+	{
+		key:  "Sys",
+		name: "mitum_resource_memory_sys_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.Sys, 10), true
+		},
+	},
+	{
+		key:  "HeapAlloc",
+		name: "mitum_resource_memory_heap_alloc_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.HeapAlloc, 10), true
+		},
+	},
+	{
+		key:  "HeapSys",
+		name: "mitum_resource_memory_heap_sys_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.HeapSys, 10), true
+		},
+	},
+	{
+		key:  "HeapIdle",
+		name: "mitum_resource_memory_heap_idle_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.HeapIdle, 10), true
+		},
+	},
+	{
+		key:  "HeapInuse",
+		name: "mitum_resource_memory_heap_inuse_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.HeapInuse, 10), true
+		},
+	},
+	{
+		key:  "HeapReleased",
+		name: "mitum_resource_memory_heap_released_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.HeapReleased, 10), true
+		},
+	},
+	{
+		key:  "StackInuse",
+		name: "mitum_resource_memory_stack_inuse_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.StackInuse, 10), true
+		},
+	},
+	{
+		key:  "StackSys",
+		name: "mitum_resource_memory_stack_sys_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.StackSys, 10), true
+		},
+	},
+	{
+		key:  "NextGC",
+		name: "mitum_resource_memory_next_gc_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.NextGC, 10), true
+		},
+	},
+	{
+		key:  "HeapObjects",
+		name: "mitum_resource_memory_heap_objects",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.HeapObjects, 10), true
+		},
+	},
+	{
+		key:  "MSpanInuse",
+		name: "mitum_resource_memory_mspan_inuse_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.MSpanInuse, 10), true
+		},
+	},
+	{
+		key:  "MSpanSys",
+		name: "mitum_resource_memory_mspan_sys_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.MSpanSys, 10), true
+		},
+	},
+	{
+		key:  "MCacheInuse",
+		name: "mitum_resource_memory_mcache_inuse_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.MCacheInuse, 10), true
+		},
+	},
+	{
+		key:  "MCacheSys",
+		name: "mitum_resource_memory_mcache_sys_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.MCacheSys, 10), true
+		},
+	},
+	{
+		key:  "BuckHashSys",
+		name: "mitum_resource_memory_buck_hash_sys_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.BuckHashSys, 10), true
+		},
+	},
+	{
+		key:  "GCSys",
+		name: "mitum_resource_memory_gc_sys_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.GCSys, 10), true
+		},
+	},
+	{
+		key:  "OtherSys",
+		name: "mitum_resource_memory_other_sys_bytes",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(mem.OtherSys, 10), true
+		},
+	},
+	{
+		key:  "LastGC",
+		name: "mitum_resource_memory_last_gc_timestamp_seconds",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatFloat(float64(mem.LastGC)/1e9, 'f', -1, 64), true
+		},
+	},
+	{
+		key:  "PauseTotalNs",
+		name: "mitum_resource_memory_pause_total_seconds",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatFloat(float64(mem.PauseTotalNs)/1e9, 'f', -1, 64), true
+		},
+	},
+	{
+		key:  "NumGC",
+		name: "mitum_resource_memory_num_gc_total",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(uint64(mem.NumGC), 10), true
+		},
+	},
+	{
+		key:  "NumForcedGC",
+		name: "mitum_resource_memory_num_forced_gc_total",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatUint(uint64(mem.NumForcedGC), 10), true
+		},
+	},
+	{
+		key:  "GCCPUFraction",
+		name: "mitum_resource_memory_gc_cpu_fraction",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return strconv.FormatFloat(mem.GCCPUFraction, 'f', -1, 64), true
+		},
+	},
+	{
+		key:  "EnableGC",
+		name: "mitum_resource_memory_enable_gc",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return boolToGauge(mem.EnableGC), true
+		},
+	},
+	{
+		key:  "DebugGC",
+		name: "mitum_resource_memory_debug_gc",
+		value: func(mem *runtime.MemStats) (string, bool) {
+			return boolToGauge(mem.DebugGC), true
+		},
+	},
+}
+
+func writePromResource(b *strings.Builder, rm *resourceMetrics) {
+	headersWritten := map[string]bool{}
+
+	if rm == nil || len(rm.memInfo) == 0 {
+		b.WriteString("# No resource metrics available\n")
+
+		return
+	}
+
+	for i := range resourcePromMetrics {
+		def := resourcePromMetrics[i]
+		if _, ok := rm.memInfo[def.key]; !ok {
+			continue
+		}
+
+		if value, ok := def.value(&rm.raw); ok {
+			writePromSample(b, def.name, nil, value, headersWritten)
+		}
+	}
+}
+
+func boolToGauge(v bool) string {
+	if v {
+		return "1"
+	}
+
+	return "0"
 }
 
 type MemoryMetric struct {

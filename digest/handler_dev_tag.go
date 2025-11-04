@@ -10,6 +10,7 @@ import (
 
 var (
 	HandlerPathResource       = `/resource`
+	HandlerPathResourceProm   = `/resource/prom`
 	HandlerPathPProfProfile   = `/pprof/profile`
 	HandlerPathPProfGoroutine = `/pprof/goroutine`
 	HandlerPathPProfHeap      = `/pprof/heap`
@@ -32,7 +33,13 @@ func (hd *Handlers) setHandlers(digest bool) {
 		Methods(http.MethodOptions, "GET")
 	_ = hd.setHandler(HandlerPathNodeMetric, hd.handleNodeMetric, true, get, get).
 		Methods(http.MethodOptions, "GET")
+	_ = hd.setHandler(HandlerPathNodeInfoProm, hd.handleNodeInfoProm, false, get, get).
+		Methods(http.MethodOptions, "GET")
+	_ = hd.setHandler(HandlerPathNodeMetricProm, hd.handleNodeMetricProm, false, get, get).
+		Methods(http.MethodOptions, "GET")
 	_ = hd.setHandler(HandlerPathResource, hd.handleResource, true, get, get).
+		Methods(http.MethodOptions, "GET")
+	_ = hd.setHandler(HandlerPathResourceProm, hd.handleResourceProm, false, get, get).
 		Methods(http.MethodOptions, "GET")
 	_ = hd.setHandler(HandlerPathPProfProfile, hd.handlePProfProfile, true, get, get).
 		Methods(http.MethodOptions, "GET")
