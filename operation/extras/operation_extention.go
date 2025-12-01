@@ -731,6 +731,13 @@ func VerifyInActiveContractOwnerHandlerOnly(fact InActiveContractOwnerHandlerOnl
 					Errorf("%v", err))
 		}
 
+		if ca == nil {
+			return base.NewBaseOperationProcessReasonError(
+				common.ErrMPreProcess.
+					Wrap(common.ErrMValueInvalid).Errorf(
+					"contract account value is nil"))
+		}
+
 		if ca.IsActive() {
 			return base.NewBaseOperationProcessReasonError(
 				common.ErrMPreProcess.
@@ -783,6 +790,13 @@ func VerifyActiveContractOwnerHandlerOnly(fact ActiveContractOwnerHandlerOnly, g
 			return base.NewBaseOperationProcessReasonError(
 				common.ErrMPreProcess.
 					Errorf("%v", err))
+		}
+
+		if ca == nil {
+			return base.NewBaseOperationProcessReasonError(
+				common.ErrMPreProcess.
+					Wrap(common.ErrMValueInvalid).Errorf(
+					"contract account value is nil"))
 		}
 
 		if !ca.IsActive() {
