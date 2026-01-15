@@ -1,37 +1,69 @@
 package types
 
-import "github.com/ProtoconNet/mitum2/base"
+import (
+	"github.com/ProtoconNet/mitum2/util"
+	"github.com/ProtoconNet/mitum2/util/hint"
+)
 
-func (d *AsymmetricKeyAuthentication) unpack(
-	id, authType, controller string, publicKey base.Publickey,
+func (v *BaseVerificationMethod) unpack(
+	id, vrfType, controller string,
 ) error {
-	d.id = id
-	d.authType = authType
-	d.controller = controller
-
-	d.publicKey = publicKey
+	did, err := NewDIDURLRefFromString(id)
+	if err != nil {
+		return err
+	}
+	v.id = *did
+	v.verificationType = VerificationMethodType(vrfType)
+	cont, err := NewDIDRefFromString(controller)
+	if err != nil {
+		return err
+	}
+	v.controller = *cont
 
 	return nil
 }
 
-func (d *SocialLogInAuthentication) unpack(
-	id, authType, controller, serviceEP string,
+func (v *VerificationMethod) unpack(
+	pubKeyJwk *JWK, pubKeyMultibase, pubKey string, tid string, allowed []AllowedOperation,
 ) error {
-	d.id = id
-	d.authType = authType
-	d.controller = controller
-	d.serviceEndpoint = serviceEP
+	if pubKey != "" {
+		pbKey, err := ParseMEPublickey(pubKey)
+		if err != nil {
+			return err
+		}
+		v.publicKey = pbKey
+	}
+	v.publicKeyJwk = pubKeyJwk
+	v.publicKeyMultibase = pubKeyMultibase
+
+	if tid != "" {
+		targetID, err := NewDIDURLRefFromString(tid)
+		if err != nil {
+			return err
+		}
+		v.targetID = targetID
+	}
+
+	v.allowed = allowed
 
 	return nil
 }
 
-func (d *VerificationMethod) unpack(
-	id, vrfType, controller, pubKey string,
-) error {
-	d.id = id
-	d.verificationType = vrfType
-	d.controller = controller
-	d.publicKey = pubKey
+func (a *AllowedOperation) unpack(sc, oh string) error {
+	e := util.StringError("failed to unpack of %T", AllowedOperation{})
+	if sc != "" {
+		contract, err := NewAddressFromString(sc)
+		if err != nil {
+			return e.Wrap(err)
+		}
+		a.contract = contract
+	}
 
+	ht, err := hint.ParseHint(oh)
+	if err != nil {
+		return e.Wrap(err)
+	}
+
+	a.operation = ht
 	return nil
 }

@@ -1,132 +1,218 @@
 package types
 
 import (
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util/hint"
-	"go.mongodb.org/mongo-driver/bson"
-
 	bsonenc "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
 	"github.com/ProtoconNet/mitum2/util"
+	"github.com/ProtoconNet/mitum2/util/hint"
+	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
 )
 
-func (d AsymmetricKeyAuthentication) MarshalBSON() ([]byte, error) {
-	return bsonenc.Marshal(bson.M{
-		"_hint":        d.Hint().String(),
-		"id":           d.id,
-		"authType":     d.authType,
-		"controller":   d.controller,
-		"publicKeyHex": d.publicKey.String(),
-	})
+func (v VerificationMethodOrRef) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	switch v.kind {
+	case VMRefKindReference:
+		if v.ref == nil {
+			return 0, nil, errors.New("reference not set")
+		}
+		return bson.MarshalValue(v.ref.String())
+	case VMRefKindEmbedded:
+		if v.method == nil {
+			return 0, nil, errors.New("method not set")
+		}
+		return bson.MarshalValue(v.method)
+	default:
+		return 0, nil, errors.Errorf("unknown kind: %v", v.kind)
+	}
 }
 
-type AsymmetricKeyAuthenticationBSONUnmarshaler struct {
-	Hint       string `bson:"_hint"`
+type VerificationMethodOrRefBSONUnmarshaler struct {
+	Hint   string            `bson:"_hint"`
+	REF    string            `bson:"ref"`
+	METHOD bson.Raw          `bson:"method"`
+	KIND   VMRefKind         `bson:"kind"`
+	POLICY AttestationPolicy `bson:"policy"`
+}
+
+func (v *VerificationMethodOrRef) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
+	switch t {
+	case bson.TypeString:
+		var s string
+		if err := bson.UnmarshalValue(t, data, &s); err != nil {
+			return err
+		}
+		ref, err := NewDIDURLRefFromString(s)
+		if err != nil {
+			return err
+		}
+		v.ref = ref
+		v.method = nil
+		v.kind = VMRefKindReference
+		return nil
+
+	case bson.TypeEmbeddedDocument:
+		var vm VerificationMethod
+		if err := bson.UnmarshalValue(t, data, &vm); err != nil {
+			return err
+		}
+		v.method = vm
+		v.ref = nil
+		v.kind = VMRefKindEmbedded
+		return nil
+
+	default:
+		return errors.New("unsupported bson type")
+	}
+}
+
+type BaseVerificationMethodBSONMarshaler struct {
 	ID         string `bson:"id"`
-	AuthType   string `bson:"authType"`
 	Controller string `bson:"controller"`
-	PublicKey  string `bson:"publicKeyHex"`
+	Type       string `bson:"type"`
 }
 
-func (d *AsymmetricKeyAuthentication) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
-	e := util.StringError("decode bson of AsymmetricKeyAuthentication")
+func (b BaseVerificationMethod) BSONMarshaler() BaseVerificationMethodBSONMarshaler {
+	return BaseVerificationMethodBSONMarshaler{
+		ID:         b.id.String(),
+		Controller: b.controller.String(),
+		Type:       b.verificationType.String(),
+	}
+}
 
-	var u AsymmetricKeyAuthenticationBSONUnmarshaler
-	if err := enc.Unmarshal(b, &u); err != nil {
+type BaseVerificationMethodBSONUnMarshaler struct {
+	ID         string `bson:"id"`
+	Controller string `bson:"controller"`
+	Type       string `bson:"type"`
+}
+
+func (b BaseVerificationMethod) UnmarshalBSON(v []byte) error {
+	e := util.StringError("failed to decode bson of %T", BaseVerificationMethod{})
+
+	var u BaseVerificationMethodBSONUnMarshaler
+	if err := bson.Unmarshal(v, &u); err != nil {
 		return e.Wrap(err)
 	}
 
-	ht, err := hint.ParseHint(u.Hint)
+	b.SetType(VerificationMethodType(u.Type))
+	id, err := NewDIDURLRefFromString(u.ID)
 	if err != nil {
 		return e.Wrap(err)
 	}
-
-	d.BaseHinter = hint.NewBaseHinter(ht)
-
-	pubKey, err := base.DecodePublickeyFromString(u.PublicKey, enc)
+	b.SetID(*id)
+	controller, err := NewDIDRefFromString(u.Controller)
 	if err != nil {
 		return e.Wrap(err)
 	}
+	b.SetController(*controller)
 
-	return d.unpack(u.ID, u.AuthType, u.Controller, pubKey)
+	return nil
 }
 
-func (d SocialLogInAuthentication) MarshalBSON() ([]byte, error) {
-	return bsonenc.Marshal(bson.M{
-		"_hint":           d.Hint().String(),
-		"id":              d.id,
-		"authType":        d.authType,
-		"controller":      d.controller,
-		"serviceEndpoint": d.serviceEndpoint,
-		"proof":           d.proof,
+type VerificationMethodBSONMarshaler struct {
+	Hint               string             `bson:"_hint"`
+	ID                 string             `bson:"id"`
+	Controller         string             `bson:"controller"`
+	Type               string             `bson:"type"`
+	PublicKeyJwk       *JWK               `bson:"publicKeyJwk,omitempty"`
+	PublicKeyMultibase string             `bson:"publicKeyMultibase,omitempty"`
+	PublicKey          string             `bson:"publicKeyImFact,omitempty"`
+	TargetId           string             `bson:"targetId,omitempty"`
+	Allowed            []AllowedOperation `bson:"allowed,omitempty"`
+}
+
+func (v VerificationMethod) MarshalBSON() ([]byte, error) {
+	var tid string
+	if v.targetID != nil {
+		tid = v.targetID.String()
+	} else {
+		tid = ""
+	}
+	var pk string
+	if v.PublicKey() != nil {
+		pk = v.PublicKey().String()
+	} else {
+		pk = ""
+	}
+
+	return bsonenc.Marshal(VerificationMethodBSONMarshaler{
+		Hint:               v.Hint().String(),
+		ID:                 v.ID().String(),
+		Controller:         v.Controller().String(),
+		Type:               v.Type().String(),
+		PublicKeyJwk:       v.PublicKeyJwk(),
+		PublicKeyMultibase: v.PublicKeyMultibase(),
+		PublicKey:          pk,
+		TargetId:           tid,
+		Allowed:            v.Allowed(),
 	})
 }
 
-type SocialLogInAuthenticationBSONUnmarshaler struct {
-	Hint            string   `bson:"_hint"`
-	ID              string   `bson:"id"`
-	AuthType        string   `bson:"authType"`
-	Controller      string   `bson:"controller"`
-	ServiceEndPoint string   `bson:"serviceEndpoint"`
-	Proof           bson.Raw `bson:"proof"`
+type VerificationMethodBSONUnMarshaler struct {
+	Hint               string             `bson:"_hint"`
+	PublicKeyJwk       *JWK               `bson:"publicKeyJwk"`
+	PublicKeyMultibase string             `bson:"publicKeyMultibase"`
+	PublicKey          string             `bson:"publicKeyImFact"`
+	TargetId           string             `bson:"targetId"`
+	Allowed            []AllowedOperation `bson:"allowed"`
 }
 
-func (d *SocialLogInAuthentication) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
-	e := util.StringError("decode bson of SocialLogInAuthentication")
+func (v *VerificationMethod) UnmarshalBSON(b []byte) error {
+	e := util.StringError("failed to decode bson of %T", VerificationMethod{})
 
-	var u SocialLogInAuthenticationBSONUnmarshaler
-	if err := enc.Unmarshal(b, &u); err != nil {
+	var u BaseVerificationMethodBSONUnMarshaler
+	if err := bson.Unmarshal(b, &u); err != nil {
 		return e.Wrap(err)
 	}
 
-	ht, err := hint.ParseHint(u.Hint)
+	err := v.BaseVerificationMethod.unpack(u.ID, u.Type, u.Controller)
 	if err != nil {
 		return e.Wrap(err)
 	}
 
-	d.BaseHinter = hint.NewBaseHinter(ht)
+	var uk VerificationMethodBSONUnMarshaler
+	if err := bson.Unmarshal(b, &uk); err != nil {
+		return e.Wrap(err)
+	}
 
-	var p Proof
-	err = enc.Unmarshal(u.Proof, &p)
+	ht, err := hint.ParseHint(uk.Hint)
 	if err != nil {
 		return e.Wrap(err)
 	}
-	d.proof = p
 
-	return d.unpack(u.ID, u.AuthType, u.Controller, u.ServiceEndPoint)
+	v.BaseHinter = hint.NewBaseHinter(ht)
+
+	return v.unpack(uk.PublicKeyJwk, uk.PublicKeyMultibase, uk.PublicKey, uk.TargetId, uk.Allowed)
 }
 
-func (d VerificationMethod) MarshalBSON() ([]byte, error) {
-	return bsonenc.Marshal(bson.M{
-		"_hint":            d.Hint().String(),
-		"id":               d.id,
-		"verificationType": d.verificationType,
-		"controller":       d.controller,
-		"publicKeyHex":     d.publicKey,
+type AllowedOperationBSONMarshaler struct {
+	Contract  string `bson:"contract,omitempty"`
+	Operation string `bson:"operation"`
+}
+
+func (a AllowedOperation) MarshalBSON() ([]byte, error) {
+	var contract string
+	if a.contract != nil {
+		contract = a.contract.String()
+	} else {
+		contract = ""
+	}
+	return bsonenc.Marshal(AllowedOperationBSONMarshaler{
+		Contract:  contract,
+		Operation: a.operation.String(),
 	})
 }
 
-type VerificationMethodBSONUnmarshaler struct {
-	Hint             string `bson:"_hint"`
-	ID               string `bson:"id"`
-	VerificationType string `bson:"verificationType"`
-	Controller       string `bson:"controller"`
-	PublicKey        string `bson:"publicKeyHex"`
+type AllowedOperationBSONUnMarshaler struct {
+	Contract  string `bson:"contract"`
+	Operation string `bson:"operation"`
 }
 
-func (d *VerificationMethod) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
-	e := util.StringError("decode bson of SocialLogInAuthentication")
-
-	var u VerificationMethodBSONUnmarshaler
-	if err := enc.Unmarshal(b, &u); err != nil {
+func (a *AllowedOperation) UnmarshalBSON(b []byte) error {
+	e := util.StringError("failed to decode bson of %T", AllowedOperation{})
+	var u AllowedOperationBSONUnMarshaler
+	if err := bson.Unmarshal(b, &u); err != nil {
 		return e.Wrap(err)
 	}
 
-	ht, err := hint.ParseHint(u.Hint)
-	if err != nil {
-		return e.Wrap(err)
-	}
-
-	d.BaseHinter = hint.NewBaseHinter(ht)
-
-	return d.unpack(u.ID, u.VerificationType, u.Controller, u.PublicKey)
+	return a.unpack(u.Contract, u.Operation)
 }
