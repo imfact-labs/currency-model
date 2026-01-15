@@ -50,9 +50,7 @@ func (ba *BaseAuthentication) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 
 	a, err := base.DecodeAddress(u.Contract, enc)
 	if err != nil {
-		if err != nil {
-			return common.DecorateError(err, common.ErrDecodeBson, *ba)
-		}
+		return common.DecorateError(err, common.ErrDecodeBson, *ba)
 	}
 
 	ba.contract = a
@@ -97,9 +95,7 @@ func (bs *BaseSettlement) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 
 	a, err := base.DecodeAddress(u.OpSender, enc)
 	if err != nil {
-		if err != nil {
-			return common.DecorateError(err, common.ErrDecodeBson, *bs)
-		}
+		return common.DecorateError(err, common.ErrDecodeBson, *bs)
 	}
 	bs.opSender = a
 
@@ -149,9 +145,7 @@ func (bs *BaseProxyPayer) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 
 	a, err := base.DecodeAddress(u.ProxyPayer, enc)
 	if err != nil {
-		if err != nil {
-			return common.DecorateError(err, common.ErrDecodeBson, *bs)
-		}
+		return common.DecorateError(err, common.ErrDecodeBson, *bs)
 	}
 	bs.proxyPayer = a
 

@@ -2,6 +2,7 @@ package extras
 
 import (
 	"encoding/json"
+
 	"github.com/ProtoconNet/mitum-currency/v3/common"
 	"github.com/ProtoconNet/mitum-currency/v3/state"
 	didstate "github.com/ProtoconNet/mitum-currency/v3/state/did-registry"
@@ -117,111 +118,147 @@ func (ba BaseAuthentication) Equal(b BaseAuthentication) bool {
 }
 
 func (ba BaseAuthentication) Verify(op base.Operation, getStateFunc base.GetStateFunc) error {
-	var authentication types.IAuthentication
+	var authentication types.VerificationRelationshipEntry
 	var doc types.DIDDocument
-	dr, err := types.NewDIDResourceFromString(ba.AuthenticationID())
+
+	var factUser base.Address
+	i, ok := op.Fact().(FactUser)
+	if !ok {
+		return common.ErrAccountNAth.Errorf("fact user not found")
+	} else if factUser = i.FactUser(); factUser == nil {
+		return common.ErrAccountNAth.Errorf("empty fact user")
+	}
+
+	authId, err := types.NewDIDURLRefFromString(ba.AuthenticationID())
 	if err != nil {
 		return err
 	}
 
-	switch i := op.Fact().(type) {
-	case FeeAble:
-		factSender := i.FeePayer()
-		if dr.MethodSpecificID() != factSender.String() {
-			return common.ErrAccountNAth.Errorf("fact sender is not matched with authentication id controller")
-		}
+	if factUser.String() != authId.MethodSpecificID() {
+		return common.ErrValueInvalid.Errorf("authentication id must be derived from the sender's DID")
+	}
+
+	if ba.Contract() == nil {
+		return common.ErrValueInvalid.Errorf("empty contract address")
 	}
 
 	contract := ba.Contract()
-	if contract == nil {
-		return common.ErrValueInvalid.Errorf("empty contract address")
-	}
-	if st, err := state.ExistsState(didstate.DocumentStateKey(contract, dr.DID()), "did document", getStateFunc); err != nil {
+	if st, err := state.ExistsState(didstate.DocumentStateKey(contract, authId.DID().String()), "did document", getStateFunc); err != nil {
 		return common.ErrStateNF.Wrap(err)
 	} else if doc, err = didstate.GetDocumentFromState(st); err != nil {
 		return err
 	}
 
-	authentication, err = doc.Authentication(ba.AuthenticationID())
+	authentication, err = doc.Authentication(authId.String())
 	if err != nil {
 		return common.ErrValueInvalid.Wrap(err)
 	}
 
-	if authentication.Controller() != dr.DID() {
-		return common.ErrValueInvalid.Errorf(
-			"Controller of authentication id, %v is not matched with DID in document, %v",
-			authentication.Controller(),
-			dr.DID(),
-		)
+	var iVrfMethod types.IVerificationMethod
+	if authentication.Kind() == types.VMRefKindReference {
+		iVrfMethod, err = doc.VerificationMethod(authId.String())
+		if err != nil {
+			return common.ErrValueInvalid.Wrap(err)
+		}
+	} else if authentication.Kind() == types.VMRefKindEmbedded {
+		iVrfMethod = authentication.Method()
+	} else {
+		return common.ErrValueInvalid.Errorf("unknown authentication kind")
 	}
 
-	switch authentication.AuthType() {
-	case types.AuthTypeECDSASECP:
-		details := authentication.Details()
-		pubKey, ok := details.(base.Publickey)
-		if !ok {
-			return common.ErrTypeMismatch.Errorf("expected PublicKey, but %T", details)
-		}
+	vrfMethod, ok := iVrfMethod.(types.VerificationMethod)
+	if !ok {
+		return errors.Errorf("expected VerificationMethod but %T", iVrfMethod)
+	}
 
+	switch vrfMethod.Type() {
+	case types.AuthTypeECDSASECP:
+		if vrfMethod.PublicKey() == nil {
+			return common.ErrValueInvalid.Errorf("missing public key in EcdsaSecp256k1VerificationKey2019 type")
+		}
+		pubKey := vrfMethod.PublicKey()
 		signature := base58.Decode(ba.ProofData())
-		err := pubKey.Verify(op.Fact().Hash().Bytes(), signature)
+		err = pubKey.Verify(op.Fact().Hash().Bytes(), signature)
 		if err != nil {
 			return common.ErrUserSignInvalid.Wrap(err)
 		}
-	case types.AuthTypeVC:
-		details := authentication.Details()
-		m, ok := details.(map[string]interface{})
-		if !ok {
-			return common.ErrTypeMismatch.Errorf("expected map, but %T", details)
+	case types.AuthTypeLinked:
+		targetID := vrfMethod.TargetID()
+		if targetID == nil {
+			return common.ErrUserSignInvalid.Wrap(errors.Errorf("empty target ID in LinkedVerificationMethod type"))
 		}
-		p := m["proof"]
-		proof, ok := p.(types.Proof)
-		if !ok {
-			return common.ErrTypeMismatch.Errorf("expected Proof, but %T", p)
+
+		var allowed []types.AllowedOperation
+		switch t := op.Fact().(type) {
+		case ContractOwnerOnly:
+			for _, contract := range t.ContractOwnerOnly() {
+				allowed = append(allowed, *types.NewAllowedOperation(contract[0], op.Hint()))
+			}
+		case ActiveContract:
+			for _, contract := range t.ActiveContract() {
+				allowed = append(allowed, *types.NewAllowedOperation(contract, op.Hint()))
+			}
+		case ActiveContractOwnerHandlerOnly:
+			for _, contract := range t.ActiveContractOwnerHandlerOnly() {
+				allowed = append(allowed, *types.NewAllowedOperation(contract[0], op.Hint()))
+			}
+		case InActiveContractOwnerHandlerOnly:
+			for _, contract := range t.InActiveContractOwnerHandlerOnly() {
+				allowed = append(allowed, *types.NewAllowedOperation(contract[0], op.Hint()))
+			}
+		default:
+			allowed = append(allowed, *types.NewAllowedOperation(nil, op.Hint()))
 		}
-		vm := proof.VerificationMethod()
-		dr, err := types.NewDIDResourceFromString(vm)
-		if err != nil {
+
+		for _, allowed := range allowed {
+			ok := vrfMethod.IsAllowed(allowed)
+			if !ok {
+				return common.ErrValueInvalid.Errorf("not allowed operation")
+			}
+		}
+
+		var targetDoc types.DIDDocument
+		if targetSt, err := state.ExistsState(didstate.DocumentStateKey(contract, targetID.DID().String()), "did document", getStateFunc); err != nil {
+			return common.ErrStateNF.Wrap(err)
+		} else if targetDoc, err = didstate.GetDocumentFromState(targetSt); err != nil {
 			return err
 		}
-
-		var doc types.DIDDocument
-		if st, err := state.ExistsState(didstate.DocumentStateKey(contract, dr.DID()), "did document", getStateFunc); err != nil {
-			return common.ErrStateNF.Wrap(err)
-		} else if doc, err = didstate.GetDocumentFromState(st); err != nil {
-			return common.ErrStateValInvalid.Wrap(err)
-		}
-
-		sAuthentication, err := doc.Authentication(vm)
+		tAuthentication, err := targetDoc.Authentication(targetID.String())
 		if err != nil {
 			return common.ErrValueInvalid.Wrap(err)
 		}
 
-		if sAuthentication.Controller() != dr.DID() {
-			return common.ErrValueInvalid.Errorf(
-				"Controller of authentication id, %v is not matched with DID in document, %v",
-				authentication.Controller(),
-				dr.DID(),
-			)
+		var iVrfMethod types.IVerificationMethod
+		if tAuthentication.Kind() == types.VMRefKindReference {
+			iVrfMethod, err = targetDoc.VerificationMethod(targetID.String())
+			if err != nil {
+				return common.ErrValueInvalid.Wrap(err)
+			}
+		} else if tAuthentication.Kind() == types.VMRefKindEmbedded {
+			iVrfMethod = tAuthentication.Method()
+		} else {
+			return common.ErrValueInvalid.Errorf("unknown authentication kind")
 		}
 
-		if sAuthentication.AuthType() != types.AuthTypeECDSASECP {
-			return common.ErrAthTypeInvalid.Errorf("auth type must be EcdsaSecp256k1VerificationKey2019")
-		}
-
-		sDetails := sAuthentication.Details()
-		pubKey, ok := sDetails.(base.Publickey)
+		vrfMethod, ok := iVrfMethod.(types.VerificationMethod)
 		if !ok {
-			return common.ErrTypeMismatch.Errorf("expected PublicKey, but %T", details)
+			return errors.Errorf("expected VerificationMethod but %T", iVrfMethod)
 		}
 
-		signature := base58.Decode(ba.ProofData())
-
-		err = pubKey.Verify(op.Fact().Hash().Bytes(), signature)
-		if err != nil {
-			return common.ErrSignInvalid.Wrap(err)
+		switch vrfMethod.Type() {
+		case types.AuthTypeECDSASECP:
+			if vrfMethod.PublicKey() == nil {
+				return common.ErrValueInvalid.Errorf("missing public key in EcdsaSecp256k1VerificationKey2019 type")
+			}
+			pubKey := vrfMethod.PublicKey()
+			signature := base58.Decode(ba.ProofData())
+			err = pubKey.Verify(op.Fact().Hash().Bytes(), signature)
+			if err != nil {
+				return common.ErrUserSignInvalid.Wrap(err)
+			}
+		case types.AuthTypeLinked:
+			return common.ErrValueInvalid.Errorf("target authentiation id should not point LinkedVerificationMethod type")
 		}
-	default:
 	}
 
 	return nil
@@ -536,13 +573,13 @@ func (be *BaseOperationExtensions) AddExtension(extension OperationExtension) er
 	return nil
 }
 
+// FeeAble is an interface type for fee calculation. Operations than requires fee must implement this interface.
 type FeeAble interface {
 	FeeBase() map[types.CurrencyID][]common.Big
 	FeePayer() base.Address
 }
 
-// VerifyFeeAble function checks
-// existence of currency id
+// VerifyFeeAble function checks existence of currency id
 func VerifyFeeAble(fact FeeAble, getStateFunc base.GetStateFunc) base.OperationProcessReasonError {
 	if len(fact.FeeBase()) < 1 {
 		return base.NewBaseOperationProcessReasonError(
@@ -562,6 +599,7 @@ func VerifyFeeAble(fact FeeAble, getStateFunc base.GetStateFunc) base.OperationP
 	return nil
 }
 
+// FactUser is an interface type for finding the user associated with User Operation
 type FactUser interface {
 	FactUser() base.Address
 }
@@ -588,6 +626,8 @@ func VerifyFactUser(fact FactUser, getStateFunc base.GetStateFunc) base.Operatio
 	return nil
 }
 
+// ContractOwnerOnly is an interface type for operations that must be controlled by contract owner
+// Withdraw, UpdateHandler, UpdateRecipient
 type ContractOwnerOnly interface {
 	ContractOwnerOnly() [][2]base.Address // contract, sender
 }
@@ -634,14 +674,14 @@ func VerifyContractOwnerOnly(fact ContractOwnerOnly, getStateFunc base.GetStateF
 	return nil
 }
 
+// InActiveContractOwnerHandlerOnly is an interface type for operations that activate an inactive contract
+// and must be authorized by owner or handler (e.g., RegisterModel)
 type InActiveContractOwnerHandlerOnly interface {
 	InActiveContractOwnerHandlerOnly() [][2]base.Address // contract, sender
 }
 
-// VerifyInActiveContractOwnerHandlerOnly function checks
-// existence of contract account
-// sender is owner of contract account
-// inactive contract account
+// VerifyInActiveContractOwnerHandlerOnly function checks existence of contract account
+// sender is owner of contract account inactive contract account
 func VerifyInActiveContractOwnerHandlerOnly(fact InActiveContractOwnerHandlerOnly, getStateFunc base.GetStateFunc) base.OperationProcessReasonError {
 	for _, addresses := range fact.InActiveContractOwnerHandlerOnly() {
 		contract := addresses[0]
@@ -687,6 +727,8 @@ func VerifyInActiveContractOwnerHandlerOnly(fact InActiveContractOwnerHandlerOnl
 	return nil
 }
 
+// ActiveContractOwnerHandlerOnly is an interface type for operations on an activated contract
+// that must be authorized by owner or handler(e.g., Mint)
 type ActiveContractOwnerHandlerOnly interface {
 	ActiveContractOwnerHandlerOnly() [][2]base.Address // contract, sender
 }
@@ -739,6 +781,7 @@ func VerifyActiveContractOwnerHandlerOnly(fact ActiveContractOwnerHandlerOnly, g
 	return nil
 }
 
+// ActiveContract is an interface type for operations on an active contract(e.g., CreateDID)
 type ActiveContract interface {
 	ActiveContract() []base.Address
 }

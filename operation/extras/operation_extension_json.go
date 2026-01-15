@@ -2,6 +2,7 @@ package extras
 
 import (
 	"encoding/json"
+
 	"github.com/ProtoconNet/mitum-currency/v3/common"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
@@ -13,6 +14,7 @@ import (
 type BaseAuthenticationJSONMarshaler struct {
 	hint.BaseHinter
 	Contract         base.Address `json:"contract"`
+	DID              string       `json:"did"`
 	AuthenticationID string       `json:"authentication_id"`
 	ProofData        string       `json:"proof_data"`
 }
@@ -47,12 +49,9 @@ func (ba *BaseAuthentication) DecodeJSON(b []byte, enc encoder.Encoder) error {
 	ba.BaseHinter = hint.NewBaseHinter(u.Hint)
 	a, err := base.DecodeAddress(u.Contract, enc)
 	if err != nil {
-		if err != nil {
-			return common.DecorateError(err, common.ErrDecodeBson, *ba)
-		}
+		return common.DecorateError(err, common.ErrDecodeJson, *ba)
 	}
 	ba.contract = a
-
 	ba.authenticationID = u.AuthenticationID
 	ba.proofData = u.ProofData
 
@@ -90,9 +89,7 @@ func (bs *BaseSettlement) DecodeJSON(b []byte, enc encoder.Encoder) error {
 	bs.BaseHinter = hint.NewBaseHinter(u.Hint)
 	a, err := base.DecodeAddress(u.OpSender, enc)
 	if err != nil {
-		if err != nil {
-			return common.DecorateError(err, common.ErrDecodeJson, *bs)
-		}
+		return common.DecorateError(err, common.ErrDecodeJson, *bs)
 	}
 	bs.opSender = a
 
@@ -130,9 +127,7 @@ func (bs *BaseProxyPayer) DecodeJSON(b []byte, enc encoder.Encoder) error {
 	bs.BaseHinter = hint.NewBaseHinter(u.Hint)
 	a, err := base.DecodeAddress(u.ProxyPayer, enc)
 	if err != nil {
-		if err != nil {
-			return common.DecorateError(err, common.ErrDecodeJson, *bs)
-		}
+		return common.DecorateError(err, common.ErrDecodeJson, *bs)
 	}
 	bs.proxyPayer = a
 
