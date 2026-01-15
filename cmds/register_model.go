@@ -2,6 +2,7 @@ package cmds
 
 import (
 	"context"
+
 	did "github.com/ProtoconNet/mitum-currency/v3/operation/did-registry"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/extras"
 	"github.com/ProtoconNet/mitum2/base"
@@ -96,7 +97,7 @@ func (cmd *RegisterModelCommand) createOperation() (base.Operation, error) {
 	}
 
 	if cmd.didContract != nil && cmd.AuthenticationID != "" && cmd.Proof != "" {
-		baseAuthentication = extras.NewBaseAuthentication(cmd.didContract, cmd.AuthenticationID, proofData)
+		baseAuthentication = extras.NewBaseAuthentication(cmd.didContract, cmd.DID, cmd.AuthenticationID, proofData)
 		if err := op.AddExtension(baseAuthentication); err != nil {
 			return nil, err
 		}

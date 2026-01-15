@@ -2,6 +2,7 @@ package cmds
 
 import (
 	"context"
+
 	"github.com/ProtoconNet/mitum2/isaac"
 
 	"github.com/ProtoconNet/mitum-currency/v3/digest"
@@ -218,6 +219,7 @@ func digestFollowup(ctx context.Context, height base.Height) error {
 		}
 
 		if err := digest.DigestBlock(ctx, st, bm, ops, opsTree, sts, pr, vs.String()); err != nil {
+
 			return err
 		}
 

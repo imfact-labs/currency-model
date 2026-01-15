@@ -2,6 +2,7 @@ package cmds
 
 import (
 	"context"
+
 	"github.com/ProtoconNet/mitum-currency/v3/operation/currency"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/extras"
 	"github.com/ProtoconNet/mitum-currency/v3/types"
@@ -101,7 +102,7 @@ func (cmd *UpdateKeyCommand) createOperation() (base.Operation, error) { // noli
 	}
 
 	if cmd.didContract != nil && cmd.AuthenticationID != "" && cmd.Proof != "" {
-		baseAuthentication = extras.NewBaseAuthentication(cmd.didContract, cmd.AuthenticationID, proofData)
+		baseAuthentication = extras.NewBaseAuthentication(cmd.didContract, cmd.DID, cmd.AuthenticationID, proofData)
 		if err := op.AddExtension(baseAuthentication); err != nil {
 			return nil, err
 		}
