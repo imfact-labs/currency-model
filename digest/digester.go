@@ -2,10 +2,11 @@ package digest
 
 import (
 	"context"
-	"github.com/ProtoconNet/mitum2/isaac"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/ProtoconNet/mitum2/isaac"
 
 	"github.com/ProtoconNet/mitum2/base"
 	isaacblock "github.com/ProtoconNet/mitum2/isaac/block"

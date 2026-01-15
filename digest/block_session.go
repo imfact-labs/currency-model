@@ -29,27 +29,19 @@ type BlockSessioner interface {
 
 type BlockSession struct {
 	sync.RWMutex
-	block                 base.BlockMap
-	ops                   []base.Operation
-	opsTree               fixedtree.Tree
-	sts                   []base.State
-	st                    *Database
-	proposal              base.ProposalSignFact
-	opsTreeNodes          map[string]base.OperationFixedtreeNode
-	WriteModels           map[string][]mongo.WriteModel
-	WriteModelsFunc       map[string][]mongo.WriteModel
-	blockModels           []mongo.WriteModel
-	operationModels       []mongo.WriteModel
-	accountModels         []mongo.WriteModel
-	contractAccountModels []mongo.WriteModel
-	balanceModels         []mongo.WriteModel
-	currencyModels        []mongo.WriteModel
-	didRegistryModels     []mongo.WriteModel
-	didDataModels         []mongo.WriteModel
-	didDocumentModels     []mongo.WriteModel
-	statesValue           *sync.Map
-	balanceAddressList    []string
-	buildinfo             string
+	block           base.BlockMap
+	ops             []base.Operation
+	opsTree         fixedtree.Tree
+	sts             []base.State
+	st              *Database
+	proposal        base.ProposalSignFact
+	opsTreeNodes    map[string]base.OperationFixedtreeNode
+	WriteModels     map[string][]mongo.WriteModel
+	PrepareFunc     []func(*BlockSession, base.State) (string, []mongo.WriteModel, error)
+	blockModels     []mongo.WriteModel
+	operationModels []mongo.WriteModel
+	statesValue     *sync.Map
+	buildInfo       string
 }
 
 func NewBlockSession(st *Database, blk base.BlockMap, ops []base.Operation, opsTree fixedtree.Tree, sts []base.State, proposal base.ProposalSignFact, vs string) (*BlockSession, error) {
@@ -62,6 +54,10 @@ func NewBlockSession(st *Database, blk base.BlockMap, ops []base.Operation, opsT
 		return nil, err
 	}
 
+	prepareFunc := []func(*BlockSession, base.State) (string, []mongo.WriteModel, error){
+		prepareCurrencies, prepareAccounts, prepareDIDRegistry,
+	}
+
 	return &BlockSession{
 		st:          nst,
 		block:       blk,
@@ -69,8 +65,11 @@ func NewBlockSession(st *Database, blk base.BlockMap, ops []base.Operation, opsT
 		opsTree:     opsTree,
 		sts:         sts,
 		proposal:    proposal,
+		WriteModels: make(map[string][]mongo.WriteModel),
+		PrepareFunc: prepareFunc,
 		statesValue: &sync.Map{},
-		buildinfo:   vs,
+
+		buildInfo: vs,
 	}, nil
 }
 
@@ -90,15 +89,24 @@ func (bs *BlockSession) Prepare() error {
 		return err
 	}
 
-	if err := bs.prepareCurrencies(); err != nil {
-		return err
+	for i := range bs.sts {
+		st := bs.sts[i]
+		for _, prepareFunc := range bs.PrepareFunc {
+			if colName, wrtModel, err := prepareFunc(bs, st); err != nil {
+				return err
+			} else if len(wrtModel) > 0 {
+				_, ok := bs.WriteModels[colName]
+				if !ok {
+					bs.WriteModels[colName] = wrtModel
+				} else {
+					bs.WriteModels[colName] = append(bs.WriteModels[colName], wrtModel...)
+				}
+			}
+
+		}
 	}
 
-	if err := bs.prepareDIDRegistry(); err != nil {
-		return err
-	}
-
-	return bs.prepareAccounts()
+	return nil
 }
 
 func (bs *BlockSession) Commit(ctx context.Context) error {
@@ -122,45 +130,11 @@ func (bs *BlockSession) Commit(ctx context.Context) error {
 			}
 		}
 
-		if len(bs.currencyModels) > 0 {
-			if err := bs.writeModels(txnCtx, DefaultColNameCurrency, bs.currencyModels); err != nil {
-				return nil, err
-			}
-		}
-
-		if len(bs.accountModels) > 0 {
-			if err := bs.writeModels(txnCtx, DefaultColNameAccount, bs.accountModels); err != nil {
-				return nil, err
-			}
-		}
-
-		if len(bs.contractAccountModels) > 0 {
-			if err := bs.writeModels(txnCtx, DefaultColNameContractAccount, bs.contractAccountModels); err != nil {
-				return nil, err
-			}
-		}
-
-		if len(bs.balanceModels) > 0 {
-			if err := bs.writeModels(txnCtx, DefaultColNameBalance, bs.balanceModels); err != nil {
-				return nil, err
-			}
-		}
-
-		if len(bs.didRegistryModels) > 0 {
-			if err := bs.writeModels(txnCtx, DefaultColNameDIDRegistry, bs.didRegistryModels); err != nil {
-				return nil, err
-			}
-		}
-
-		if len(bs.didDataModels) > 0 {
-			if err := bs.writeModels(txnCtx, DefaultColNameDIDData, bs.didDataModels); err != nil {
-				return nil, err
-			}
-		}
-
-		if len(bs.didDocumentModels) > 0 {
-			if err := bs.writeModels(txnCtx, DefaultColNameDIDDocument, bs.didDocumentModels); err != nil {
-				return nil, err
+		for k, v := range bs.WriteModels {
+			if len(v) > 0 {
+				if err := bs.writeModels(txnCtx, k, v); err != nil {
+					return nil, err
+				}
 			}
 		}
 
@@ -215,7 +189,7 @@ func (bs *BlockSession) prepareBlock() error {
 		bs.block.Manifest().ProposedAt(),
 	)
 
-	doc, err := NewManifestDoc(manifest, bs.st.digestDB.Encoder(), bs.block.Manifest().Height(), bs.ops, bs.block.SignedAt(), bs.proposal.ProposalFact().Proposer(), bs.proposal.ProposalFact().Point().Round(), bs.buildinfo)
+	doc, err := NewManifestDoc(manifest, bs.st.digestDB.Encoder(), bs.block.Manifest().Height(), bs.ops, bs.block.SignedAt(), bs.proposal.ProposalFact().Proposer(), bs.proposal.ProposalFact().Point().Round(), bs.buildInfo)
 	if err != nil {
 		return err
 	}
@@ -276,71 +250,44 @@ func (bs *BlockSession) prepareOperations() error {
 	return nil
 }
 
-func (bs *BlockSession) prepareAccounts() error {
-	if len(bs.sts) < 1 {
-		return nil
-	}
-
-	var accountModels []mongo.WriteModel
-	var balanceModels []mongo.WriteModel
-	var contractAccountModels []mongo.WriteModel
-	for i := range bs.sts {
-		st := bs.sts[i]
-
-		switch {
-		case ccstate.IsAccountStateKey(st.Key()):
-			j, err := bs.handleAccountState(st)
-			if err != nil {
-				return err
-			}
-			accountModels = append(accountModels, j...)
-		case ccstate.IsBalanceStateKey(st.Key()):
-			j, address, err := bs.handleBalanceState(st)
-			if err != nil {
-				return err
-			}
-			balanceModels = append(balanceModels, j...)
-			bs.balanceAddressList = append(bs.balanceAddressList, address)
-		case cestate.IsStateContractAccountKey(st.Key()):
-			j, err := bs.handleContractAccountState(st)
-			if err != nil {
-				return err
-			}
-			contractAccountModels = append(contractAccountModels, j...)
-		default:
-			continue
+func prepareAccounts(bs *BlockSession, st base.State) (string, []mongo.WriteModel, error) {
+	switch {
+	case ccstate.IsAccountStateKey(st.Key()):
+		j, err := bs.handleAccountState(st)
+		if err != nil {
+			return "", nil, err
 		}
+		return DefaultColNameAccount, j, nil
+	case ccstate.IsBalanceStateKey(st.Key()):
+		j, _, err := bs.handleBalanceState(st)
+		if err != nil {
+			return "", nil, err
+		}
+
+		return DefaultColNameBalance, j, nil
+	case cestate.IsStateContractAccountKey(st.Key()):
+		j, err := bs.handleContractAccountState(st)
+		if err != nil {
+			return "", nil, err
+		}
+		return DefaultColNameContractAccount, j, nil
 	}
 
-	bs.accountModels = accountModels
-	bs.contractAccountModels = contractAccountModels
-	bs.balanceModels = balanceModels
-	return nil
+	return "", nil, nil
 }
 
-func (bs *BlockSession) prepareCurrencies() error {
-	if len(bs.sts) < 1 {
-		return nil
-	}
-
-	var currencyModels []mongo.WriteModel
-	for i := range bs.sts {
-		st := bs.sts[i]
-		switch {
-		case ccstate.IsDesignStateKey(st.Key()):
-			j, err := bs.handleCurrencyState(st)
-			if err != nil {
-				return err
-			}
-			currencyModels = append(currencyModels, j...)
-		default:
-			continue
+func prepareCurrencies(bs *BlockSession, st base.State) (string, []mongo.WriteModel, error) {
+	switch {
+	case ccstate.IsDesignStateKey(st.Key()):
+		j, err := bs.handleCurrencyState(st)
+		if err != nil {
+			return "", nil, err
 		}
+
+		return DefaultColNameCurrency, j, nil
 	}
 
-	bs.currencyModels = currencyModels
-
-	return nil
+	return "", nil, nil
 }
 
 func (bs *BlockSession) handleAccountState(st base.State) ([]mongo.WriteModel, error) {
@@ -425,18 +372,12 @@ func (bs *BlockSession) close() error {
 	bs.block = nil
 	bs.ops = nil
 	bs.opsTree = fixedtree.EmptyTree()
+	bs.WriteModels = nil
 	bs.sts = nil
 	bs.proposal = nil
 	bs.opsTreeNodes = nil
 	bs.blockModels = nil
 	bs.operationModels = nil
-	bs.currencyModels = nil
-	bs.accountModels = nil
-	bs.contractAccountModels = nil
-	bs.didRegistryModels = nil
-	bs.didDataModels = nil
-	bs.didDocumentModels = nil
-	bs.balanceModels = nil
 
 	return bs.st.Close()
 }

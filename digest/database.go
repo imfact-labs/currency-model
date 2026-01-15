@@ -3,6 +3,12 @@ package digest
 import (
 	"context"
 	"fmt"
+	"math"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+
 	digestmongo "github.com/ProtoconNet/mitum-currency/v3/digest/mongodb"
 	dutil "github.com/ProtoconNet/mitum-currency/v3/digest/util"
 	"github.com/ProtoconNet/mitum-currency/v3/state/currency"
@@ -19,11 +25,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"math"
-	"sort"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 var maxLimit int64 = 50
@@ -104,8 +105,16 @@ func (db *Database) MongoClient() *digestmongo.Client {
 	return db.digestDB.Client()
 }
 
+func (db *Database) SetEncoder(enc encoder.Encoder) {
+	db.digestDB.SetEncoder(enc)
+}
+
 func (db *Database) Encoder() encoder.Encoder {
 	return db.digestDB.Encoder()
+}
+
+func (db *Database) SetEncoders(encs *encoder.Encoders) {
+	db.digestDB.SetEncoders(encs)
 }
 
 func (db *Database) Encoders() *encoder.Encoders {

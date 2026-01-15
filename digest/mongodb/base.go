@@ -133,8 +133,20 @@ func (st *Database) Close() error {
 	return nil
 }
 
+func (st *Database) SetEncoder(enc encoder.Encoder) {
+	st.Lock()
+	defer st.Unlock()
+	st.enc = enc
+}
+
 func (st *Database) Encoder() encoder.Encoder {
 	return st.enc
+}
+
+func (st *Database) SetEncoders(encs *encoder.Encoders) {
+	st.Lock()
+	defer st.Unlock()
+	st.encs = encs
 }
 
 func (st *Database) Encoders() *encoder.Encoders {
