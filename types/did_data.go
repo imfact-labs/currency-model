@@ -2,43 +2,54 @@ package types
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/ProtoconNet/mitum-currency/v3/common"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/pkg/errors"
-	"net/url"
-	"strings"
 )
 
-const MinKeyLen = 128
 const DIDPrefix = "did"
-const HexPrefix = "0x"
-const AddressSuffix = "fca"
 const DIDSeparator = ":"
 
 var DataHint = hint.MustNewHint("mitum-did-data-v0.0.1")
-var DIDResourceHint = hint.MustNewHint("mitum-did-resource-v0.0.1")
-var DocumentHint = hint.MustNewHint("mitum-did-document-v0.0.1")
 
 type Data struct {
 	hint.BaseHinter
 	address base.Address
-	did     DIDResource
+	did     DIDRef
 }
 
 func NewData(
 	address base.Address, method string,
-) Data {
+) (*Data, error) {
 	data := Data{
 		BaseHinter: hint.NewBaseHinter(DataHint),
 	}
 	data.address = address
-	data.did = NewDIDResource(method, address.String())
-	return data
+	var didRef *DIDRef
+	var err error
+	if didRef, err = NewDIDRef(method, address.String()); err != nil {
+		return nil, err
+	}
+
+	data.did = *didRef
+	if err := data.IsValid(nil); err != nil {
+		return nil, err
+	}
+
+	return &data, nil
 }
 
 func (d Data) IsValid([]byte) error {
+	if err := d.address.IsValid(nil); err != nil {
+		return err
+	}
+	if err := d.did.IsValid(nil); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -53,11 +64,7 @@ func (d Data) Address() base.Address {
 	return d.address
 }
 
-func (d Data) DID() string {
-	return d.did.DID()
-}
-
-func (d Data) DIDResource() DIDResource {
+func (d Data) DID() DIDRef {
 	return d.did
 }
 
@@ -65,105 +72,144 @@ func (d Data) Equal(b Data) bool {
 	if d.address.Equal(b.address) {
 		return false
 	}
-	if d.did.DID() != b.did.DID() {
+	if d.did.String() != b.did.String() {
 		return false
 	}
 
 	return true
 }
 
-type DIDResource struct {
-	hint.BaseHinter
-	method           string
-	methodSpecificID string
-	uriScheme        url.URL
+type DIDRef string
+
+func NewDIDRef(method, methodSpecificID string) (*DIDRef, error) {
+	didRef := DIDRef(fmt.Sprintf("%s:%s:%s", DIDPrefix, method, methodSpecificID))
+	if err := didRef.IsValid(nil); err != nil {
+		return nil, common.ErrValueInvalid.Wrap(err)
+	}
+	return &didRef, nil
 }
 
-func NewDIDResource(method, methodSpecificID string) DIDResource {
-	didResource := url.URL{
-		Scheme: DIDPrefix,
-		Opaque: fmt.Sprintf("%s%s%s", method, DIDSeparator, methodSpecificID),
-	}
-
-	return DIDResource{
-		BaseHinter:       hint.NewBaseHinter(DIDResourceHint),
-		method:           method,
-		methodSpecificID: methodSpecificID,
-		uriScheme:        didResource,
-	}
-}
-
-func NewDIDResourceFromString(didURL string) (*DIDResource, error) {
-	u, err := url.Parse(didURL)
-	if err != nil {
+func NewDIDRefFromString(s string) (*DIDRef, error) {
+	didRef := DIDRef(s)
+	if err := didRef.IsValid(nil); err != nil {
 		return nil, common.ErrValueInvalid.Wrap(err)
 	}
 
-	didResource := u
-	did := fmt.Sprintf("%s:%s", DIDPrefix, didResource.Opaque)
-	method, methodSpecificID, err := ParseDIDScheme(did)
-	if err != nil {
-		return nil, common.ErrValueInvalid.Wrap(err)
+	return &didRef, nil
+}
+
+func (d DIDRef) String() string {
+	return string(d)
+}
+
+func (d DIDRef) Method() string {
+	parts := strings.SplitN(string(d), ":", 3)
+
+	return parts[1]
+}
+
+func (d DIDRef) MethodSpecificID() string {
+	parts := strings.SplitN(string(d), ":", 3)
+
+	return parts[2]
+}
+
+func (d DIDRef) Bytes() []byte {
+	return []byte(string(d))
+}
+
+func (d DIDRef) IsValid(_ []byte) error {
+	s := string(d)
+
+	if len(s) < 1 {
+		return errors.Errorf("empty DIDRef")
 	}
 
-	return &DIDResource{
-		BaseHinter:       hint.NewBaseHinter(DIDResourceHint),
-		method:           method,
-		methodSpecificID: methodSpecificID,
-		uriScheme:        *didResource,
-	}, nil
-}
-
-func (d DIDResource) DID() string {
-	return fmt.Sprintf("%s:%s", DIDPrefix, d.uriScheme.Opaque)
-}
-
-func (d DIDResource) Method() string {
-	return d.method
-}
-
-func (d DIDResource) MethodSpecificID() string {
-	return d.methodSpecificID
-}
-
-func (d DIDResource) DIDUrl() string {
-	return d.uriScheme.String()
-}
-
-func (d *DIDResource) SetFragment(fragment string) {
-	d.uriScheme.Fragment = fragment
-}
-
-func (d DIDResource) IsValid([]byte) error {
-	didStrings := strings.Split(d.DID(), DIDSeparator)
-	if len(didStrings) != 3 {
-		return errors.Errorf("invalid DID scheme, %v", d.DID())
+	if !strings.HasPrefix(s, "did:") {
+		return errors.Errorf("invalid DID: %q (missing 'did:' prefix)", s)
 	}
-	if didStrings[0] != DIDPrefix {
-		return errors.Errorf("invalid DID scheme, %v", d.DID())
+
+	parts := strings.SplitN(s, ":", 3)
+	if len(parts) < 3 {
+		return errors.Errorf("invalid DID: %q (expected 'did:<method>:<id>')", s)
+	}
+
+	method := parts[1]
+	id := parts[2]
+
+	if method == "" {
+		return errors.Errorf("invalid DID: %q (empty method)", s)
+	}
+	if id == "" {
+		return errors.Errorf("invalid DID: %q (empty method-specific-id)", s)
 	}
 
 	return nil
 }
 
-func (d DIDResource) Bytes() []byte {
-	return util.ConcatBytesSlice(
-		[]byte(d.uriScheme.Scheme),
-		[]byte(d.uriScheme.Path),
-		[]byte(d.uriScheme.Fragment),
-	)
+type DIDURLRef struct {
+	uri      string // "did:example:alice#key-1"
+	did      DIDRef // "did:example:alice"
+	fragment string // "key-1"
 }
 
-func (d DIDResource) Equal(b DIDResource) bool {
-	if d.uriScheme.Scheme != b.uriScheme.Scheme {
-		return false
-	} else if d.uriScheme.Path != b.uriScheme.Path {
-		return false
-	} else if d.uriScheme.Fragment != b.uriScheme.Fragment {
-		return false
+func NewDIDURLRef(did, fragment string) (*DIDURLRef, error) {
+	didRef, err := NewDIDRefFromString(did)
+	if err != nil {
+		return nil, err
 	}
 
-	return true
+	if fragment == "" {
+		return nil, errors.Errorf("empty fragment")
+	}
+	uri := fmt.Sprintf("%s#%s", did, fragment)
+
+	didURLRef := &DIDURLRef{
+		uri:      uri,
+		did:      *didRef,
+		fragment: fragment,
+	}
+
+	return didURLRef, nil
+}
+
+func NewDIDURLRefFromString(s string) (*DIDURLRef, error) {
+	parsed := strings.Split(s, "#")
+	if len(parsed) != 2 {
+		return nil, errors.Errorf("DIDURLRef must have a fragment: %q", s)
+	}
+	if parsed[1] == "" {
+		return nil, errors.Errorf("DIDURLRef must have a non-empty fragment: %q", s)
+	}
+
+	didURLRef, err := NewDIDURLRef(parsed[0], parsed[1])
+	if err != nil {
+		return nil, common.ErrValueInvalid.Wrap(err)
+	}
+
+	return didURLRef, nil
+}
+
+func (r DIDURLRef) String() string { return r.uri }
+func (r DIDURLRef) DID() DIDRef    { return r.did }
+func (r DIDURLRef) MethodSpecificID() string {
+	return r.did.MethodSpecificID()
+}
+func (r DIDURLRef) Fragment() string { return r.fragment }
+
+func (r DIDURLRef) IsValid(_ []byte) error {
+	parsed := strings.Split(string(r.uri), "#")
+	if len(parsed) != 2 {
+		return errors.Errorf("DIDURLRef must have a fragment: %q", r.uri)
+	}
+	if parsed[1] == "" {
+		return errors.Errorf("DIDURLRef must have a non-empty fragment: %q", r.uri)
+	}
+	return r.did.IsValid(nil)
+}
+
+func (r DIDURLRef) Bytes() []byte {
+	return []byte(r.uri)
 }
 
 func ParseDIDScheme(did string) (method, methodSpecificID string, err error) {
