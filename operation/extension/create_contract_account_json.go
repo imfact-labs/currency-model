@@ -32,13 +32,13 @@ type CreateContractAccountFactJSONUnMarshaler struct {
 func (fact *CreateContractAccountFact) DecodeJSON(b []byte, enc encoder.Encoder) error {
 	var uf CreateContractAccountFactJSONUnMarshaler
 	if err := enc.Unmarshal(b, &uf); err != nil {
-		return common.DecorateError(err, common.ErrDecodeBson, *fact)
+		return common.DecorateError(err, common.ErrDecodeJson, *fact)
 	}
 
 	fact.BaseFact.SetJSONUnmarshaler(uf.BaseFactJSONUnmarshaler)
 
 	if err := fact.unpack(enc, uf.Owner, uf.Items); err != nil {
-		return common.DecorateError(err, common.ErrDecodeBson, *fact)
+		return common.DecorateError(err, common.ErrDecodeJson, *fact)
 	}
 
 	return nil

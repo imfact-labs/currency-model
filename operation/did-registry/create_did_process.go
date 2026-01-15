@@ -3,6 +3,8 @@ package did_registry
 import (
 	"context"
 
+	"sync"
+
 	"github.com/ProtoconNet/mitum-currency/v3/common"
 	"github.com/ProtoconNet/mitum-currency/v3/state"
 	ccstate "github.com/ProtoconNet/mitum-currency/v3/state/currency"
@@ -11,7 +13,6 @@ import (
 	ctypes "github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
-	"sync"
 )
 
 var createDIDProcessorPool = sync.Pool{
@@ -111,31 +112,41 @@ func (opp *CreateDIDProcessor) Process( // nolint:dupl
 		return nil, base.NewBaseOperationProcessReasonError("service design value not found, %q; %w", fact.Contract(), err), nil
 	}
 
-	didData := types.NewData(
+	didData, err := types.NewData(
 		fact.Sender(), design.DIDMethod(),
 	)
-	if err := didData.IsValid(nil); err != nil {
+	if err != nil {
 		return nil, base.NewBaseOperationProcessReasonError("invalid did data; %w", err), nil
 	}
 
 	var sts []base.StateMergeValue // nolint:prealloc
 	sts = append(sts, state.NewStateMergeValue(
 		dstate.DataStateKey(fact.Contract(), fact.Sender().String()),
-		dstate.NewDataStateValue(didData),
+		dstate.NewDataStateValue(*didData),
 	))
 
-	didr := didData.DIDResource()
-	didr.SetFragment("auth_key")
-	authentication := types.NewAsymmetricKeyAuthentication(didr.DIDUrl(), fact.authType, didData.DID(), fact.PublicKey())
-	svc := types.NewService(didData.DID(), fact.ServiceType(), fact.ServiceEndpoint())
+	didr, err := types.NewDIDURLRef(didData.DID().String(), "auth_key")
+	if err != nil {
+		return nil, base.NewBaseOperationProcessReasonError("invalid did data; %w", err), nil
+	}
 
-	didDocument := types.NewDIDDocument(didData.DID(),
-		[]types.IAuthentication{authentication}, []types.IVerificationMethod{}, svc)
+	vrfmOrRef := types.NewVerificationMethodOrRef()
+	vrfm := types.NewVerificationMethod(*didr, didData.DID())
+	vrfm.SetType(ctypes.VerificationMethodType(fact.authType))
+	vrfm.SetPublicKey(fact.PublicKey())
+	if err := vrfm.SetPublicKeyMultibase(fact.PublicKey()); err != nil {
+		return nil, base.NewBaseOperationProcessReasonError("invalid did data; %w", err), nil
+	}
+
+	vrfmOrRef.SetVerificationMethod(&vrfm)
+
+	didDocument := types.NewDIDDocument(didData.DID())
+	didDocument.SetAuthentication(vrfmOrRef)
 	if err := didDocument.IsValid(nil); err != nil {
 		return nil, base.NewBaseOperationProcessReasonError("invalid did document; %w", err), nil
 	}
 	sts = append(sts, state.NewStateMergeValue(
-		dstate.DocumentStateKey(fact.Contract(), didData.DID()),
+		dstate.DocumentStateKey(fact.Contract(), didData.DID().String()),
 		dstate.NewDocumentStateValue(didDocument),
 	))
 

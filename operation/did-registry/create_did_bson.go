@@ -62,7 +62,7 @@ func (fact *CreateDIDFact) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 
 	pubKey, err := base.DecodePublickeyFromString(uf.PublicKey, enc)
 	if err != nil {
-		return common.DecorateError(err, common.ErrDecodeJson, *fact)
+		return common.DecorateError(err, common.ErrDecodeBson, *fact)
 	}
 
 	if err := fact.unpack(enc, uf.Sender, uf.Contract, uf.AuthType, pubKey, uf.ServiceType, uf.ServiceEndpoint, uf.Currency); err != nil {

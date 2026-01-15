@@ -3,9 +3,10 @@ package processor
 import (
 	"context"
 	"fmt"
-	"github.com/ProtoconNet/mitum-currency/v3/operation/extras"
 	"io"
 	"sync"
+
+	"github.com/ProtoconNet/mitum-currency/v3/operation/extras"
 
 	"github.com/ProtoconNet/mitum-currency/v3/common"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/currency"
