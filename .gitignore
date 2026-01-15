@@ -35,7 +35,7 @@ tests/*/*/coverage/
 /.vscode
 /mitum-data*
 /yml8
-.envrc
+.envrc_dgm_backup
 .golangci.excludes.txt
 /config.yml
 /genesis.yml
