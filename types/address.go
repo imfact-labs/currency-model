@@ -29,6 +29,19 @@ func NewAddress(s string) Address {
 	return ca
 }
 
+func NewAddressFromString(s string) (Address, error) {
+	sad, _, err := hint.ParseFixedTypedString(s, base.AddressTypeSize)
+	if err != nil {
+		return Address{}, util.ErrInvalid.Errorf("invalid mitum currency address: %v", err)
+	}
+	adr := NewAddress(sad)
+	err = adr.IsValid(nil)
+	if err != nil {
+		return Address{}, util.ErrInvalid.Errorf("invalid mitum currency address: %v", err)
+	}
+	return adr, nil
+}
+
 func NewAddressFromKeys(keys AccountKeys) (Address, error) {
 	var buf [42]byte
 	copy(buf[:2], "0x")
@@ -40,12 +53,12 @@ func NewAddressFromKeys(keys AccountKeys) (Address, error) {
 
 func (ad Address) IsValid([]byte) error {
 	if err := ad.BaseStringAddress.IsValid(nil); err != nil {
-		return util.ErrInvalid.Errorf("invalid mitum currency address1: %v", err)
+		return util.ErrInvalid.Errorf("invalid mitum currency address: %v", err)
 	}
 
 	sad, _, err := hint.ParseFixedTypedString(ad.String(), 3)
 	if err != nil {
-		return util.ErrInvalid.Errorf("invalid mitum currency address2: %v", err)
+		return util.ErrInvalid.Errorf("invalid mitum currency address: %v", err)
 	}
 
 	switch {
@@ -59,7 +72,7 @@ func (ad Address) IsValid([]byte) error {
 
 		bytes, err := hex.DecodeString(lowered)
 		if err != nil {
-			return util.ErrInvalid.Errorf("invalid mitum currency address3: %v", err)
+			return util.ErrInvalid.Errorf("invalid mitum currency address: %v", err)
 		}
 		hex.Encode(buf[2:], bytes)
 		if string(ChecksumHex(buf)) != sad {
