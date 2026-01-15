@@ -1,21 +1,15 @@
 package types
 
-import (
-	"github.com/ProtoconNet/mitum2/util/encoder"
-)
-
 func (d *DIDDocument) unpack(
-	enc encoder.Encoder, context, id string, bSvc []byte,
+	context []string, id string,
 ) error {
 	d.context_ = context
-	d.id = id
 
-	var svc Service
-	err := enc.Unmarshal(bSvc, &svc)
+	did, err := NewDIDRefFromString(id)
 	if err != nil {
 		return err
 	}
-	d.service = svc
+	d.id = *did
 
 	return nil
 }
@@ -24,12 +18,6 @@ func (d *Service) unpack(id, svcType, svcEP string) error {
 	d.id = id
 	d.serviceType = svcType
 	d.serviceEndPoint = svcEP
-
-	return nil
-}
-
-func (d *Proof) unpack(vrfM string) error {
-	d.verificationMethod = vrfM
 
 	return nil
 }

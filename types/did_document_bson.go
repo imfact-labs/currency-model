@@ -16,17 +16,15 @@ func (d DIDDocument) MarshalBSON() ([]byte, error) {
 		"id":                 d.id,
 		"authentication":     d.authentication,
 		"verificationMethod": d.verificationMethod,
-		"service":            d.service,
 	})
 }
 
 type DIDDocumentBSONUnmarshaler struct {
-	Hint      string   `bson:"_hint"`
-	Context_  string   `bson:"@context"`
-	ID        string   `bson:"id"`
-	Auth      bson.Raw `bson:"authentication"`
-	VRFMethod bson.Raw `bson:"verificationMethod"`
-	Service   bson.Raw `bson:"service"`
+	Hint      string                    `bson:"_hint"`
+	Context_  []string                  `bson:"@context"`
+	ID        string                    `bson:"id"`
+	Auth      []VerificationMethodOrRef `bson:"authentication"`
+	VRFMethod bson.Raw                  `bson:"verificationMethod"`
 }
 
 func (d *DIDDocument) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
@@ -44,39 +42,13 @@ func (d *DIDDocument) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 
 	d.BaseHinter = hint.NewBaseHinter(ht)
 
-	hr, err := enc.DecodeSlice(u.Auth)
-	if err != nil {
-		return err
+	var authSlice []VerificationRelationshipEntry
+	for _, v := range u.Auth {
+		authSlice = append(authSlice, &v)
 	}
+	d.authentication = authSlice
 
-	auths := make([]IAuthentication, len(hr))
-	for i, hinter := range hr {
-		if v, ok := hinter.(IAuthentication); !ok {
-			return e.Wrap(errors.Errorf("expected IAuthentication, not %T", hinter))
-		} else {
-			switch v.(type) {
-			case AsymmetricKeyAuthentication:
-				auth := v.(AsymmetricKeyAuthentication)
-				if err := auth.IsValid(nil); err != nil {
-					return e.Wrap(err)
-				} else {
-					auths[i] = auth
-				}
-			case SocialLogInAuthentication:
-				auth := v.(SocialLogInAuthentication)
-				if err := auth.IsValid(nil); err != nil {
-					return e.Wrap(err)
-				} else {
-					auths[i] = auth
-				}
-			default:
-			}
-		}
-
-	}
-	d.authentication = auths
-
-	hr, err = enc.DecodeSlice(u.VRFMethod)
+	hr, err := enc.DecodeSlice(u.VRFMethod)
 	if err != nil {
 		return err
 	}
@@ -84,24 +56,19 @@ func (d *DIDDocument) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 	vrfs := make([]IVerificationMethod, len(hr))
 	for i, hinter := range hr {
 		if v, ok := hinter.(IVerificationMethod); !ok {
-			return e.Wrap(errors.Errorf("expected IVerificationMethod, not %T", hinter))
+			return e.Wrap(errors.Errorf("expected DIDVerificationMethod, not %T", hinter))
 		} else {
-			switch v.(type) {
-			case VerificationMethod:
-				auth := v.(VerificationMethod)
-				if err := auth.IsValid(nil); err != nil {
-					return e.Wrap(err)
-				} else {
-					vrfs[i] = auth
-				}
-			default:
+			if err := v.IsValid(nil); err != nil {
+				return e.Wrap(err)
+			} else {
+				vrfs[i] = v
 			}
 		}
 
 	}
 	d.verificationMethod = vrfs
 
-	return d.unpack(enc, u.Context_, u.ID, u.Service)
+	return d.unpack(u.Context_, u.ID)
 }
 
 func (d Service) MarshalBSON() ([]byte, error) {
@@ -128,26 +95,4 @@ func (d *Service) UnmarshalBSON(b []byte) error {
 	}
 
 	return d.unpack(u.ID, u.Type, u.ServiceEndPoint)
-}
-
-func (d Proof) MarshalBSON() ([]byte, error) {
-	return bsonenc.Marshal(bson.M{
-		"verificationMethod": d.verificationMethod,
-	})
-}
-
-type ProofBSONUnmarshaler struct {
-	VerificationMethod string `bson:"verificationMethod"`
-}
-
-func (d *Proof) UnmarshalBSON(b []byte) error {
-	e := util.StringError("decode bson of Proof")
-
-	var u ProofBSONUnmarshaler
-	err := bsonenc.Unmarshal(b, &u)
-	if err != nil {
-		return e.Wrap(err)
-	}
-
-	return d.unpack(u.VerificationMethod)
 }

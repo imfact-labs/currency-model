@@ -10,46 +10,57 @@ var DIDDocumentHint = hint.MustNewHint("mitum-did-document-v0.0.1")
 
 type DIDDocument struct {
 	hint.BaseHinter
-	context_           string
-	id                 string
-	authentication     []IAuthentication
-	verificationMethod []IVerificationMethod
-	service            Service
+	context_             []string
+	id                   DIDRef
+	controller           DIDRef
+	verificationMethod   []IVerificationMethod
+	authentication       []VerificationRelationshipEntry
+	assertionMethod      []VerificationRelationshipEntry
+	keyAgreement         []VerificationRelationshipEntry
+	capabilityInvocation []VerificationRelationshipEntry
+	capabilityDelegation []VerificationRelationshipEntry
 }
 
-func NewDIDDocument(
-	did string, auth []IAuthentication, vrf []IVerificationMethod, service Service,
-) DIDDocument {
+func NewDIDDocument(did DIDRef) DIDDocument {
 	return DIDDocument{
-		BaseHinter:         hint.NewBaseHinter(DIDDocumentHint),
-		context_:           "https://www.w3.org/ns/did/v1",
-		id:                 did,
-		authentication:     auth,
-		verificationMethod: vrf,
-		service:            service,
+		BaseHinter: hint.NewBaseHinter(DIDDocumentHint),
+		context_:   []string{"https://www.w3.org/ns/did/v1", "https://imfact.im/did/contexts/v1.jsonld"},
+		id:         did,
 	}
 }
 
 func (d DIDDocument) IsValid([]byte) error {
 	foundMap := map[string]struct{}{}
 	for _, v := range d.authentication {
-		if _, found := foundMap[v.ID()]; found {
+		var id string
+		switch kind := v.Kind(); {
+		case kind == VMRefKindReference:
+			id = v.Ref().String()
+		default:
+			id = v.Method().ID().String()
+		}
+		if _, found := foundMap[id]; found {
 			return errors.Errorf("duplicated authentication id found")
 		}
-		foundMap[v.ID()] = struct{}{}
+		foundMap[id] = struct{}{}
 	}
 
 	foundMap = map[string]struct{}{}
 	for _, v := range d.verificationMethod {
-		if _, found := foundMap[v.ID()]; found {
+		if _, found := foundMap[v.ID().String()]; found {
 			return errors.Errorf("duplicated verificationMethod id found")
 		}
-		foundMap[v.ID()] = struct{}{}
+		foundMap[v.ID().String()] = struct{}{}
 	}
 	return nil
 }
 
 func (d DIDDocument) Bytes() []byte {
+	var ctx []byte
+	for _, v := range d.context_ {
+		ctx = util.ConcatBytesSlice(ctx, []byte(v))
+	}
+
 	var bAuth [][]byte
 	for _, v := range d.authentication {
 		bAuth = append(bAuth, v.Bytes())
@@ -63,21 +74,31 @@ func (d DIDDocument) Bytes() []byte {
 	byteVrf := util.ConcatBytesSlice(bVrf...)
 
 	return util.ConcatBytesSlice(
-		[]byte(d.context_),
-		[]byte(d.id),
+		ctx,
+		d.id.Bytes(),
 		byteAuth,
 		byteVrf,
-		d.service.Bytes(),
 	)
 }
 
-func (d DIDDocument) DID() string {
+func (d DIDDocument) DID() DIDRef {
 	return d.id
 }
 
-func (d DIDDocument) Authentication(id string) (IAuthentication, error) {
+func (d *DIDDocument) SetAuthentication(auth VerificationRelationshipEntry) {
+	d.authentication = append(d.authentication, auth)
+}
+
+func (d DIDDocument) Authentication(id string) (VerificationRelationshipEntry, error) {
 	for _, v := range d.authentication {
-		if v.ID() == id {
+		var authID string
+		switch kind := v.Kind(); {
+		case kind == VMRefKindReference:
+			authID = v.Ref().String()
+		default:
+			authID = v.Method().ID().String()
+		}
+		if authID == id {
 			return v, nil
 		}
 	}
@@ -85,9 +106,13 @@ func (d DIDDocument) Authentication(id string) (IAuthentication, error) {
 	return nil, errors.Errorf("Authentication not found by id %v", id)
 }
 
+func (d DIDDocument) SetVerificationMethod() {
+	d.verificationMethod = append(d.verificationMethod)
+}
+
 func (d DIDDocument) VerificationMethod(id string) (IVerificationMethod, error) {
 	for _, v := range d.verificationMethod {
-		if v.ID() == id {
+		if v.ID().String() == id {
 			return v, nil
 		}
 	}
