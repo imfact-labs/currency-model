@@ -13,17 +13,12 @@ import (
 type CreateDIDCommand struct {
 	BaseCommand
 	OperationFlags
-	Sender          AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
-	Contract        AddressFlag    `arg:"" name:"contract" help:"contract address" required:"true"`
-	AuthType        string         `arg:"" name:"auth-type" help:"authentication type" required:"true"`
-	PubKey          string         `arg:"" name:"pubKey" help:"public key" required:"true"`
-	ServiceType     string         `arg:"" name:"service-type" help:"service type" required:"true"`
-	ServiceEndpoint string         `arg:"" name:"service-endpoint" help:"service endpoint" required:"true"`
-	Currency        CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
+	Sender   AddressFlag    `arg:"" name:"sender" help:"sender address" required:"true"`
+	Contract AddressFlag    `arg:"" name:"contract" help:"contract address" required:"true"`
+	Currency CurrencyIDFlag `arg:"" name:"currency" help:"currency id" required:"true"`
 	OperationExtensionFlags
 	sender   base.Address
 	contract base.Address
-	pubKey   base.Publickey
 }
 
 func (cmd *CreateDIDCommand) Run(pctx context.Context) error { // nolint:dupl
@@ -64,17 +59,6 @@ func (cmd *CreateDIDCommand) parseFlags() error {
 		cmd.contract = a
 	}
 
-	if len(cmd.PubKey) < 1 {
-		return errors.Errorf("invalid Public Key, %s", cmd.PubKey)
-	}
-
-	switch pk, err := base.DecodePublickeyFromString(cmd.PubKey, enc); {
-	case err != nil:
-		return err
-	default:
-		cmd.pubKey = pk
-	}
-
 	cmd.OperationExtensionFlags.parseFlags(cmd.Encoders.JSON())
 
 	return nil
@@ -84,8 +68,7 @@ func (cmd *CreateDIDCommand) createOperation() (base.Operation, error) { // noli
 	e := util.StringError("failed to create CreateDID operation")
 
 	fact := did.NewCreateDIDFact(
-		[]byte(cmd.Token), cmd.sender, cmd.contract,
-		cmd.AuthType, cmd.pubKey, cmd.ServiceType, cmd.ServiceEndpoint, cmd.Currency.CID,
+		[]byte(cmd.Token), cmd.sender, cmd.contract, cmd.Currency.CID,
 	)
 
 	op, err := did.NewCreateDID(fact)
