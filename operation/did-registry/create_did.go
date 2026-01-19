@@ -18,28 +18,20 @@ var (
 
 type CreateDIDFact struct {
 	base.BaseFact
-	sender          base.Address
-	contract        base.Address
-	authType        string
-	publicKey       base.Publickey
-	serviceType     string
-	serviceEndpoint string
-	currency        types.CurrencyID
+	sender   base.Address
+	contract base.Address
+	currency types.CurrencyID
 }
 
 func NewCreateDIDFact(
 	token []byte, sender, contract base.Address,
-	authType string, publicKey base.Publickey, serviceType, serviceEndpoint string, currency types.CurrencyID) CreateDIDFact {
+	currency types.CurrencyID) CreateDIDFact {
 	bf := base.NewBaseFact(CreateDIDFactHint, token)
 	fact := CreateDIDFact{
-		BaseFact:        bf,
-		sender:          sender,
-		contract:        contract,
-		authType:        authType,
-		publicKey:       publicKey,
-		serviceType:     serviceType,
-		serviceEndpoint: serviceEndpoint,
-		currency:        currency,
+		BaseFact: bf,
+		sender:   sender,
+		contract: contract,
+		currency: currency,
 	}
 
 	fact.SetHash(fact.GenerateHash())
@@ -81,10 +73,6 @@ func (fact CreateDIDFact) Bytes() []byte {
 		fact.Token(),
 		fact.sender.Bytes(),
 		fact.contract.Bytes(),
-		[]byte(fact.authType),
-		fact.publicKey.Bytes(),
-		[]byte(fact.serviceType),
-		[]byte(fact.serviceEndpoint),
 		fact.currency.Bytes(),
 	)
 }
@@ -103,22 +91,6 @@ func (fact CreateDIDFact) Signer() base.Address {
 
 func (fact CreateDIDFact) Contract() base.Address {
 	return fact.contract
-}
-
-func (fact CreateDIDFact) AuthType() string {
-	return fact.authType
-}
-
-func (fact CreateDIDFact) PublicKey() base.Publickey {
-	return fact.publicKey
-}
-
-func (fact CreateDIDFact) ServiceType() string {
-	return fact.serviceType
-}
-
-func (fact CreateDIDFact) ServiceEndpoint() string {
-	return fact.serviceEndpoint
 }
 
 func (fact CreateDIDFact) Currency() types.CurrencyID {

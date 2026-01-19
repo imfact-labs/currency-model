@@ -8,7 +8,7 @@ import (
 
 func (fact *CreateDIDFact) unpack(
 	enc encoder.Encoder,
-	sa, ta, authType string, publicKey base.Publickey, svcType, svcEndpoint, cid string,
+	sa, ca string, cid string,
 ) error {
 	switch sender, err := base.DecodeAddress(sa, enc); {
 	case err != nil:
@@ -17,17 +17,13 @@ func (fact *CreateDIDFact) unpack(
 		fact.sender = sender
 	}
 
-	switch contract, err := base.DecodeAddress(ta, enc); {
+	switch contract, err := base.DecodeAddress(ca, enc); {
 	case err != nil:
 		return err
 	default:
 		fact.contract = contract
 	}
 
-	fact.authType = authType
-	fact.publicKey = publicKey
-	fact.serviceType = svcType
-	fact.serviceEndpoint = svcEndpoint
 	fact.currency = types.CurrencyID(cid)
 
 	return nil

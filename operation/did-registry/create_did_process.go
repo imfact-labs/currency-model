@@ -125,23 +125,7 @@ func (opp *CreateDIDProcessor) Process( // nolint:dupl
 		dstate.NewDataStateValue(*didData),
 	))
 
-	didr, err := types.NewDIDURLRef(didData.DID().String(), "auth_key")
-	if err != nil {
-		return nil, base.NewBaseOperationProcessReasonError("invalid did data; %w", err), nil
-	}
-
-	vrfmOrRef := types.NewVerificationMethodOrRef()
-	vrfm := types.NewVerificationMethod(*didr, didData.DID())
-	vrfm.SetType(ctypes.VerificationMethodType(fact.authType))
-	vrfm.SetPublicKey(fact.PublicKey())
-	if err := vrfm.SetPublicKeyMultibase(fact.PublicKey()); err != nil {
-		return nil, base.NewBaseOperationProcessReasonError("invalid did data; %w", err), nil
-	}
-
-	vrfmOrRef.SetVerificationMethod(&vrfm)
-
 	didDocument := types.NewDIDDocument(didData.DID())
-	didDocument.SetAuthentication(vrfmOrRef)
 	if err := didDocument.IsValid(nil); err != nil {
 		return nil, base.NewBaseOperationProcessReasonError("invalid did document; %w", err), nil
 	}

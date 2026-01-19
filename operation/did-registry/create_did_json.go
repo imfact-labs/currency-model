@@ -11,13 +11,9 @@ import (
 
 type CreateDIDFactJSONMarshaler struct {
 	base.BaseFactJSONMarshaler
-	Sender          base.Address     `json:"sender"`
-	Contract        base.Address     `json:"contract"`
-	AuthType        string           `json:"authType"`
-	PublicKey       string           `json:"publicKey"`
-	ServiceType     string           `json:"serviceType"`
-	ServiceEndpoint string           `json:"serviceEndpoints"`
-	Currency        types.CurrencyID `json:"currency"`
+	Sender   base.Address     `json:"sender"`
+	Contract base.Address     `json:"contract"`
+	Currency types.CurrencyID `json:"currency"`
 }
 
 func (fact CreateDIDFact) MarshalJSON() ([]byte, error) {
@@ -25,23 +21,15 @@ func (fact CreateDIDFact) MarshalJSON() ([]byte, error) {
 		BaseFactJSONMarshaler: fact.BaseFact.JSONMarshaler(),
 		Sender:                fact.sender,
 		Contract:              fact.contract,
-		AuthType:              fact.authType,
-		PublicKey:             fact.publicKey.String(),
-		ServiceType:           fact.serviceType,
-		ServiceEndpoint:       fact.serviceEndpoint,
 		Currency:              fact.currency,
 	})
 }
 
 type CreateDIDFactJSONUnmarshaler struct {
 	base.BaseFactJSONUnmarshaler
-	Sender          string `json:"sender"`
-	Contract        string `json:"contract"`
-	AuthType        string `json:"authType"`
-	PublicKey       string `json:"publicKey"`
-	ServiceType     string `json:"serviceType"`
-	ServiceEndpoint string `json:"serviceEndpoints"`
-	Currency        string `json:"currency"`
+	Sender   string `json:"sender"`
+	Contract string `json:"contract"`
+	Currency string `json:"currency"`
 }
 
 func (fact *CreateDIDFact) DecodeJSON(b []byte, enc encoder.Encoder) error {
@@ -52,12 +40,7 @@ func (fact *CreateDIDFact) DecodeJSON(b []byte, enc encoder.Encoder) error {
 
 	fact.BaseFact.SetJSONUnmarshaler(u.BaseFactJSONUnmarshaler)
 
-	pubKey, err := base.DecodePublickeyFromString(u.PublicKey, enc)
-	if err != nil {
-		return common.DecorateError(err, common.ErrDecodeJson, *fact)
-	}
-
-	if err := fact.unpack(enc, u.Sender, u.Contract, u.AuthType, pubKey, u.ServiceType, u.ServiceEndpoint, u.Currency); err != nil {
+	if err := fact.unpack(enc, u.Sender, u.Contract, u.Currency); err != nil {
 		return common.DecorateError(err, common.ErrDecodeJson, *fact)
 	}
 
