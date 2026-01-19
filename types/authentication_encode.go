@@ -3,6 +3,7 @@ package types
 import (
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
+	"github.com/pkg/errors"
 )
 
 func (v *BaseVerificationMethod) unpack(
@@ -24,7 +25,7 @@ func (v *BaseVerificationMethod) unpack(
 }
 
 func (v *VerificationMethod) unpack(
-	pubKeyJwk *JWK, pubKeyMultibase, pubKey string, tid string, allowed []AllowedOperation,
+	authtype string, pubKeyJwk *JWK, pubKeyMultibase, pubKey string, tid string, allowed []AllowedOperation,
 ) error {
 	if pubKey != "" {
 		pbKey, err := ParseMEPublickey(pubKey)
@@ -33,8 +34,26 @@ func (v *VerificationMethod) unpack(
 		}
 		v.publicKey = pbKey
 	}
-	v.publicKeyJwk = pubKeyJwk
 	v.publicKeyMultibase = pubKeyMultibase
+	switch authtype {
+	case "EcdsaSecp256k1VerificationKey2019":
+		if pubKeyMultibase == "" {
+			if pubKey == "" {
+				return errors.New("invalid EcdsaSecp256k1VerificationKey2019 type")
+			} else {
+				err := v.SetPublicKeyMultibase(v.publicKey)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	case "EcdsaSecp256k1VerificationKeyImFact2025":
+		if pubKey == "" {
+			return errors.New("invalid EcdsaSecp256k1VerificationKeyImFact2025 type")
+		}
+	}
+
+	v.publicKeyJwk = pubKeyJwk
 
 	if tid != "" {
 		targetID, err := NewDIDURLRefFromString(tid)

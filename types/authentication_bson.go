@@ -181,7 +181,7 @@ func (v *VerificationMethod) UnmarshalBSON(b []byte) error {
 
 	v.BaseHinter = hint.NewBaseHinter(ht)
 
-	return v.unpack(uk.PublicKeyJwk, uk.PublicKeyMultibase, uk.PublicKey, uk.TargetId, uk.Allowed)
+	return v.unpack(u.Type, uk.PublicKeyJwk, uk.PublicKeyMultibase, uk.PublicKey, uk.TargetId, uk.Allowed)
 }
 
 type AllowedOperationBSONMarshaler struct {

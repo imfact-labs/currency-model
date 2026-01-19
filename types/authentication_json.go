@@ -190,7 +190,7 @@ func (v *VerificationMethod) DecodeJSON(b []byte, enc encoder.Encoder) error {
 		return e.Wrap(err)
 	}
 
-	return v.unpack(uk.PublicKeyJwk, uk.PublicKeyMultibase, uk.PublicKey, uk.TargetId, uk.Allowed)
+	return v.unpack(u.Type, uk.PublicKeyJwk, uk.PublicKeyMultibase, uk.PublicKey, uk.TargetId, uk.Allowed)
 }
 
 type AllowedOperationJSONMarshaler struct {

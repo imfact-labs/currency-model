@@ -13,8 +13,8 @@ type DIDDocumentJSONMarshaler struct {
 	hint.BaseHinter
 	Context_  []string                        `json:"@context"`
 	ID        string                          `json:"id"`
-	Auth      []VerificationRelationshipEntry `json:"authentication"`
-	VRFMethod []IVerificationMethod           `json:"verificationMethod"`
+	Auth      []VerificationRelationshipEntry `json:"authentication,omitempty"`
+	VRFMethod []IVerificationMethod           `json:"verificationMethod,omitempty"`
 }
 
 func (d DIDDocument) MarshalJSON() ([]byte, error) {
@@ -46,31 +46,33 @@ func (d *DIDDocument) DecodeJSON(b []byte, enc encoder.Encoder) error {
 
 	d.BaseHinter = hint.NewBaseHinter(u.Hint)
 
-	var bAuth []json.RawMessage
-	err := json.Unmarshal(u.Auth, &bAuth)
-	if err != nil {
-		return err
-	}
-
-	auths := make([]VerificationRelationshipEntry, len(bAuth))
-	for i, hinter := range bAuth {
-		var vrfR VerificationMethodOrRef
-		err := vrfR.DecodeJSON(hinter, enc)
+	if u.Auth != nil {
+		var bAuth []json.RawMessage
+		err := json.Unmarshal(u.Auth, &bAuth)
 		if err != nil {
 			return e.Wrap(err)
 		}
 
-		if err := vrfR.IsValid(nil); err != nil {
-			return e.Wrap(err)
-		} else {
-			auths[i] = &vrfR
+		auths := make([]VerificationRelationshipEntry, len(bAuth))
+		for i, hinter := range bAuth {
+			var vrfR VerificationMethodOrRef
+			err := vrfR.DecodeJSON(hinter, enc)
+			if err != nil {
+				return e.Wrap(err)
+			}
+
+			if err := vrfR.IsValid(nil); err != nil {
+				return e.Wrap(err)
+			} else {
+				auths[i] = &vrfR
+			}
 		}
+		d.authentication = auths
 	}
-	d.authentication = auths
 
 	hr, err := enc.DecodeSlice(u.VRFMethod)
 	if err != nil {
-		return err
+		return e.Wrap(err)
 	}
 
 	vrfs := make([]IVerificationMethod, len(hr))
@@ -89,7 +91,7 @@ func (d *DIDDocument) DecodeJSON(b []byte, enc encoder.Encoder) error {
 	d.verificationMethod = vrfs
 	err = d.unpack(u.Context_, u.ID)
 	if err != nil {
-		return err
+		return e.Wrap(err)
 	}
 
 	return nil
