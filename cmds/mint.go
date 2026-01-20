@@ -8,59 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-//type MintItemFlag struct {
-//	s        string
-//	receiver base.Address
-//	amount   types.Amount
-//}
-//
-//func (v *MintItemFlag) String() string {
-//	return v.s
-//}
-//
-//func (v *MintItemFlag) UnmarshalText(b []byte) error {
-//	v.s = string(b)
-//
-//	l := strings.SplitN(string(b), ",", 3)
-//	if len(l) != 3 {
-//		return util.ErrInvalid.Errorf("invalid inflation amount, %v", string(b))
-//	}
-//
-//	a, c := l[0], l[1]+","+l[2]
-//
-//	af := &AddressFlag{}
-//	if err := af.UnmarshalText([]byte(a)); err != nil {
-//		return util.ErrInvalid.Errorf("invalid inflation receiver address: %v", err)
-//	}
-//
-//	receiver, err := af.Encode(enc)
-//	if err != nil {
-//		return util.ErrInvalid.Errorf("invalid inflation receiver address: %v", err)
-//	}
-//
-//	v.receiver = receiver
-//
-//	cf := &CurrencyAmountFlag{}
-//	if err := cf.UnmarshalText([]byte(c)); err != nil {
-//		return util.ErrInvalid.Errorf("invalid inflation amount: %v", err)
-//	}
-//	v.amount = types.NewAmount(cf.Big, cf.CID)
-//
-//	return nil
-//}
-
-//func (v *MintItemFlag) IsValid([]byte) error {
-//	if err := util.CheckIsValiders(nil, false, v.receiver, v.amount); err != nil {
-//		return err
-//	}
-//
-//	if !v.amount.Big().OverZero() {
-//		return util.ErrInvalid.Errorf("amount should be over zero")
-//	}
-//
-//	return nil
-//}
-
 type MintCommand struct {
 	BaseCommand
 	OperationFlags

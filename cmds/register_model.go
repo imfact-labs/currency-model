@@ -62,7 +62,10 @@ func (cmd *RegisterModelCommand) parseFlags() error {
 		return errors.Errorf("invalid DID Method, %s", cmd.DIDMethod)
 	}
 
-	cmd.OperationExtensionFlags.parseFlags(cmd.Encoders.JSON())
+	err := cmd.OperationExtensionFlags.parseFlags(cmd.Encoders.JSON())
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -97,7 +100,7 @@ func (cmd *RegisterModelCommand) createOperation() (base.Operation, error) {
 	}
 
 	if cmd.didContract != nil && cmd.AuthenticationID != "" && cmd.Proof != "" {
-		baseAuthentication = extras.NewBaseAuthentication(cmd.didContract, cmd.DID, cmd.AuthenticationID, proofData)
+		baseAuthentication = extras.NewBaseAuthentication(cmd.didContract, cmd.AuthenticationID, proofData)
 		if err := op.AddExtension(baseAuthentication); err != nil {
 			return nil, err
 		}

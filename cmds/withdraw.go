@@ -59,28 +59,9 @@ func (cmd *WithdrawCommand) parseFlags() error {
 		cmd.target = target
 	}
 
-	if len(cmd.DIDContract.String()) > 0 {
-		a, err := cmd.DIDContract.Encode(cmd.Encoders.JSON())
-		if err != nil {
-			return errors.Wrapf(err, "invalid did contract format, %v", cmd.DIDContract.String())
-		}
-		cmd.didContract = a
-	}
-
-	if len(cmd.OpSender.String()) > 0 {
-		a, err := cmd.OpSender.Encode(cmd.Encoders.JSON())
-		if err != nil {
-			return errors.Wrapf(err, "invalid proxy payer format, %v", cmd.ProxyPayer.String())
-		}
-		cmd.opSender = a
-	}
-
-	if len(cmd.ProxyPayer.String()) > 0 {
-		a, err := cmd.ProxyPayer.Encode(cmd.Encoders.JSON())
-		if err != nil {
-			return errors.Wrapf(err, "invalid proxy payer format, %v", cmd.ProxyPayer.String())
-		}
-		cmd.proxyPayer = a
+	err := cmd.OperationExtensionFlags.parseFlags(cmd.Encoders.JSON())
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -128,7 +109,7 @@ func (cmd *WithdrawCommand) createOperation() (base.Operation, error) { // nolin
 	}
 
 	if cmd.didContract != nil && cmd.AuthenticationID != "" && cmd.Proof != "" {
-		baseAuthentication = extras.NewBaseAuthentication(cmd.didContract, cmd.DID, cmd.AuthenticationID, proofData)
+		baseAuthentication = extras.NewBaseAuthentication(cmd.didContract, cmd.AuthenticationID, proofData)
 		if err := op.AddExtension(baseAuthentication); err != nil {
 			return nil, err
 		}

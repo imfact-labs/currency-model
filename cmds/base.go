@@ -96,7 +96,6 @@ func (op *OperationFlags) IsValid([]byte) error {
 
 type OperationExtensionFlags struct {
 	DIDContract        AddressFlag    `name:"authentication-contract" help:"contract account for authentication"`
-	DID                string         `name:"did" help:"DID"`
 	AuthenticationID   string         `name:"authentication-id" help:"auth id for authentication"`
 	Proof              string         `name:"authentication-proof" help:"data for proof authentication"`
 	IsPrivateKey       bool           `name:"is-privatekey" help:"proor-data is private key, not signature"`

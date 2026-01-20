@@ -54,7 +54,10 @@ func (cmd *TransferCommand) parseFlags() error {
 		cmd.sender = sender
 	}
 
-	cmd.OperationExtensionFlags.parseFlags(cmd.Encoders.JSON())
+	err := cmd.OperationExtensionFlags.parseFlags(cmd.Encoders.JSON())
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -94,7 +97,7 @@ func (cmd *TransferCommand) createOperation() (base.Operation, error) { // nolin
 	}
 
 	if cmd.didContract != nil && cmd.AuthenticationID != "" && cmd.Proof != "" {
-		baseAuthentication = extras.NewBaseAuthentication(cmd.didContract, cmd.DID, cmd.AuthenticationID, proofData)
+		baseAuthentication = extras.NewBaseAuthentication(cmd.didContract, cmd.AuthenticationID, proofData)
 		if err := op.AddExtension(baseAuthentication); err != nil {
 			return nil, err
 		}
