@@ -219,6 +219,9 @@ func (v VerificationMethod) PublicKeyJwk() *JWK {
 }
 
 func (v *VerificationMethod) SetPublicKeyMultibase(publicKey base.Publickey) error {
+	if v.Type() == AuthTypeECDSASECP && v.publicKey != nil {
+
+	}
 	if publicKey == nil {
 		return fmt.Errorf("publicKey is nil")
 	}
@@ -271,6 +274,32 @@ func (v VerificationMethod) IsAllowed(operation AllowedOperation) bool {
 
 func (v VerificationMethod) Allowed() []AllowedOperation {
 	return v.allowed
+}
+
+func (v VerificationMethod) IsValid([]byte) error {
+	if v.Type() == AuthTypeECDSASECP {
+		if v.publicKeyMultibase == "" && v.publicKey == nil {
+			return fmt.Errorf("EcdsaSecp256k1VerificationKey2019 type must publicKey ")
+		}
+	}
+	if v.publicKey != nil && v.publicKeyMultibase != "" {
+		pbKey, ok := v.publicKey.(MEPublickey)
+		if !ok {
+			return fmt.Errorf("verification method publicKey is not a MEPublickey")
+		}
+		var Secp256k1PubPrefix = []byte{0xe7, 0x01}
+		compressedBytes := crypto.CompressPubkey(pbKey.k)
+		data := append(Secp256k1PubPrefix, compressedBytes...)
+		encoded, err := multibase.Encode(multibase.Base58BTC, data)
+		if err != nil {
+			return fmt.Errorf("multibase encoding failed: %w", err)
+		}
+		if v.publicKeyMultibase != encoded {
+			return fmt.Errorf("verification method publicKey is not matched with publicKeyMultibase")
+		}
+	}
+
+	return nil
 }
 
 func (v VerificationMethod) Bytes() []byte {
