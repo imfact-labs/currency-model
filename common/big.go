@@ -48,8 +48,8 @@ func NewBigFromInterface(a interface{}) (Big, error) {
 		return NewBig(int64(t)), nil
 	case int32:
 		return NewBig(int64(t)), nil
-	case int64:
-		return NewBig(t), nil
+	//case int64:
+	//	return NewBig(t), nil
 	case uint:
 		return NewBig(int64(t)), nil
 	case uint8:
