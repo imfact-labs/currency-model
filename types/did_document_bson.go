@@ -1,12 +1,11 @@
 package types
 
 import (
-	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/bson"
-
 	bsonenc "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
+	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (d DIDDocument) MarshalBSON() ([]byte, error) {
@@ -42,10 +41,13 @@ func (d *DIDDocument) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 
 	d.BaseHinter = hint.NewBaseHinter(ht)
 
-	var authSlice []VerificationRelationshipEntry
-	for _, v := range u.Auth {
-		authSlice = append(authSlice, &v)
+	authSlice := make([]VerificationRelationshipEntry, 0)
+	if len(u.Auth) > 0 {
+		for _, v := range u.Auth {
+			authSlice = append(authSlice, &v)
+		}
 	}
+
 	d.authentication = authSlice
 
 	hr, err := enc.DecodeSlice(u.VRFMethod)
@@ -54,18 +56,21 @@ func (d *DIDDocument) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 	}
 
 	vrfs := make([]IVerificationMethod, len(hr))
-	for i, hinter := range hr {
-		if v, ok := hinter.(IVerificationMethod); !ok {
-			return e.Wrap(errors.Errorf("expected DIDVerificationMethod, not %T", hinter))
-		} else {
-			if err := v.IsValid(nil); err != nil {
-				return e.Wrap(err)
+	if len(hr) > 0 {
+		for i, hinter := range hr {
+			if v, ok := hinter.(IVerificationMethod); !ok {
+				return e.Wrap(errors.Errorf("expected DIDVerificationMethod, not %T", hinter))
 			} else {
-				vrfs[i] = v
+				if err := v.IsValid(nil); err != nil {
+					return e.Wrap(err)
+				} else {
+					vrfs[i] = v
+				}
 			}
-		}
 
+		}
 	}
+
 	d.verificationMethod = vrfs
 
 	return d.unpack(u.Context_, u.ID)

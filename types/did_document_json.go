@@ -13,8 +13,8 @@ type DIDDocumentJSONMarshaler struct {
 	hint.BaseHinter
 	Context_  []string                        `json:"@context"`
 	ID        string                          `json:"id"`
-	Auth      []VerificationRelationshipEntry `json:"authentication,omitempty"`
-	VRFMethod []IVerificationMethod           `json:"verificationMethod,omitempty"`
+	Auth      []VerificationRelationshipEntry `json:"authentication"`
+	VRFMethod []IVerificationMethod           `json:"verificationMethod"`
 }
 
 func (d DIDDocument) MarshalJSON() ([]byte, error) {
@@ -46,6 +46,7 @@ func (d *DIDDocument) DecodeJSON(b []byte, enc encoder.Encoder) error {
 
 	d.BaseHinter = hint.NewBaseHinter(u.Hint)
 
+	var auths []VerificationRelationshipEntry
 	if u.Auth != nil {
 		var bAuth []json.RawMessage
 		err := json.Unmarshal(u.Auth, &bAuth)
@@ -53,41 +54,46 @@ func (d *DIDDocument) DecodeJSON(b []byte, enc encoder.Encoder) error {
 			return e.Wrap(err)
 		}
 
-		auths := make([]VerificationRelationshipEntry, len(bAuth))
-		for i, hinter := range bAuth {
-			var vrfR VerificationMethodOrRef
-			err := vrfR.DecodeJSON(hinter, enc)
-			if err != nil {
-				return e.Wrap(err)
-			}
+		if len(bAuth) > 0 {
+			for _, hinter := range bAuth {
+				var vrfR VerificationMethodOrRef
+				err := vrfR.DecodeJSON(hinter, enc)
+				if err != nil {
+					return e.Wrap(err)
+				}
 
-			if err := vrfR.IsValid(nil); err != nil {
-				return e.Wrap(err)
-			} else {
-				auths[i] = &vrfR
+				if err := vrfR.IsValid(nil); err != nil {
+					return e.Wrap(err)
+				} else {
+					auths = append(auths, &vrfR)
+				}
 			}
 		}
-		d.authentication = auths
 	}
+
+	d.authentication = auths
 
 	hr, err := enc.DecodeSlice(u.VRFMethod)
 	if err != nil {
 		return e.Wrap(err)
 	}
 
-	vrfs := make([]IVerificationMethod, len(hr))
-	for i, hinter := range hr {
-		if v, ok := hinter.(IVerificationMethod); !ok {
-			return e.Wrap(errors.Errorf("expected DIDVerificationMethod, not %T", hinter))
-		} else {
-			if err := v.IsValid(nil); err != nil {
-				return e.Wrap(err)
+	var vrfs []IVerificationMethod
+	if len(hr) > 0 {
+		for _, hinter := range hr {
+			if v, ok := hinter.(IVerificationMethod); !ok {
+				return e.Wrap(errors.Errorf("expected DIDVerificationMethod, not %T", hinter))
 			} else {
-				vrfs[i] = v
+				if err := v.IsValid(nil); err != nil {
+					return e.Wrap(err)
+				} else {
+					vrfs = append(vrfs, v)
+				}
 			}
-		}
 
+		}
 	}
+
 	d.verificationMethod = vrfs
 	err = d.unpack(u.Context_, u.ID)
 	if err != nil {
