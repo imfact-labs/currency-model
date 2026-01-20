@@ -278,8 +278,8 @@ func (v VerificationMethod) Allowed() []AllowedOperation {
 
 func (v VerificationMethod) IsValid([]byte) error {
 	if v.Type() == AuthTypeECDSASECP {
-		if v.publicKeyMultibase == "" && v.publicKey == nil {
-			return fmt.Errorf("EcdsaSecp256k1VerificationKey2019 type must publicKey ")
+		if v.publicKeyMultibase == "" {
+			return fmt.Errorf("EcdsaSecp256k1VerificationKey2019 type must have publicKeyMultibase")
 		}
 	}
 	if v.publicKey != nil && v.publicKeyMultibase != "" {

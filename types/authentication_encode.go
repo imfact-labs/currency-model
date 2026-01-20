@@ -65,6 +65,11 @@ func (v *VerificationMethod) unpack(
 
 	v.allowed = allowed
 
+	err := v.IsValid(nil)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
