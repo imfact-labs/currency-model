@@ -172,7 +172,7 @@ func (ba BaseAuthentication) Verify(op base.Operation, getStateFunc base.GetStat
 	}
 
 	switch vrfMethod.Type() {
-	case types.AuthTypeECDSASECP:
+	case types.AuthTypeECDSASECP, types.AuthTypeImFact:
 		if vrfMethod.PublicKey() == nil {
 			return common.ErrValueInvalid.Errorf("missing public key in EcdsaSecp256k1VerificationKey2019 type")
 		}
@@ -246,7 +246,7 @@ func (ba BaseAuthentication) Verify(op base.Operation, getStateFunc base.GetStat
 		}
 
 		switch vrfMethod.Type() {
-		case types.AuthTypeECDSASECP:
+		case types.AuthTypeECDSASECP, types.AuthTypeImFact:
 			if vrfMethod.PublicKey() == nil {
 				return common.ErrValueInvalid.Errorf("missing public key in EcdsaSecp256k1VerificationKey2019 type")
 			}
