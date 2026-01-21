@@ -327,11 +327,19 @@ func (v VerificationMethod) Bytes() []byte {
 	}
 	s := util.ConcatBytesSlice(pbKey...)
 
-	var allowed [][]byte
-	for _, op := range v.allowed {
-		allowed = append(allowed, op.Bytes())
+	var linked [][]byte
+
+	if v.targetID != nil {
+		linked = append(linked, v.targetID.Bytes())
 	}
-	a := util.ConcatBytesSlice(allowed...)
+
+	if v.allowed != nil && len(v.allowed) > 0 {
+		for _, op := range v.allowed {
+			linked = append(linked, op.Bytes())
+		}
+	}
+
+	a := util.ConcatBytesSlice(linked...)
 
 	return util.ConcatBytesSlice(
 		v.BaseVerificationMethod.Bytes(),
