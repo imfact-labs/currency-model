@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	"github.com/ProtoconNet/mitum-currency/v3/common"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	jsonutil "github.com/ProtoconNet/mitum2/util/encoder/json"
@@ -149,6 +150,17 @@ func (v VerificationMethodOrRef) Bytes() []byte {
 }
 
 func (v VerificationMethodOrRef) IsValid([]byte) error {
+	if v.kind == VMRefKindReference {
+		if v.ref == nil {
+			return common.ErrValueInvalid.Errorf("missing reference to verification method")
+		}
+	} else if v.kind == VMRefKindEmbedded {
+		if v.method == nil {
+			return common.ErrValueInvalid.Errorf("missing reference to verification method")
+		} else if err := v.method.IsValid(nil); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

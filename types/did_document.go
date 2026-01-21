@@ -43,6 +43,9 @@ func (d DIDDocument) IsValid([]byte) error {
 			return errors.Errorf("duplicated authentication id found")
 		}
 		foundMap[id] = struct{}{}
+		if err := v.IsValid(nil); err != nil {
+			return err
+		}
 	}
 
 	foundMap = map[string]struct{}{}
@@ -51,6 +54,9 @@ func (d DIDDocument) IsValid([]byte) error {
 			return errors.Errorf("duplicated verificationMethod id found")
 		}
 		foundMap[v.ID().String()] = struct{}{}
+		if err := v.IsValid(nil); err != nil {
+			return err
+		}
 	}
 	return nil
 }

@@ -100,6 +100,10 @@ func (d *DIDDocument) DecodeJSON(b []byte, enc encoder.Encoder) error {
 		return e.Wrap(err)
 	}
 
+	if err := d.IsValid(nil); err != nil {
+		return e.Wrap(err)
+	}
+
 	return nil
 }
 
