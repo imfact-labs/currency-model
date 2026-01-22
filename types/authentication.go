@@ -64,6 +64,14 @@ func NewAllowedOperation(contract base.Address, operation hint.Hint) *AllowedOpe
 	}
 }
 
+func (a AllowedOperation) Contract() base.Address {
+	return a.contract
+}
+
+func (a AllowedOperation) Operation() hint.Hint {
+	return a.operation
+}
+
 func (a AllowedOperation) Bytes() []byte {
 	if a.contract == nil {
 		return util.ConcatBytesSlice(

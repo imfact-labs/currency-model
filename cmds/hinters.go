@@ -95,9 +95,6 @@ var AddedHinters = []encoder.DecodeDetail{
 	{Hint: types.DesignHint, Instance: types.Design{}},
 	{Hint: types.DataHint, Instance: types.Data{}},
 	{Hint: types.DIDDocumentHint, Instance: types.DIDDocument{}},
-	//{Hint: types.AsymmetricKeyAuthenticationHint, Instance: types.AsymmetricKeyAuthentication{}},
-	//{Hint: types.SocialLogInAuthenticationHint, Instance: types.SocialLogInAuthentication{}},
-	//{Hint: types.LinkedVerificationMethodHint, Instance: types.LinkedVerificationMethod{}},
 	{Hint: types.VerificationMethodHint, Instance: types.VerificationMethod{}},
 	{Hint: types.VerificationMethodOrRefHint, Instance: types.VerificationMethodOrRef{}},
 

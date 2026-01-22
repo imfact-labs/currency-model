@@ -210,10 +210,18 @@ func (ba BaseAuthentication) Verify(op base.Operation, getStateFunc base.GetStat
 			allowed = append(allowed, *types.NewAllowedOperation(nil, op.Hint()))
 		}
 
-		for _, allowed := range allowed {
-			ok := vrfMethod.IsAllowed(allowed)
+		for _, allowedOp := range allowed {
+			ok := vrfMethod.IsAllowed(allowedOp)
 			if !ok {
-				return common.ErrValueInvalid.Errorf("not allowed operation")
+				if allowedOp.Contract() == nil {
+					return common.ErrValueInvalid.Errorf(
+						"operation %s is not found in allowed operation", allowedOp.Operation().String())
+				} else {
+					return common.ErrValueInvalid.Errorf(
+						"operation %s for contract %s is not found in allowed operation",
+						allowedOp.Operation().String(), allowedOp.Contract().String(),
+					)
+				}
 			}
 		}
 
