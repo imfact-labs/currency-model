@@ -126,6 +126,10 @@ func (fact TransferFact) Items() []TransferItem {
 	return fact.items
 }
 
+func (fact TransferFact) ItemsLen() int {
+	return len(fact.items)
+}
+
 func (fact TransferFact) Rebuild() TransferFact {
 	items := make([]TransferItem, len(fact.items))
 	for i := range fact.items {

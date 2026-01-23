@@ -177,6 +177,14 @@ func (bs *BlockSession) prepareBlock() error {
 		return nil
 	}
 
+	var items uint64
+	//for _, op := range bs.ops {
+	//	itemsFact, ok := op.Fact().(currency.ItemsFact)
+	//	if ok {
+	//		items += uint64(len(itemsFact.Items()))
+	//	}
+	//}
+
 	bs.blockModels = make([]mongo.WriteModel, 1)
 
 	manifest := isaac.NewManifest(
@@ -189,7 +197,7 @@ func (bs *BlockSession) prepareBlock() error {
 		bs.block.Manifest().ProposedAt(),
 	)
 
-	doc, err := NewManifestDoc(manifest, bs.st.digestDB.Encoder(), bs.block.Manifest().Height(), bs.ops, bs.block.SignedAt(), bs.proposal.ProposalFact().Proposer(), bs.proposal.ProposalFact().Point().Round(), bs.buildInfo)
+	doc, err := NewManifestDoc(manifest, bs.st.digestDB.Encoder(), bs.block.Manifest().Height(), uint64(len(bs.ops)), items, bs.block.SignedAt(), bs.proposal.ProposalFact().Proposer(), bs.proposal.ProposalFact().Point().Round(), bs.buildInfo)
 	if err != nil {
 		return err
 	}

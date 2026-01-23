@@ -188,7 +188,7 @@ func DigestBlock(
 	proposal base.ProposalSignFact,
 	vs string,
 ) error {
-	if m, _, _, _, _, _ := st.ManifestByHeight(blk.Manifest().Height()); m != nil {
+	if m, _, _, _, _, _, _ := st.ManifestByHeight(blk.Manifest().Height()); m != nil {
 		return nil
 	}
 

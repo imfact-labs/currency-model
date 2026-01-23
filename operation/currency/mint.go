@@ -92,6 +92,10 @@ func (fact MintFact) Items() []MintItem {
 	return fact.items
 }
 
+func (fact MintFact) ItemsLen() int {
+	return len(fact.items)
+}
+
 type Mint struct {
 	common.BaseNodeOperation
 }

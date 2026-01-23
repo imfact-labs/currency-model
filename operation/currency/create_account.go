@@ -22,6 +22,10 @@ type Signer interface {
 	Signer() base.Address
 }
 
+type ItemsFact interface {
+	ItemsLen() int
+}
+
 type AmountsItem interface {
 	Amounts() []types.Amount
 }
@@ -30,7 +34,7 @@ type CreateAccountItem interface {
 	hint.Hinter
 	util.IsValider
 	AmountsItem
-	Bytes() []byte
+	util.Byter
 	Keys() types.AccountKeys
 	Address() (base.Address, error)
 	Rebuild() CreateAccountItem
@@ -137,6 +141,10 @@ func (fact CreateAccountFact) Signer() base.Address {
 
 func (fact CreateAccountFact) Items() []CreateAccountItem {
 	return fact.items
+}
+
+func (fact CreateAccountFact) ItemsLen() int {
+	return len(fact.items)
 }
 
 func (fact CreateAccountFact) Targets() ([]base.Address, error) {

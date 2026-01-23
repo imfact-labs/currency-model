@@ -92,48 +92,52 @@ func LoadDataFromDoc(b []byte, encs *encoder.Encoders) (bson.Raw /* id */, inter
 }
 
 type BaseManifestDocBSONUnMarshaler struct {
-	I bson.Raw      `bson:"_id,omitempty"`
-	E string        `bson:"_e"`
-	D bson.RawValue `bson:"d"`
-	H bool          `bson:"_hinted"`
-	O uint64        `bson:"operations"`
-	T string        `bson:"confirmed_at"`
-	P string        `bson:"proposer"`
-	R uint64        `bson:"round"`
+	I  bson.Raw      `bson:"_id,omitempty"`
+	E  string        `bson:"_e"`
+	D  bson.RawValue `bson:"d"`
+	H  bool          `bson:"_hinted"`
+	O  uint64        `bson:"operations"`
+	IT uint64        `bson:"items"`
+	T  string        `bson:"confirmed_at"`
+	P  string        `bson:"proposer"`
+	R  uint64        `bson:"round"`
 }
 
-func LoadManifestDataFromDoc(b []byte, encs *encoder.Encoders) (bson.Raw /* id */, interface{} /* data */, uint64 /* operations */, string /* confirmed_at */, string /* proposer */, uint64 /* round */, error) {
+func LoadManifestDataFromDoc(b []byte, encs *encoder.Encoders) (
+	bson.Raw /* id */, interface{} /* data */, uint64 /* operations */, uint64, /* items */
+	string /* confirmed_at */, string /* proposer */, uint64 /* round */, error,
+) {
 
 	var bd BaseManifestDocBSONUnMarshaler
 	if err := bsonenc.Unmarshal(b, &bd); err != nil {
-		return nil, nil, 0, "", "", 0, err
+		return nil, nil, 0, 0, "", "", 0, err
 	}
 
 	ht, err := hint.ParseHint(bd.E)
 	if err != nil {
-		return nil, nil, 0, "", "", 0, err
+		return nil, nil, 0, 0, "", "", 0, err
 	}
 
 	enc, found := encs.Find(ht)
 	if !found {
-		return nil, nil, 0, "", "", 0, util.ErrNotFound.Errorf("Encoder not found for %q", ht)
+		return nil, nil, 0, 0, "", "", 0, util.ErrNotFound.Errorf("Encoder not found for %q", ht)
 	}
 
 	if !bd.H {
-		return bd.I, bd.D, 0, "", "", 0, nil
+		return bd.I, bd.D, 0, 0, "", "", 0, nil
 	}
 
 	doc, ok := bd.D.DocumentOK()
 	if !ok {
-		return nil, nil, 0, "", "", 0, errors.Errorf("Hinted should be mongodb Document")
+		return nil, nil, 0, 0, "", "", 0, errors.Errorf("Hinted should be mongodb Document")
 	}
 
 	var data interface{}
 	if i, err := enc.Decode([]byte(doc)); err != nil {
-		return nil, nil, 0, "", "", 0, err
+		return nil, nil, 0, 0, "", "", 0, err
 	} else {
 		data = i
 	}
 
-	return bd.I, data, bd.O, bd.T, bd.P, bd.R, nil
+	return bd.I, data, bd.O, bd.IT, bd.T, bd.P, bd.R, nil
 }

@@ -12,7 +12,8 @@ import (
 type ManifestDoc struct {
 	mongodbst.BaseDoc
 	va          base.Manifest
-	operations  []base.Operation
+	operations  uint64
+	items       uint64
 	height      base.Height
 	confirmedAt time.Time
 	proposer    base.Address
@@ -24,7 +25,8 @@ func NewManifestDoc(
 	manifest base.Manifest,
 	enc encoder.Encoder,
 	height base.Height,
-	operations []base.Operation,
+	operations uint64,
+	items uint64,
 	confirmedAt time.Time,
 	proposer base.Address,
 	round base.Round,
@@ -39,6 +41,7 @@ func NewManifestDoc(
 		BaseDoc:     b,
 		va:          manifest,
 		operations:  operations,
+		items:       items,
 		height:      height,
 		confirmedAt: confirmedAt,
 		proposer:    proposer,
@@ -54,7 +57,8 @@ func (doc ManifestDoc) MarshalBSON() ([]byte, error) {
 	}
 
 	m["block"] = doc.va.Hash()
-	m["operations"] = len(doc.operations)
+	m["operations"] = doc.operations
+	m["items"] = doc.items
 	m["height"] = doc.height
 	m["confirmed_at"] = doc.confirmedAt.String()
 	m["proposer"] = doc.proposer.String()
