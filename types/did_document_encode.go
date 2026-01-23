@@ -15,7 +15,11 @@ func (d *DIDDocument) unpack(
 }
 
 func (d *Service) unpack(id, svcType, svcEP string) error {
-	d.id = id
+	did, err := NewDIDURLRefFromString(id)
+	if err != nil {
+		return err
+	}
+	d.id = *did
 	d.serviceType = svcType
 	d.serviceEndPoint = svcEP
 

@@ -15,6 +15,7 @@ type DIDDocumentJSONMarshaler struct {
 	ID        string                          `json:"id"`
 	Auth      []VerificationRelationshipEntry `json:"authentication"`
 	VRFMethod []IVerificationMethod           `json:"verificationMethod"`
+	Service   []Service                       `json:"service"`
 }
 
 func (d DIDDocument) MarshalJSON() ([]byte, error) {
@@ -24,6 +25,7 @@ func (d DIDDocument) MarshalJSON() ([]byte, error) {
 		ID:         d.id.String(),
 		Auth:       d.authentication,
 		VRFMethod:  d.verificationMethod,
+		Service:    d.service,
 	})
 }
 
@@ -33,6 +35,7 @@ type DIDDocumentJSONUnmarshaler struct {
 	ID        string          `json:"id"`
 	Auth      json.RawMessage `json:"authentication"`
 	VRFMethod json.RawMessage `json:"verificationMethod"`
+	Service   []Service       `json:"service"`
 }
 
 func (d *DIDDocument) DecodeJSON(b []byte, enc encoder.Encoder) error {
@@ -104,6 +107,16 @@ func (d *DIDDocument) DecodeJSON(b []byte, enc encoder.Encoder) error {
 		return e.Wrap(err)
 	}
 
+	if u.Service != nil {
+		d.service = u.Service
+	} else {
+		d.service = []Service{}
+	}
+
+	d.verificationMethod = vrfs
+
+	d.authentication = auths
+
 	return nil
 }
 
@@ -115,7 +128,7 @@ type ServiceJSONMarshaler struct {
 
 func (d Service) MarshalJSON() ([]byte, error) {
 	return util.MarshalJSON(ServiceJSONMarshaler{
-		ID:              d.id,
+		ID:              d.id.String(),
 		Type:            d.serviceType,
 		ServiceEndPoint: d.serviceEndPoint,
 	})

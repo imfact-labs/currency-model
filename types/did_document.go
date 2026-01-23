@@ -19,6 +19,7 @@ type DIDDocument struct {
 	keyAgreement         []VerificationRelationshipEntry
 	capabilityInvocation []VerificationRelationshipEntry
 	capabilityDelegation []VerificationRelationshipEntry
+	service              []Service
 }
 
 func NewDIDDocument(did DIDRef) DIDDocument {
@@ -30,34 +31,62 @@ func NewDIDDocument(did DIDRef) DIDDocument {
 }
 
 func (d DIDDocument) IsValid([]byte) error {
+	validationTarget := map[string][]VerificationRelationshipEntry{
+		"authentication":       d.authentication,
+		"assertionMethod":      d.assertionMethod,
+		"keyAgreement":         d.keyAgreement,
+		"capabilityInvocation": d.capabilityInvocation,
+		"capabilityDelegation": d.capabilityDelegation,
+	}
+
 	foundMap := map[string]struct{}{}
-	for _, v := range d.authentication {
-		var id string
-		switch kind := v.Kind(); {
-		case kind == VMRefKindReference:
-			id = v.Ref().String()
-		default:
-			id = v.Method().ID().String()
-		}
-		if _, found := foundMap[id]; found {
-			return errors.Errorf("duplicated authentication id found")
-		}
-		foundMap[id] = struct{}{}
-		if err := v.IsValid(nil); err != nil {
-			return err
+	for tName, t := range validationTarget {
+		if t != nil {
+			for _, v := range t {
+				var id string
+				switch kind := v.Kind(); {
+				case kind == VMRefKindReference:
+					id = v.Ref().String()
+				default:
+					id = v.Method().ID().String()
+				}
+				if _, found := foundMap[id]; found {
+					return errors.Errorf("duplicated %s id found", tName)
+				}
+				foundMap[id] = struct{}{}
+				if err := v.IsValid(nil); err != nil {
+					return err
+				}
+			}
 		}
 	}
 
 	foundMap = map[string]struct{}{}
-	for _, v := range d.verificationMethod {
-		if _, found := foundMap[v.ID().String()]; found {
-			return errors.Errorf("duplicated verificationMethod id found")
-		}
-		foundMap[v.ID().String()] = struct{}{}
-		if err := v.IsValid(nil); err != nil {
-			return err
+	if d.verificationMethod != nil {
+		for _, v := range d.verificationMethod {
+			if _, found := foundMap[v.ID().String()]; found {
+				return errors.Errorf("duplicated verificationMethod id found")
+			}
+			foundMap[v.ID().String()] = struct{}{}
+			if err := v.IsValid(nil); err != nil {
+				return err
+			}
 		}
 	}
+
+	foundMap = map[string]struct{}{}
+	if d.service != nil {
+		for _, v := range d.service {
+			if _, found := foundMap[v.ID().String()]; found {
+				return errors.Errorf("duplicated service id found")
+			}
+			foundMap[v.ID().String()] = struct{}{}
+			if err := v.IsValid(nil); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -79,11 +108,46 @@ func (d DIDDocument) Bytes() []byte {
 	}
 	byteVrf := util.ConcatBytesSlice(bVrf...)
 
+	var bAsrt [][]byte
+	for _, v := range d.assertionMethod {
+		bAsrt = append(bAsrt, v.Bytes())
+	}
+	byteAsrt := util.ConcatBytesSlice(bAsrt...)
+
+	var bKagr [][]byte
+	for _, v := range d.keyAgreement {
+		bKagr = append(bKagr, v.Bytes())
+	}
+	byteKagr := util.ConcatBytesSlice(bKagr...)
+
+	var bCapInv [][]byte
+	for _, v := range d.capabilityInvocation {
+		bCapInv = append(bCapInv, v.Bytes())
+	}
+	byteCapInv := util.ConcatBytesSlice(bCapInv...)
+
+	var bCapDlg [][]byte
+	for _, v := range d.capabilityDelegation {
+		bCapDlg = append(bCapDlg, v.Bytes())
+	}
+	byteCapDlg := util.ConcatBytesSlice(bCapDlg...)
+
+	var bSvc [][]byte
+	for _, v := range d.service {
+		bSvc = append(bSvc, v.Bytes())
+	}
+	byteSvc := util.ConcatBytesSlice(bSvc...)
+
 	return util.ConcatBytesSlice(
 		ctx,
 		d.id.Bytes(),
 		byteAuth,
 		byteVrf,
+		byteAsrt,
+		byteKagr,
+		byteCapInv,
+		byteCapDlg,
+		byteSvc,
 	)
 }
 
@@ -127,13 +191,13 @@ func (d DIDDocument) VerificationMethod(id string) (IVerificationMethod, error) 
 }
 
 type Service struct {
-	id              string
+	id              DIDURLRef
 	serviceType     string
 	serviceEndPoint string
 }
 
 func NewService(
-	id, serviceType, serviceEndPoint string,
+	id DIDURLRef, serviceType, serviceEndPoint string,
 ) Service {
 	return Service{
 		id:              id,
@@ -142,13 +206,17 @@ func NewService(
 	}
 }
 
+func (s Service) ID() DIDURLRef {
+	return s.id
+}
+
 func (d Service) IsValid([]byte) error {
 	return nil
 }
 
 func (d Service) Bytes() []byte {
 	return util.ConcatBytesSlice(
-		[]byte(d.id),
+		d.id.Bytes(),
 		[]byte(d.serviceType),
 		[]byte(d.serviceEndPoint),
 	)

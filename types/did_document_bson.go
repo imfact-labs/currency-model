@@ -15,6 +15,7 @@ func (d DIDDocument) MarshalBSON() ([]byte, error) {
 		"id":                 d.id,
 		"authentication":     d.authentication,
 		"verificationMethod": d.verificationMethod,
+		"service":            d.service,
 	})
 }
 
@@ -24,6 +25,7 @@ type DIDDocumentBSONUnmarshaler struct {
 	ID        string                    `bson:"id"`
 	Auth      []VerificationMethodOrRef `bson:"authentication"`
 	VRFMethod bson.Raw                  `bson:"verificationMethod"`
+	Service   []Service                 `bson:"service"`
 }
 
 func (d *DIDDocument) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
@@ -72,13 +74,18 @@ func (d *DIDDocument) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 	}
 
 	d.verificationMethod = vrfs
+	if u.Service != nil {
+		d.service = u.Service
+	} else {
+		d.service = []Service{}
+	}
 
 	return d.unpack(u.Context_, u.ID)
 }
 
 func (d Service) MarshalBSON() ([]byte, error) {
 	return bsonenc.Marshal(bson.M{
-		"id":                d.id,
+		"id":                d.id.String(),
 		"type":              d.serviceType,
 		"service_end_point": d.serviceEndPoint,
 	})

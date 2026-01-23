@@ -219,9 +219,3 @@ func (a *AllowedOperation) UnmarshalJSON(b []byte) error {
 
 	return a.unpack(u.Contract, u.Operation)
 }
-
-type ServiceMarshaler struct {
-	ID              string `json:"id"`
-	Type            string `json:"type"`
-	ServiceEndPoint string `json:"serviceEndpoint"`
-}
