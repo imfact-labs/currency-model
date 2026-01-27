@@ -7,13 +7,13 @@ import (
 )
 
 type TestMintProcessor struct {
-	*test.BaseTestOperationProcessorWithItem[Mint, MintItem]
+	*test.BaseTestOperationProcessorNoItem[Mint]
 }
 
 func NewTestMintProcessor(
 	tp *test.TestProcessor,
 ) TestMintProcessor {
-	t := test.NewBaseTestOperationProcessorWithItem[Mint, MintItem](tp)
+	t := test.NewBaseTestOperationProcessorNoItem[Mint](tp)
 
 	return TestMintProcessor{&t}
 }
@@ -30,13 +30,13 @@ func (t *TestMintProcessor) Create() *TestMintProcessor {
 
 func (t *TestMintProcessor) SetCurrency(
 	cid string, am int64, addr base.Address, target []types.CurrencyID, instate bool) *TestMintProcessor {
-	t.BaseTestOperationProcessorWithItem.SetCurrency(cid, am, addr, target, instate)
+	t.BaseTestOperationProcessorNoItem.SetCurrency(cid, am, addr, target, instate)
 
 	return t
 }
 
 func (t *TestMintProcessor) SetAmount(am int64, cid types.CurrencyID, target []types.Amount) *TestMintProcessor {
-	t.BaseTestOperationProcessorWithItem.SetAmount(am, cid, target)
+	t.BaseTestOperationProcessorNoItem.SetAmount(am, cid, target)
 
 	return t
 }
@@ -44,44 +44,35 @@ func (t *TestMintProcessor) SetAmount(am int64, cid types.CurrencyID, target []t
 func (t *TestMintProcessor) SetContractAccount(
 	owner base.Address, priv string, amount int64, cid types.CurrencyID, target []test.Account, inState bool,
 ) *TestMintProcessor {
-	t.BaseTestOperationProcessorWithItem.SetContractAccount(owner, priv, amount, cid, target, inState)
+	t.BaseTestOperationProcessorNoItem.SetContractAccount(owner, priv, amount, cid, target, inState)
 
 	return t
 }
 
 func (t *TestMintProcessor) SetAccount(
 	priv string, amount int64, cid types.CurrencyID, target []test.Account, inState bool) *TestMintProcessor {
-	t.BaseTestOperationProcessorWithItem.SetAccount(priv, amount, cid, target, inState)
+	t.BaseTestOperationProcessorNoItem.SetAccount(priv, amount, cid, target, inState)
 
 	return t
 }
 
 func (t *TestMintProcessor) LoadOperation(fileName string) *TestMintProcessor {
-	t.BaseTestOperationProcessorWithItem.LoadOperation(fileName)
+	t.BaseTestOperationProcessorNoItem.LoadOperation(fileName)
 
 	return t
 }
 
 func (t *TestMintProcessor) Print(fileName string) *TestMintProcessor {
-	t.BaseTestOperationProcessorWithItem.Print(fileName)
+	t.BaseTestOperationProcessorNoItem.Print(fileName)
 
 	return t
 }
 
-func (t *TestMintProcessor) MakeItem(
-	receiver test.Account, amount types.Amount, targetItems []MintItem,
-) *TestMintProcessor {
-	item := NewMintItem(receiver.Address(), amount)
-	test.UpdateSlice[MintItem](item, targetItems)
-
-	return t
-}
-
-func (t *TestMintProcessor) MakeOperation(items []MintItem,
+func (t *TestMintProcessor) MakeOperation(receiver test.Account, amount types.Amount,
 ) *TestMintProcessor {
 	//t.MockGetter.On("Get", mock.Anything).Return(nil, false, nil)
 
-	op, _ := NewMint(NewMintFact([]byte("token"), items))
+	op, _ := NewMint(NewMintFact([]byte("token"), receiver.Address(), amount))
 	_ = op.NodeSign(t.NodePriv, t.NetworkID, t.NodeAddr)
 	t.Op = op
 
@@ -89,25 +80,25 @@ func (t *TestMintProcessor) MakeOperation(items []MintItem,
 }
 
 func (t *TestMintProcessor) RunPreProcess() *TestMintProcessor {
-	t.BaseTestOperationProcessorWithItem.RunPreProcess()
+	t.BaseTestOperationProcessorNoItem.RunPreProcess()
 
 	return t
 }
 
 func (t *TestMintProcessor) RunProcess() *TestMintProcessor {
-	t.BaseTestOperationProcessorWithItem.RunProcess()
+	t.BaseTestOperationProcessorNoItem.RunProcess()
 
 	return t
 }
 
 func (t *TestMintProcessor) IsValid() *TestMintProcessor {
-	t.BaseTestOperationProcessorWithItem.IsValid()
+	t.BaseTestOperationProcessorNoItem.IsValid()
 
 	return t
 }
 
 func (t *TestMintProcessor) Decode(fileName string) *TestMintProcessor {
-	t.BaseTestOperationProcessorWithItem.Decode(fileName)
+	t.BaseTestOperationProcessorNoItem.Decode(fileName)
 
 	return t
 }

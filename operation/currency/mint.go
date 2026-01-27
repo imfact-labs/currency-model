@@ -2,6 +2,7 @@ package currency
 
 import (
 	"github.com/ProtoconNet/mitum-currency/v3/common"
+	"github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
@@ -18,13 +19,15 @@ var maxMintItem = 10
 
 type MintFact struct {
 	base.BaseFact
-	items []MintItem
+	receiver base.Address
+	amount   types.Amount
 }
 
-func NewMintFact(token []byte, items []MintItem) MintFact {
+func NewMintFact(token []byte, receiver base.Address, amount types.Amount) MintFact {
 	fact := MintFact{
 		BaseFact: base.NewBaseFact(MintFactHint, token),
-		items:    items,
+		receiver: receiver,
+		amount:   amount,
 	}
 
 	fact.SetHash(fact.GenerateHash())
@@ -37,14 +40,7 @@ func (fact MintFact) Hash() util.Hash {
 }
 
 func (fact MintFact) Bytes() []byte {
-	bi := make([][]byte, len(fact.items)+1)
-	bi[0] = fact.Token()
-
-	for i := range fact.items {
-		bi[i+1] = fact.items[i].Bytes()
-	}
-
-	return util.ConcatBytesSlice(bi...)
+	return util.ConcatBytesSlice(fact.Token(), fact.receiver.Bytes(), fact.amount.Bytes())
 }
 
 func (fact MintFact) IsValid(b []byte) error {
@@ -52,25 +48,12 @@ func (fact MintFact) IsValid(b []byte) error {
 		return common.ErrFactInvalid.Wrap(err)
 	}
 
-	switch n := len(fact.items); {
-	case n < 1:
-		return common.ErrFactInvalid.Wrap(common.ErrArrayLen.Wrap(errors.Errorf("Empty items for MintFact")))
-	case n > maxMintItem:
-		return common.ErrFactInvalid.Wrap(common.ErrArrayLen.Wrap(errors.Errorf("Array length: Too many items; %d > %d", n, maxMintItem)))
+	if err := util.CheckIsValiders(nil, false, fact.receiver, fact.amount); err != nil {
+		return err
 	}
 
-	founds := map[string]struct{}{}
-	for i := range fact.items {
-		item := fact.items[i]
-		if err := item.IsValid(nil); err != nil {
-			return common.ErrFactInvalid.Wrap(err)
-		}
-
-		k := item.receiver.String() + "-" + item.amount.Currency().String()
-		if _, found := founds[k]; found {
-			return common.ErrFactInvalid.Wrap(common.ErrDupVal.Wrap(errors.Errorf("Duplicated value: Item in MintFact")))
-		}
-		founds[k] = struct{}{}
+	if !fact.amount.Big().OverZero() {
+		return common.ErrValOOR.Wrap(errors.Errorf("Under zero amount of Mint"))
 	}
 
 	if err := common.IsValidOperationFact(fact, b); err != nil {
@@ -88,12 +71,16 @@ func (fact MintFact) Token() base.Token {
 	return fact.BaseFact.Token()
 }
 
-func (fact MintFact) Items() []MintItem {
-	return fact.items
+func (fact MintFact) Receiver() base.Address {
+	return fact.receiver
 }
 
-func (fact MintFact) ItemsLen() int {
-	return len(fact.items)
+func (fact MintFact) Currency() types.CurrencyID {
+	return fact.amount.Currency()
+}
+
+func (fact MintFact) Amount() types.Amount {
+	return fact.amount
 }
 
 type Mint struct {

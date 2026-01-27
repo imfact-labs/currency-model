@@ -2,7 +2,9 @@ package currency
 
 import (
 	"encoding/json"
+
 	"github.com/ProtoconNet/mitum-currency/v3/common"
+	"github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/encoder"
@@ -10,19 +12,22 @@ import (
 
 type MintFactJSONMarshaler struct {
 	base.BaseFactJSONMarshaler
-	Items []MintItem `json:"items"`
+	Receiver base.Address `json:"receiver"`
+	Amount   types.Amount `json:"amount"`
 }
 
 func (fact MintFact) MarshalJSON() ([]byte, error) {
 	return util.MarshalJSON(MintFactJSONMarshaler{
 		BaseFactJSONMarshaler: fact.BaseFact.JSONMarshaler(),
-		Items:                 fact.items,
+		Receiver:              fact.receiver,
+		Amount:                fact.amount,
 	})
 }
 
 type MintFactJSONUnmarshaler struct {
 	base.BaseFactJSONUnmarshaler
-	Items []json.RawMessage `json:"items"`
+	Receiver string          `json:"receiver"`
+	Amount   json.RawMessage `json:"amount"`
 }
 
 func (fact *MintFact) DecodeJSON(b []byte, enc encoder.Encoder) error {
@@ -33,17 +38,6 @@ func (fact *MintFact) DecodeJSON(b []byte, enc encoder.Encoder) error {
 	}
 
 	fact.BaseFact.SetJSONUnmarshaler(uf.BaseFactJSONUnmarshaler)
-
-	items := make([]MintItem, len(uf.Items))
-	for i := range uf.Items {
-		item := MintItem{}
-		if err := item.DecodeJSON(uf.Items[i], enc); err != nil {
-			return common.DecorateError(err, common.ErrDecodeJson, *fact)
-		}
-		items[i] = item
-	}
-
-	fact.items = items
 
 	return nil
 }

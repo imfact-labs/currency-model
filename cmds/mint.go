@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ProtoconNet/mitum-currency/v3/operation/currency"
+	"github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/pkg/errors"
 )
@@ -11,9 +12,11 @@ import (
 type MintCommand struct {
 	BaseCommand
 	OperationFlags
-	Node           AddressFlag `arg:"" name:"node" help:"node address" required:"true"`
-	node           base.Address
-	ReceiverAmount AddressCurrencyAmountFlag `arg:"" name:"receiver amount" help:"ex: \"<receiver address>,<currency>,<amount>\" separator @"`
+	Node     AddressFlag `arg:"" name:"node" help:"node address" required:"true"`
+	node     base.Address
+	Receiver AddressFlag `arg:"" name:"receiver" help:"receiver address" required:"true"`
+	receiver base.Address
+	Amount   CurrencyAmountFlag `arg:"" name:"currency-amount" help:"amount (ex: \"<currency>,<amount>\")"`
 }
 
 func (cmd *MintCommand) Run(pctx context.Context) error { // nolint:dupl
@@ -52,21 +55,23 @@ func (cmd *MintCommand) parseFlags() error {
 	}
 	cmd.node = a
 
+	r, err := cmd.Receiver.Encode(cmd.Encoders.JSON())
+	if err != nil {
+		return errors.Wrapf(err, "invalid sender format, %v", cmd.Receiver.String())
+	}
+	cmd.receiver = r
+
 	return nil
 }
 
 func (cmd *MintCommand) createOperation() (currency.Mint, error) {
-	items := make([]currency.MintItem, len(cmd.ReceiverAmount.Address()))
-	for i := range cmd.ReceiverAmount.Address() {
-		items[i] = currency.NewMintItem(cmd.ReceiverAmount.Address()[i], cmd.ReceiverAmount.Amount()[i])
+	am := types.NewAmount(cmd.Amount.Big, cmd.Amount.CID)
 
-		cmd.Log.Debug().
-			Stringer("amount", cmd.ReceiverAmount.Amount()[i]).
-			Stringer("receiver", cmd.ReceiverAmount.Address()[i]).
-			Msg("mint item loaded")
-	}
-
-	fact := currency.NewMintFact([]byte(cmd.Token), items)
+	fact := currency.NewMintFact([]byte(cmd.Token), cmd.receiver, am)
+	cmd.Log.Debug().
+		Stringer("receiver", cmd.receiver).
+		Stringer("amount", am).
+		Msg("mint fact loaded")
 
 	op, err := currency.NewMint(fact)
 	if err != nil {

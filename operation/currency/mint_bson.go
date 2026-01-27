@@ -12,17 +12,19 @@ import (
 func (fact MintFact) MarshalBSON() ([]byte, error) {
 	return bsonenc.Marshal(
 		bson.M{
-			"_hint": fact.Hint().String(),
-			"items": fact.items,
-			"hash":  fact.BaseFact.Hash().String(),
-			"token": fact.BaseFact.Token(),
+			"_hint":    fact.Hint().String(),
+			"receiver": fact.receiver,
+			"amount":   fact.amount,
+			"hash":     fact.BaseFact.Hash().String(),
+			"token":    fact.BaseFact.Token(),
 		},
 	)
 }
 
 type MintFactBSONUnmarshaler struct {
-	Hint  string     `bson:"_hint"`
-	Items []bson.Raw `bson:"items"`
+	Hint     string   `bson:"_hint"`
+	Receiver string   `bson:"receiver"`
+	Amount   bson.Raw `bson:"amount"`
 }
 
 func (fact *MintFact) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
@@ -52,16 +54,9 @@ func (fact *MintFact) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 	}
 	fact.BaseHinter = hint.NewBaseHinter(ht)
 
-	items := make([]MintItem, len(uf.Items))
-	for i := range uf.Items {
-		item := MintItem{}
-		if err := item.DecodeBSON(uf.Items[i], enc); err != nil {
-			return common.DecorateError(err, common.ErrDecodeBson, *fact)
-		}
-		items[i] = item
+	if err := fact.unpack(enc, uf.Receiver, uf.Amount); err != nil {
+		return common.DecorateError(err, common.ErrDecodeBson, *fact)
 	}
-
-	fact.items = items
 
 	return nil
 }

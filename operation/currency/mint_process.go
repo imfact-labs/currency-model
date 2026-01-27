@@ -102,20 +102,18 @@ func (opp *MintProcessor) PreProcess(
 			), nil
 	}
 
-	for _, item := range fact.Items() {
-		_, err := state.ExistsCurrencyPolicy(item.Amount().Currency(), getStateFunc)
-		if err != nil {
-			return ctx, base.NewBaseOperationProcessReasonError(
-				common.ErrMPreProcess.
-					Errorf("%v", err),
-			), nil
-		}
+	_, err := state.ExistsCurrencyPolicy(fact.Amount().Currency(), getStateFunc)
+	if err != nil {
+		return ctx, base.NewBaseOperationProcessReasonError(
+			common.ErrMPreProcess.
+				Errorf("%v", err),
+		), nil
+	}
 
-		if _, _, _, cErr := state.ExistsCAccount(
-			item.Receiver(), "receiver", true, false, getStateFunc); cErr != nil {
-			return ctx, base.NewBaseOperationProcessReasonError(
-				common.ErrMPreProcess.Wrap(common.ErrMCAccountNA).Errorf("%v: receiver %v is contract account", cErr, item.Receiver())), nil
-		}
+	if _, _, _, cErr := state.ExistsCAccount(
+		fact.Receiver(), "receiver", true, false, getStateFunc); cErr != nil {
+		return ctx, base.NewBaseOperationProcessReasonError(
+			common.ErrMPreProcess.Wrap(common.ErrMCAccountNA).Errorf("%v: receiver %v is contract account", cErr, fact.Receiver())), nil
 	}
 
 	return ctx, nil, nil
@@ -134,77 +132,64 @@ func (opp *MintProcessor) Process(
 
 	var sts []base.StateMergeValue
 
-	aggs := map[types.CurrencyID]common.Big{}
+	smv, err := state.CreateNotExistAccount(fact.Receiver(), getStateFunc)
+	if err != nil {
+		return nil, base.NewBaseOperationProcessReasonError(
+			"%w", err), nil
+	} else if smv != nil {
+		sts = append(sts, smv)
+	}
 
-	for i := range fact.Items() {
-		item := fact.Items()[i]
-
-		smv, err := state.CreateNotExistAccount(item.Receiver(), getStateFunc)
+	cid := fact.Amount().Currency()
+	k := currency.BalanceStateKey(fact.Receiver(), cid)
+	switch st, found, err := getStateFunc(k); {
+	case err != nil:
+		return nil, base.NewBaseOperationProcessReasonError(
+			"find receiver account balance state, %v; %w", k, err), nil
+	//case !found:
+	//	ab = types.NewZeroAmount(item.Amount().Currency())
+	case found:
+		_, err := currency.StateBalanceValue(st)
 		if err != nil {
-			return nil, base.NewBaseOperationProcessReasonError(
-				"%w", err), nil
-		} else if smv != nil {
-			sts = append(sts, smv)
-		}
-
-		k := currency.BalanceStateKey(item.Receiver(), item.Amount().Currency())
-		switch st, found, err := getStateFunc(k); {
-		case err != nil:
-			return nil, base.NewBaseOperationProcessReasonError(
-				"find receiver account balance state, %v; %w", k, err), nil
-		//case !found:
-		//	ab = types.NewZeroAmount(item.Amount().Currency())
-		case found:
-			_, err := currency.StateBalanceValue(st)
-			if err != nil {
-				return nil, base.NewBaseOperationProcessReasonError("get balance value, %v: %w", k, err), nil
-			}
-		}
-
-		sts = append(sts, common.NewBaseStateMergeValue(
-			k,
-			currency.NewAddBalanceStateValue(types.NewAmount(item.Amount().Big(), item.Amount().Currency())),
-			func(height base.Height, st base.State) base.StateValueMerger {
-				return currency.NewBalanceStateValueMerger(
-					height,
-					k,
-					item.Amount().Currency(),
-					st,
-				)
-			},
-		))
-
-		if _, found := aggs[item.Amount().Currency()]; found {
-			aggs[item.Amount().Currency()] = aggs[item.Amount().Currency()].Add(item.Amount().Big())
-		} else {
-			aggs[item.Amount().Currency()] = item.Amount().Big()
+			return nil, base.NewBaseOperationProcessReasonError("get balance value, %v: %w", k, err), nil
 		}
 	}
 
-	for cid, big := range aggs {
-		var de types.CurrencyDesign
+	sts = append(sts, common.NewBaseStateMergeValue(
+		k,
+		currency.NewAddBalanceStateValue(types.NewAmount(fact.Amount().Big(), cid)),
+		func(height base.Height, st base.State) base.StateValueMerger {
+			return currency.NewBalanceStateValueMerger(
+				height,
+				k,
+				cid,
+				st,
+			)
+		},
+	))
 
-		k := currency.DesignStateKey(cid)
-		switch st, found, err := getStateFunc(k); {
-		case err != nil:
-			return nil, base.NewBaseOperationProcessReasonError("find currency design state, %v: %w", cid, err), nil
-		case !found:
-			return nil, base.NewBaseOperationProcessReasonError("Currency not found, %v: %w", cid, err), nil
-		default:
-			d, err := currency.GetDesignFromState(st)
-			if err != nil {
-				return nil, base.NewBaseOperationProcessReasonError("get currency design value, %v: %w", cid, err), nil
-			}
-			de = d
-		}
+	var de types.CurrencyDesign
 
-		ade, err := de.AddTotalSupply(big)
+	k = currency.DesignStateKey(cid)
+	switch st, found, err := getStateFunc(k); {
+	case err != nil:
+		return nil, base.NewBaseOperationProcessReasonError("find currency design state, %v: %w", cid, err), nil
+	case !found:
+		return nil, base.NewBaseOperationProcessReasonError("Currency not found, %v: %w", cid, err), nil
+	default:
+		d, err := currency.GetDesignFromState(st)
 		if err != nil {
-			return nil, base.NewBaseOperationProcessReasonError("add aggregate, %v: %w", cid, err), nil
+			return nil, base.NewBaseOperationProcessReasonError("get currency design value, %v: %w", cid, err), nil
 		}
-
-		sts = append(sts, state.NewStateMergeValue(k, currency.NewCurrencyDesignStateValue(ade)))
+		de = d
 	}
+
+	ade, err := de.AddTotalSupply(fact.Amount().Big())
+	if err != nil {
+		return nil, base.NewBaseOperationProcessReasonError("add aggregate, %v: %w", cid, err), nil
+	}
+
+	sts = append(sts, state.NewStateMergeValue(k, currency.NewCurrencyDesignStateValue(ade)))
 
 	return sts, nil, nil
 }

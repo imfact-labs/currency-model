@@ -5,16 +5,15 @@ import (
 	"github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util/encoder"
-	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/pkg/errors"
 )
 
-func (it *MintItem) unpack(enc encoder.Encoder, ht hint.Hint, rc string, bam []byte) error {
+func (fact *MintFact) unpack(enc encoder.Encoder, rc string, bam []byte) error {
 	switch ad, err := base.DecodeAddress(rc, enc); {
 	case err != nil:
 		return err
 	default:
-		it.receiver = ad
+		fact.receiver = ad
 	}
 
 	if hinter, err := enc.Decode(bam); err != nil {
@@ -22,9 +21,8 @@ func (it *MintItem) unpack(enc encoder.Encoder, ht hint.Hint, rc string, bam []b
 	} else if am, ok := hinter.(types.Amount); !ok {
 		return common.ErrTypeMismatch.Wrap(errors.Errorf("expected InitialSupply, not %T", hinter))
 	} else {
-		it.amount = am
+		fact.amount = am
 	}
-	it.BaseHinter = hint.NewBaseHinter(ht)
 
 	return nil
 }
