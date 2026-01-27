@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/ProtoconNet/mitum-currency/v3/digest/isaac"
+	"github.com/ProtoconNet/mitum-currency/v3/digest/mongodb"
+	"github.com/ProtoconNet/mitum-currency/v3/operation/extras"
 	ccstate "github.com/ProtoconNet/mitum-currency/v3/state/currency"
 	cestate "github.com/ProtoconNet/mitum-currency/v3/state/extension"
 	"github.com/ProtoconNet/mitum2/base"
@@ -44,7 +46,11 @@ type BlockSession struct {
 	buildInfo       string
 }
 
-func NewBlockSession(st *Database, blk base.BlockMap, ops []base.Operation, opsTree fixedtree.Tree, sts []base.State, proposal base.ProposalSignFact, vs string) (*BlockSession, error) {
+func NewBlockSession(
+	st *Database, blk base.BlockMap, ops []base.Operation, opsTree fixedtree.Tree,
+	sts []base.State, proposal base.ProposalSignFact, vs string) (
+	*BlockSession, error,
+) {
 	if st.Readonly() {
 		return nil, errors.Errorf("Readonly mode")
 	}
@@ -177,13 +183,27 @@ func (bs *BlockSession) prepareBlock() error {
 		return nil
 	}
 
-	var items uint64
-	//for _, op := range bs.ops {
-	//	itemsFact, ok := op.Fact().(currency.ItemsFact)
-	//	if ok {
-	//		items += uint64(len(itemsFact.Items()))
-	//	}
-	//}
+	var opInfo mongodbstorage.OperationItemInfo
+	opInfo.TotalOperations = uint(len(bs.ops))
+
+	var NoItemOperations uint
+	var ItemOperations uint
+	var Items uint
+	for _, op := range bs.ops {
+		feeable, ok := op.Fact().(extras.FeeAble)
+		if ok {
+			items, hasItem := feeable.FeeItemCount()
+			if hasItem {
+				ItemOperations++
+				Items += uint(items)
+			} else {
+				NoItemOperations++
+			}
+		}
+	}
+	opInfo.NoItemOperations = NoItemOperations
+	opInfo.ItemOperations = ItemOperations
+	opInfo.Items = Items
 
 	bs.blockModels = make([]mongo.WriteModel, 1)
 
@@ -197,7 +217,7 @@ func (bs *BlockSession) prepareBlock() error {
 		bs.block.Manifest().ProposedAt(),
 	)
 
-	doc, err := NewManifestDoc(manifest, bs.st.digestDB.Encoder(), bs.block.Manifest().Height(), uint64(len(bs.ops)), items, bs.block.SignedAt(), bs.proposal.ProposalFact().Proposer(), bs.proposal.ProposalFact().Point().Round(), bs.buildInfo)
+	doc, err := NewManifestDoc(manifest, bs.st.digestDB.Encoder(), bs.block.Manifest().Height(), opInfo, bs.block.SignedAt(), bs.proposal.ProposalFact().Proposer(), bs.proposal.ProposalFact().Point().Round(), bs.buildInfo)
 	if err != nil {
 		return err
 	}
