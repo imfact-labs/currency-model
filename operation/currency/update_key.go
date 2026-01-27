@@ -115,6 +115,10 @@ func (fact UpdateKeyFact) FeePayer() base.Address {
 	return fact.sender
 }
 
+func (fact UpdateKeyFact) FeeItemCount() (uint, bool) {
+	return extras.ZeroItem, extras.HasNoItem
+}
+
 func (fact UpdateKeyFact) FactUser() base.Address {
 	return fact.sender
 }

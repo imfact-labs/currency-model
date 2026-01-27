@@ -143,6 +143,10 @@ func (fact UpdateDIDDocumentFact) FactUser() base.Address {
 	return fact.sender
 }
 
+func (fact UpdateDIDDocumentFact) FeeItemCount() (uint, bool) {
+	return extras.ZeroItem, extras.HasNoItem
+}
+
 func (fact UpdateDIDDocumentFact) ActiveContract() []base.Address {
 	return []base.Address{fact.contract}
 }

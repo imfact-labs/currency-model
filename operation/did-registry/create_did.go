@@ -114,6 +114,10 @@ func (fact CreateDIDFact) FeePayer() base.Address {
 	return fact.sender
 }
 
+func (fact CreateDIDFact) FeeItemCount() (uint, bool) {
+	return extras.ZeroItem, extras.HasNoItem
+}
+
 func (fact CreateDIDFact) FactUser() base.Address {
 	return fact.sender
 }

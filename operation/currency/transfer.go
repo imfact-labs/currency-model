@@ -22,7 +22,7 @@ type TransferItem interface {
 	hint.Hinter
 	util.IsValider
 	AmountsItem
-	Bytes() []byte
+	util.Byter
 	Receiver() base.Address
 	Rebuild() TransferItem
 }
@@ -184,6 +184,10 @@ func (fact TransferFact) FeeBase() map[types.CurrencyID][]common.Big {
 
 func (fact TransferFact) FeePayer() base.Address {
 	return fact.sender
+}
+
+func (fact TransferFact) FeeItemCount() (uint, bool) {
+	return uint(len(fact.items)), extras.HasItem
 }
 
 func (fact TransferFact) FactUser() base.Address {

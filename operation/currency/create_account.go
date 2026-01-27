@@ -219,6 +219,10 @@ func (fact CreateAccountFact) FeePayer() base.Address {
 	return fact.sender
 }
 
+func (fact CreateAccountFact) FeeItemCount() (uint, bool) {
+	return uint(len(fact.items)), extras.HasItem
+}
+
 func (fact CreateAccountFact) FactUser() base.Address {
 	return fact.sender
 }

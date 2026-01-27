@@ -126,6 +126,10 @@ func (fact RegisterModelFact) FactUser() base.Address {
 	return fact.sender
 }
 
+func (fact RegisterModelFact) FeeItemCount() (uint, bool) {
+	return extras.ZeroItem, extras.HasNoItem
+}
+
 func (fact RegisterModelFact) InActiveContractOwnerHandlerOnly() [][2]base.Address {
 	return [][2]base.Address{{fact.contract, fact.sender}}
 }
