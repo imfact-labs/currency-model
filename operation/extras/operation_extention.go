@@ -584,8 +584,15 @@ func (be *BaseOperationExtensions) AddExtension(extension OperationExtension) er
 // FeeAble is an interface type for fee calculation. Operations than requires fee must implement this interface.
 type FeeAble interface {
 	FeeBase() map[types.CurrencyID][]common.Big
+	FeeItemCount() (uint, bool)
 	FeePayer() base.Address
 }
+
+const (
+	ZeroItem  = 0
+	HasItem   = true
+	HasNoItem = false
+)
 
 // VerifyFeeAble function checks existence of currency id
 func VerifyFeeAble(fact FeeAble, getStateFunc base.GetStateFunc) base.OperationProcessReasonError {
