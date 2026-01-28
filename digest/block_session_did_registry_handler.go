@@ -6,24 +6,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func prepareDIDRegistry(bs *BlockSession, st base.State) (string, []mongo.WriteModel, error) {
+func PrepareDIDRegistry(bs *BlockSession, st base.State) (string, []mongo.WriteModel, error) {
 	switch {
 	case dstate.IsDesignStateKey(st.Key()):
-		j, err := bs.handleDIDRegistryDesignState(st)
+		j, err := handleDIDRegistryDesignState(bs, st)
 		if err != nil {
 			return "", nil, err
 		}
 
 		return DefaultColNameDIDRegistry, j, nil
 	case dstate.IsDataStateKey(st.Key()):
-		j, err := bs.handleDIDDataState(st)
+		j, err := handleDIDDataState(bs, st)
 		if err != nil {
 			return "", nil, err
 		}
 
 		return DefaultColNameDIDData, j, nil
 	case dstate.IsDocumentStateKey(st.Key()):
-		j, err := bs.handleDIDDocumentState(st)
+		j, err := handleDIDDocumentState(bs, st)
 		if err != nil {
 			return "", nil, err
 		}
@@ -34,7 +34,7 @@ func prepareDIDRegistry(bs *BlockSession, st base.State) (string, []mongo.WriteM
 	return "", nil, nil
 }
 
-func (bs *BlockSession) handleDIDRegistryDesignState(st base.State) ([]mongo.WriteModel, error) {
+func handleDIDRegistryDesignState(bs *BlockSession, st base.State) ([]mongo.WriteModel, error) {
 	if DIDDesignDoc, err := NewDIDRegistryDesignDoc(st, bs.st.Encoder()); err != nil {
 		return nil, err
 	} else {
@@ -44,7 +44,7 @@ func (bs *BlockSession) handleDIDRegistryDesignState(st base.State) ([]mongo.Wri
 	}
 }
 
-func (bs *BlockSession) handleDIDDataState(st base.State) ([]mongo.WriteModel, error) {
+func handleDIDDataState(bs *BlockSession, st base.State) ([]mongo.WriteModel, error) {
 	if DIDDataDoc, err := NewDIDDataDoc(st, bs.st.Encoder()); err != nil {
 		return nil, err
 	} else {
@@ -54,7 +54,7 @@ func (bs *BlockSession) handleDIDDataState(st base.State) ([]mongo.WriteModel, e
 	}
 }
 
-func (bs *BlockSession) handleDIDDocumentState(st base.State) ([]mongo.WriteModel, error) {
+func handleDIDDocumentState(bs *BlockSession, st base.State) ([]mongo.WriteModel, error) {
 	if DIDDocumentDoc, err := NewDIDDocumentDoc(st, bs.st.Encoder()); err != nil {
 		return nil, err
 	} else {

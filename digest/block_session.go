@@ -21,7 +21,7 @@ import (
 
 var bulkWriteLimit = 500
 
-type WriteModelPrepareFunc func(BlockSession, base.State) ([]mongo.WriteModel, error)
+type BlockSessionPrepareFunc func(*BlockSession, base.State) (string, []mongo.WriteModel, error)
 
 type BlockSessioner interface {
 	Prepare() error
@@ -39,7 +39,7 @@ type BlockSession struct {
 	proposal        base.ProposalSignFact
 	opsTreeNodes    map[string]base.OperationFixedtreeNode
 	WriteModels     map[string][]mongo.WriteModel
-	PrepareFunc     []func(*BlockSession, base.State) (string, []mongo.WriteModel, error)
+	PrepareFunc     []BlockSessionPrepareFunc
 	blockModels     []mongo.WriteModel
 	operationModels []mongo.WriteModel
 	statesValue     *sync.Map
@@ -60,10 +60,6 @@ func NewBlockSession(
 		return nil, err
 	}
 
-	prepareFunc := []func(*BlockSession, base.State) (string, []mongo.WriteModel, error){
-		prepareCurrencies, prepareAccounts, prepareDIDRegistry,
-	}
-
 	return &BlockSession{
 		st:          nst,
 		block:       blk,
@@ -72,11 +68,14 @@ func NewBlockSession(
 		sts:         sts,
 		proposal:    proposal,
 		WriteModels: make(map[string][]mongo.WriteModel),
-		PrepareFunc: prepareFunc,
 		statesValue: &sync.Map{},
 
 		buildInfo: vs,
 	}, nil
+}
+
+func (bs *BlockSession) Database() *Database {
+	return bs.st
 }
 
 func (bs *BlockSession) Prepare() error {
@@ -278,23 +277,23 @@ func (bs *BlockSession) prepareOperations() error {
 	return nil
 }
 
-func prepareAccounts(bs *BlockSession, st base.State) (string, []mongo.WriteModel, error) {
+func PrepareAccounts(bs *BlockSession, st base.State) (string, []mongo.WriteModel, error) {
 	switch {
 	case ccstate.IsAccountStateKey(st.Key()):
-		j, err := bs.handleAccountState(st)
+		j, err := handleAccountState(bs, st)
 		if err != nil {
 			return "", nil, err
 		}
 		return DefaultColNameAccount, j, nil
 	case ccstate.IsBalanceStateKey(st.Key()):
-		j, _, err := bs.handleBalanceState(st)
+		j, _, err := handleBalanceState(bs, st)
 		if err != nil {
 			return "", nil, err
 		}
 
 		return DefaultColNameBalance, j, nil
 	case cestate.IsStateContractAccountKey(st.Key()):
-		j, err := bs.handleContractAccountState(st)
+		j, err := handleContractAccountState(bs, st)
 		if err != nil {
 			return "", nil, err
 		}
@@ -304,10 +303,10 @@ func prepareAccounts(bs *BlockSession, st base.State) (string, []mongo.WriteMode
 	return "", nil, nil
 }
 
-func prepareCurrencies(bs *BlockSession, st base.State) (string, []mongo.WriteModel, error) {
+func PrepareCurrencies(bs *BlockSession, st base.State) (string, []mongo.WriteModel, error) {
 	switch {
 	case ccstate.IsDesignStateKey(st.Key()):
-		j, err := bs.handleCurrencyState(st)
+		j, err := handleCurrencyState(bs, st)
 		if err != nil {
 			return "", nil, err
 		}
@@ -318,7 +317,7 @@ func prepareCurrencies(bs *BlockSession, st base.State) (string, []mongo.WriteMo
 	return "", nil, nil
 }
 
-func (bs *BlockSession) handleAccountState(st base.State) ([]mongo.WriteModel, error) {
+func handleAccountState(bs *BlockSession, st base.State) ([]mongo.WriteModel, error) {
 	if rs, err := NewAccountValue(st); err != nil {
 		return nil, err
 	} else if doc, err := NewAccountDoc(rs, bs.st.digestDB.Encoder()); err != nil {
@@ -328,7 +327,7 @@ func (bs *BlockSession) handleAccountState(st base.State) ([]mongo.WriteModel, e
 	}
 }
 
-func (bs *BlockSession) handleBalanceState(st base.State) ([]mongo.WriteModel, string, error) {
+func handleBalanceState(bs *BlockSession, st base.State) ([]mongo.WriteModel, string, error) {
 	doc, address, err := NewBalanceDoc(st, bs.st.digestDB.Encoder())
 	if err != nil {
 		return nil, "", err
@@ -336,7 +335,7 @@ func (bs *BlockSession) handleBalanceState(st base.State) ([]mongo.WriteModel, s
 	return []mongo.WriteModel{mongo.NewInsertOneModel().SetDocument(doc)}, address, nil
 }
 
-func (bs *BlockSession) handleContractAccountState(st base.State) ([]mongo.WriteModel, error) {
+func handleContractAccountState(bs *BlockSession, st base.State) ([]mongo.WriteModel, error) {
 	doc, err := NewContractAccountStatusDoc(st, bs.st.digestDB.Encoder())
 	if err != nil {
 		return nil, err
@@ -344,7 +343,7 @@ func (bs *BlockSession) handleContractAccountState(st base.State) ([]mongo.Write
 	return []mongo.WriteModel{mongo.NewInsertOneModel().SetDocument(doc)}, nil
 }
 
-func (bs *BlockSession) handleCurrencyState(st base.State) ([]mongo.WriteModel, error) {
+func handleCurrencyState(bs *BlockSession, st base.State) ([]mongo.WriteModel, error) {
 	doc, err := NewCurrencyDoc(st, bs.st.digestDB.Encoder())
 	if err != nil {
 		return nil, err

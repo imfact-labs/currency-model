@@ -11,7 +11,6 @@ import (
 	"github.com/ProtoconNet/mitum2/base"
 	isaacblock "github.com/ProtoconNet/mitum2/isaac/block"
 	"github.com/ProtoconNet/mitum2/util"
-	"github.com/ProtoconNet/mitum2/util/fixedtree"
 	"github.com/ProtoconNet/mitum2/util/logging"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -56,6 +55,7 @@ type Digester struct {
 	errChan       chan error
 	sourceReaders *isaac.BlockItemReaders
 	fromRemotes   isaac.RemotesBlockItemReadFunc
+	PrepareFunc   []BlockSessionPrepareFunc
 	networkID     base.NetworkID
 	buildInfo     string
 }
@@ -88,6 +88,10 @@ func NewDigester(
 	return di
 }
 
+func (di *Digester) Database() *Database {
+	return di.database
+}
+
 func (di *Digester) start(ctx context.Context) error {
 	e := util.StringError("start Digester")
 
@@ -108,7 +112,7 @@ end:
 			break end
 		case blk := <-di.blockChan:
 			err := util.Retry(ctx, func() (bool, error) {
-				if err := di.digest(ctx, blk); err != nil {
+				if err := di.DigestBlockMap(ctx, blk.Manifest().Height()); err != nil {
 					go errch(NewDigestError(err, blk.Manifest().Height()))
 					if errors.Is(err, context.Canceled) {
 						return false, e.Wrap(err)
@@ -145,7 +149,7 @@ func (di *Digester) Digest(blocks []base.BlockMap) {
 	}
 }
 
-func (di *Digester) digest(ctx context.Context, blk base.BlockMap) error {
+func (di *Digester) DigestBlockMap(ctx context.Context, blk base.Height) error {
 	e := util.StringError("digest block")
 
 	di.Lock()
@@ -153,7 +157,7 @@ func (di *Digester) digest(ctx context.Context, blk base.BlockMap) error {
 
 	var bm base.BlockMap
 
-	switch i, found, err := isaac.BlockItemReadersDecode[base.BlockMap](di.sourceReaders.Item, blk.Manifest().Height(), base.BlockItemMap, nil); {
+	switch i, found, err := isaac.BlockItemReadersDecode[base.BlockMap](di.sourceReaders.Item, blk, base.BlockItemMap, nil); {
 	case err != nil:
 		return e.Wrap(err)
 	case !found:
@@ -166,43 +170,30 @@ func (di *Digester) digest(ctx context.Context, blk base.BlockMap) error {
 		bm = i
 	}
 
-	pr, ops, sts, opsTree, _, _, err := isaacblock.LoadBlockItemsFromReader(bm, di.sourceReaders.Item, blk.Manifest().Height())
+	pr, ops, sts, opsTree, _, _, err := isaacblock.LoadBlockItemsFromReader(bm, di.sourceReaders.Item, blk)
 	if err != nil {
 		return e.Wrap(err)
 	}
 
-	if err := DigestBlock(ctx, di.database, blk, ops, opsTree, sts, pr, di.buildInfo); err != nil {
-		return e.Wrap(err)
-	}
-
-	return di.database.SetLastBlock(blk.Manifest().Height())
-}
-
-func DigestBlock(
-	ctx context.Context,
-	st *Database,
-	blk base.BlockMap,
-	ops []base.Operation,
-	opsTree fixedtree.Tree,
-	sts []base.State,
-	proposal base.ProposalSignFact,
-	vs string,
-) error {
-	if m, _, _, _, _, _ := st.ManifestByHeight(blk.Manifest().Height()); m != nil {
+	if m, _, _, _, _, _ := di.database.ManifestByHeight(blk); m != nil {
 		return nil
 	}
 
-	bs, err := NewBlockSession(st, blk, ops, opsTree, sts, proposal, vs)
+	bs, err := NewBlockSession(di.database, bm, ops, opsTree, sts, pr, di.buildInfo)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		_ = bs.Close()
 	}()
-
+	bs.PrepareFunc = di.PrepareFunc
 	if err := bs.Prepare(); err != nil {
 		return err
 	}
 
-	return bs.Commit(ctx)
+	if err := bs.Commit(ctx); err != nil {
+		return err
+	}
+
+	return di.database.SetLastBlock(blk)
 }

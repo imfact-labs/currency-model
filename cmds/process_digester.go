@@ -3,16 +3,15 @@ package cmds
 import (
 	"context"
 
-	"github.com/ProtoconNet/mitum2/isaac"
-
 	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum2/base"
-	isaacblock "github.com/ProtoconNet/mitum2/isaac/block"
+	"github.com/ProtoconNet/mitum2/isaac"
 	isaacdatabase "github.com/ProtoconNet/mitum2/isaac/database"
 	"github.com/ProtoconNet/mitum2/launch"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/logging"
 	"github.com/ProtoconNet/mitum2/util/ps"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -76,6 +75,7 @@ func ProcessDigester(ctx context.Context) (context.Context, error) {
 
 	di := digest.NewDigester(st, root, sourceReaders, fromRemotes, design.NetworkID, vs.String(), nil)
 	_ = di.SetLogging(log)
+	di.PrepareFunc = []digest.BlockSessionPrepareFunc{digest.PrepareCurrencies, digest.PrepareAccounts, digest.PrepareDIDRegistry}
 
 	return context.WithValue(ctx, digest.ContextValueDigester, di), nil
 }
@@ -139,7 +139,7 @@ func PdigesterFollowUp(ctx context.Context) (context.Context, error) {
 			Int64("last_block", st.LastBlock().Int64()).
 			Msg("new blocks found to digest")
 
-		if err := digestFollowup(ctx, m.Manifest().Height()); err != nil {
+		if err := DigestFollowup(ctx, m.Manifest().Height()); err != nil {
 			log.Log().Error().Err(err).Msg("follow up")
 
 			return ctx, err
@@ -152,40 +152,24 @@ func PdigesterFollowUp(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func digestFollowup(ctx context.Context, height base.Height) error {
+func DigestFollowup(ctx context.Context, height base.Height) error {
 	var vs util.Version
 	if err := util.LoadFromContextOK(ctx, launch.VersionContextKey, &vs); err != nil {
 		return err
 	}
 
-	var st *digest.Database
-	if err := util.LoadFromContextOK(ctx, digest.ContextValueDigestDatabase, &st); err != nil {
-		return err
-	}
-
-	var design launch.NodeDesign
-	if err := util.LoadFromContext(ctx, launch.DesignContextKey, &design); err != nil {
-		return err
-	}
-	root := launch.LocalFSDataDirectory(design.Storage.Base)
-
-	var newReaders func(context.Context, string, *isaac.BlockItemReadersArgs) (*isaac.BlockItemReaders, error)
-	var fromRemotes isaac.RemotesBlockItemReadFunc
-
-	if err := util.LoadFromContextOK(ctx,
-		launch.NewBlockItemReadersFuncContextKey, &newReaders,
-		launch.RemotesBlockItemReaderFuncContextKey, &fromRemotes,
+	var di *digest.Digester
+	if err := util.LoadFromContext(ctx,
+		digest.ContextValueDigester, &di,
 	); err != nil {
 		return err
 	}
 
-	var sourceReaders *isaac.BlockItemReaders
-
-	switch i, err := newReaders(ctx, root, nil); {
-	case err != nil:
-		return err
-	default:
-		sourceReaders = i
+	var st *digest.Database
+	if di.Database() != nil {
+		st = di.Database()
+	} else {
+		return errors.New("Digester Database is nil")
 	}
 
 	if height <= st.LastBlock() {
@@ -198,35 +182,9 @@ func digestFollowup(ctx context.Context, height base.Height) error {
 	}
 
 	for h := lastBlock; h <= height; h++ {
-		var bm base.BlockMap
-
-		switch i, found, err := isaac.BlockItemReadersDecode[base.BlockMap](sourceReaders.Item, h, base.BlockItemMap, nil); {
-		case err != nil:
-			return err
-		case !found:
-			continue
-		default:
-			if err := i.IsValid(design.NetworkID); err != nil {
-				return err
-			}
-
-			bm = i
-		}
-
-		pr, ops, sts, opsTree, _, _, err := isaacblock.LoadBlockItemsFromReader(bm, sourceReaders.Item, h)
-		if err != nil {
+		if err := di.DigestBlockMap(ctx, h); err != nil {
 			return err
 		}
-
-		if err := digest.DigestBlock(ctx, st, bm, ops, opsTree, sts, pr, vs.String()); err != nil {
-
-			return err
-		}
-
-		if err := st.SetLastBlock(h); err != nil {
-			return err
-		}
-
 	}
 	return nil
 }

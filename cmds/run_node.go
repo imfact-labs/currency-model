@@ -278,7 +278,7 @@ func (cmd *RunCommand) pWhenNewBlockConfirmed(pctx context.Context) (context.Con
 	if !design.Equal(digest.YamlDigestDesign{}) && design.Digest {
 		f = func(height base.Height) {
 			l := log.Log().With().Interface("height", height).Logger()
-			err := digestFollowup(pctx, height)
+			err := DigestFollowup(pctx, height)
 			if err != nil {
 				cmd.exitf(err)
 
