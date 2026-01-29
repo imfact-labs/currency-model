@@ -74,6 +74,10 @@ func NewBlockSession(
 	}, nil
 }
 
+func (bs *BlockSession) BlockMap() base.BlockMap {
+	return bs.block
+}
+
 func (bs *BlockSession) Database() *Database {
 	return bs.st
 }
