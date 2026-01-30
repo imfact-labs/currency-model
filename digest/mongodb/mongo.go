@@ -2,8 +2,9 @@ package mongodbstorage
 
 import (
 	"context"
-	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 	"time"
+
+	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 
 	"github.com/ProtoconNet/mitum-currency/v3/digest/util"
 	"github.com/pkg/errors"
@@ -115,11 +116,13 @@ func (cl *Client) Find(
 	callback getRecordsCallback,
 	opts ...*options.FindOptions,
 ) error {
-	if ctx == context.TODO() {
-		var cancel func()
-		ctx, cancel = context.WithTimeout(context.Background(), cl.execTimeout)
-		defer cancel()
+	if ctx == nil {
+		ctx = context.Background()
 	}
+
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(context.Background(), cl.execTimeout)
+	defer cancel()
 
 	var cursor *mongo.Cursor
 	if c, err := cl.db.Collection(col).Find(ctx, query, opts...); err != nil {
@@ -142,17 +145,19 @@ func (cl *Client) Find(
 		return cursor.Next(ctx)
 	}
 
-	var err error
 	for next() {
 		if keep, e := callback(cursor); e != nil {
-			err = e
-			break
+			return e
 		} else if !keep {
 			break
 		}
 	}
 
-	return err
+	if err := cursor.Err(); err != nil {
+		return errors.Errorf("cursor error: %v", err)
+	}
+
+	return nil
 }
 
 func (cl *Client) GetByID(
@@ -207,6 +212,55 @@ func (cl *Client) getByFilter(col string, filter bson.D, opts ...*options.FindOn
 	return res, nil
 }
 
+func (cl *Client) Aggregate(
+	ctx context.Context,
+	col string,
+	pipeline interface{}, // mongo.Pipeline 또는 []bson.D
+	callback getRecordsCallback,
+	opts ...*options.AggregateOptions,
+) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(context.Background(), cl.execTimeout)
+	defer cancel()
+
+	var cursor *mongo.Cursor
+	c, err := cl.db.Collection(col).Aggregate(ctx, pipeline, opts...)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		closeCtx, cancel := context.WithTimeout(context.Background(), cl.execTimeout)
+		defer cancel()
+		_ = c.Close(closeCtx)
+	}()
+	cursor = c
+
+	next := func() bool {
+		nextCtx, cancel := context.WithTimeout(context.Background(), cl.execTimeout)
+		defer cancel()
+		return cursor.Next(nextCtx)
+	}
+
+	for next() {
+		if keep, e := callback(cursor); e != nil {
+			return e
+		} else if !keep {
+			break
+		}
+	}
+
+	if err := cursor.Err(); err != nil {
+		return errors.Errorf("cursor error: %v", err)
+	}
+
+	return nil
+}
+
 func (cl *Client) Add(col string, doc Doc) (interface{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), cl.execTimeout)
 	defer cancel()
@@ -228,14 +282,19 @@ func (cl *Client) Set(col string, doc Doc) (interface{}, error) {
 		return cl.Add(col, doc)
 	}
 
-	// NOTE remove existing one
-	models := []mongo.WriteModel{
-		mongo.NewDeleteOneModel().SetFilter(util.NewBSONFilter("_id", doc.ID()).D()),
-		mongo.NewInsertOneModel().SetDocument(doc),
+	ctx, cancel := context.WithTimeout(context.Background(), cl.execTimeout)
+	defer cancel()
+
+	opts := options.Replace().SetUpsert(true) // 없으면 넣고, 있으면 통째로 교체
+	filter := util.NewBSONFilter("_id", doc.ID()).D()
+
+	res, err := cl.db.Collection(col).ReplaceOne(ctx, filter, doc, opts)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := cl.Bulk(context.Background(), col, models, true); err != nil {
-		return nil, err
+	if res.UpsertedCount > 0 && res.UpsertedID != nil {
+		return res.UpsertedID, nil
 	}
 
 	return doc.ID(), nil
@@ -286,8 +345,17 @@ func (cl *Client) Exists(col string, filter bson.D) (bool, error) {
 }
 
 func (cl *Client) WithSession(
+	ctx context.Context,
 	callback func(mongo.SessionContext, func(string /* collection */) *mongo.Collection) (interface{}, error),
 ) (interface{}, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, cl.execTimeout)
+	defer cancel()
+
 	opts := options.Session().
 		SetCausalConsistency(true).
 		SetDefaultReadConcern(readconcern.Majority()).
@@ -296,14 +364,19 @@ func (cl *Client) WithSession(
 	if err != nil {
 		return nil, err
 	}
-	defer sess.EndSession(context.TODO())
+
+	defer func() {
+		closeCtx, cancel := context.WithTimeout(context.Background(), cl.execTimeout)
+		defer cancel()
+		sess.EndSession(closeCtx)
+	}()
 
 	txnOpts := options.Transaction().
 		SetReadConcern(readconcern.Snapshot()).
 		SetWriteConcern(writeconcern.New(writeconcern.WMajority())).
 		SetReadPreference(readpref.Primary())
 	result, err := sess.WithTransaction(
-		context.TODO(),
+		ctx,
 		func(sessCtx mongo.SessionContext) (interface{}, error) {
 			return callback(sessCtx, cl.Collection)
 		},

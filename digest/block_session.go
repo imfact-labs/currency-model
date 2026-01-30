@@ -128,27 +128,29 @@ func (bs *BlockSession) Commit(ctx context.Context) error {
 		_ = bs.close()
 	}()
 
-	_, err := bs.st.digestDB.Client().WithSession(func(txnCtx mongo.SessionContext, collection func(string) *mongo.Collection) (interface{}, error) {
-		if err := bs.writeModels(txnCtx, DefaultColNameBlock, bs.blockModels); err != nil {
-			return nil, err
-		}
-
-		if len(bs.operationModels) > 0 {
-			if err := bs.writeModels(txnCtx, DefaultColNameOperation, bs.operationModels); err != nil {
+	_, err := bs.st.digestDB.Client().WithSession(
+		ctx,
+		func(txnCtx mongo.SessionContext, collection func(string) *mongo.Collection) (interface{}, error) {
+			if err := bs.writeModels(txnCtx, DefaultColNameBlock, bs.blockModels); err != nil {
 				return nil, err
 			}
-		}
 
-		for k, v := range bs.WriteModels {
-			if len(v) > 0 {
-				if err := bs.writeModels(txnCtx, k, v); err != nil {
+			if len(bs.operationModels) > 0 {
+				if err := bs.writeModels(txnCtx, DefaultColNameOperation, bs.operationModels); err != nil {
 					return nil, err
 				}
 			}
-		}
 
-		return nil, nil
-	})
+			for k, v := range bs.WriteModels {
+				if len(v) > 0 {
+					if err := bs.writeModels(txnCtx, k, v); err != nil {
+						return nil, err
+					}
+				}
+			}
+
+			return nil, nil
+		})
 
 	return err
 }

@@ -80,7 +80,7 @@ func writeBulkModels(
 			result.UpsertedCount += res.UpsertedCount
 
 			for i := range res.UpsertedIDs {
-				result.UpsertedIDs[i] = res.UpsertedIDs[i]
+				result.UpsertedIDs[int64(s)+i] = res.UpsertedIDs[i]
 			}
 		}
 
