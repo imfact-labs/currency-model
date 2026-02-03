@@ -21,10 +21,9 @@ import (
 	"github.com/ProtoconNet/mitum2/util/logging"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 var maxLimit int64 = 50
@@ -635,7 +634,7 @@ func (db *Database) balance(a base.Address) ([]types.Amount, base.Height, error)
 	for {
 		filter := dutil.NewBSONFilter("address", a.String())
 
-		var q primitive.D
+		var q bson.D
 		if len(cids) < 1 {
 			q = filter.D()
 		} else {
@@ -733,7 +732,7 @@ func (db *Database) currencies() ([]string, error) {
 	for {
 		filter := dutil.EmptyBSONFilter()
 
-		var q primitive.D
+		var q bson.D
 		if len(cids) < 1 {
 			q = filter.D()
 		} else {
@@ -885,20 +884,17 @@ func (db *Database) currency(cid string) (types.CurrencyDesign, base.State, erro
 
 func (db *Database) topHeightByPublickey(pub base.Publickey) (base.Height, error) {
 	var sas []string
-	switch r, err := db.digestDB.Client().Collection(DefaultColNameAccount).Distinct(
+	res := db.digestDB.Client().Collection(DefaultColNameAccount).Distinct(
 		context.Background(),
 		"address",
 		buildAccountsFilterByPublickey(pub),
-	); {
-	case err != nil:
+	)
+	if err := res.Err(); err != nil {
 		return base.NilHeight, err
-	case len(r) < 1:
+	}
+
+	if err := res.Decode(&sas); err != nil {
 		return base.NilHeight, err
-	default:
-		sas = make([]string, len(r))
-		for i := range r {
-			sas[i] = r[i].(string)
-		}
 	}
 
 	var top base.Height
@@ -946,18 +942,15 @@ func (db *Database) partialTopHeightByPublickey(as []string) (base.Height, error
 }
 
 func (db *Database) addressesByPublickey(filter bson.M) ([]string, error) {
-	r, err := db.digestDB.Client().Collection(DefaultColNameAccount).Distinct(context.Background(), "address", filter)
-	if err != nil {
-		return nil, errors.Wrap(err, "get distinct addresses")
+	var sas []string
+	r := db.digestDB.Client().Collection(DefaultColNameAccount).Distinct(context.Background(), "address", filter)
+
+	if err := r.Err(); err != nil {
+		return nil, err
 	}
 
-	if len(r) < 1 {
-		return nil, nil
-	}
-
-	sas := make([]string, len(r))
-	for i := range r {
-		sas[i] = r[i].(string)
+	if err := r.Decode(&sas); err != nil {
+		return nil, err
 	}
 
 	sort.Strings(sas)
@@ -1206,10 +1199,10 @@ func loadHeightDoc(decoder func(interface{}) error) (base.Height, error) {
 }
 
 type briefAccountDoc struct {
-	ID      primitive.ObjectID `bson:"_id"`
-	Address string             `bson:"address"`
-	Pubs    []string           `bson:"pubs"`
-	Height  base.Height        `bson:"height"`
+	ID      bson.ObjectID `bson:"_id"`
+	Address string        `bson:"address"`
+	Pubs    []string      `bson:"pubs"`
+	Height  base.Height   `bson:"height"`
 }
 
 func (doc briefAccountDoc) pubExists(k base.Publickey) bool {

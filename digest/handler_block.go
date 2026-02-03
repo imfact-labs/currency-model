@@ -1,10 +1,11 @@
 package digest
 
 import (
+	"net/http"
+
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/gorilla/mux"
-	"net/http"
 )
 
 var halBlockTemplate = map[string]HalLink{

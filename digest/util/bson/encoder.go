@@ -9,7 +9,7 @@ import (
 	"github.com/ProtoconNet/mitum2/util/encoder"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 var BSONEncoderHint = hint.MustNewHint("bson-encoder-v2.0.0")

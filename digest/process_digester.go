@@ -1,9 +1,8 @@
-package cmds
+package digest
 
 import (
 	"context"
 
-	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/isaac"
 	isaacdatabase "github.com/ProtoconNet/mitum2/isaac/database"
@@ -22,22 +21,22 @@ const (
 func ProcessDigester(ctx context.Context) (context.Context, error) {
 	var vs util.Version
 	var log *logging.Logging
-	var digestDesign digest.YamlDigestDesign
+	var digestDesign YamlDigestDesign
 
 	if err := util.LoadFromContextOK(ctx,
 		launch.VersionContextKey, &vs,
 		launch.LoggingContextKey, &log,
-		digest.ContextValueDigestDesign, &digestDesign,
+		ContextValueDigestDesign, &digestDesign,
 	); err != nil {
 		return ctx, err
 	}
 
-	if digestDesign.Equal(digest.YamlDigestDesign{}) || !digestDesign.Digest {
+	if digestDesign.Equal(YamlDigestDesign{}) || !digestDesign.Digest {
 		return ctx, nil
 	}
-	var st *digest.Database
+	var st *Database
 	if err := util.LoadFromContextOK(ctx,
-		digest.ContextValueDigestDatabase, &st,
+		ContextValueDigestDatabase, &st,
 	); err != nil {
 		return ctx, err
 	}
@@ -73,25 +72,25 @@ func ProcessDigester(ctx context.Context) (context.Context, error) {
 		sourceReaders = i
 	}
 
-	di := digest.NewDigester(st, root, sourceReaders, fromRemotes, design.NetworkID, vs.String(), nil)
+	di := NewDigester(st, root, sourceReaders, fromRemotes, design.NetworkID, vs.String(), nil)
 	_ = di.SetLogging(log)
-	di.PrepareFunc = []digest.BlockSessionPrepareFunc{digest.PrepareCurrencies, digest.PrepareAccounts, digest.PrepareDIDRegistry}
+	di.PrepareFunc = []BlockSessionPrepareFunc{PrepareCurrencies, PrepareAccounts, PrepareDIDRegistry}
 
-	return context.WithValue(ctx, digest.ContextValueDigester, di), nil
+	return context.WithValue(ctx, ContextValueDigester, di), nil
 }
 
 func ProcessStartDigester(ctx context.Context) (context.Context, error) {
-	var di *digest.Digester
-	var digestDesign digest.YamlDigestDesign
+	var di *Digester
+	var digestDesign YamlDigestDesign
 
 	if err := util.LoadFromContext(ctx,
-		digest.ContextValueDigester, &di,
-		digest.ContextValueDigestDesign, &digestDesign,
+		ContextValueDigester, &di,
+		ContextValueDigestDesign, &digestDesign,
 	); err != nil {
 		return ctx, err
 	}
 
-	if digestDesign.Equal(digest.YamlDigestDesign{}) || !digestDesign.Digest || di == nil {
+	if digestDesign.Equal(YamlDigestDesign{}) || !digestDesign.Digest || di == nil {
 		return ctx, nil
 	}
 
@@ -107,20 +106,20 @@ func PdigesterFollowUp(ctx context.Context) (context.Context, error) {
 	log.Log().Debug().Msg("digester trying to follow up")
 
 	var mst *isaacdatabase.Center
-	var digestDesign digest.YamlDigestDesign
+	var digestDesign YamlDigestDesign
 	if err := util.LoadFromContextOK(ctx,
 		launch.CenterDatabaseContextKey, &mst,
-		digest.ContextValueDigestDesign, &digestDesign,
+		ContextValueDigestDesign, &digestDesign,
 	); err != nil {
 		return ctx, err
 	}
 
-	if digestDesign.Equal(digest.YamlDigestDesign{}) || !digestDesign.Digest {
+	if digestDesign.Equal(YamlDigestDesign{}) || !digestDesign.Digest {
 		return ctx, nil
 	}
 
-	var st *digest.Database
-	if err := util.LoadFromContext(ctx, digest.ContextValueDigestDatabase, &st); err != nil {
+	var st *Database
+	if err := util.LoadFromContext(ctx, ContextValueDigestDatabase, &st); err != nil {
 		return ctx, err
 	}
 
@@ -158,14 +157,14 @@ func DigestFollowup(ctx context.Context, height base.Height) error {
 		return err
 	}
 
-	var di *digest.Digester
+	var di *Digester
 	if err := util.LoadFromContext(ctx,
-		digest.ContextValueDigester, &di,
+		ContextValueDigester, &di,
 	); err != nil {
 		return err
 	}
 
-	var st *digest.Database
+	var st *Database
 	if di.Database() != nil {
 		st = di.Database()
 	} else {

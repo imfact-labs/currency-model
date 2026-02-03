@@ -14,9 +14,9 @@ import (
 	"github.com/bluele/gcache"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 const (
@@ -259,7 +259,7 @@ func (st *Database) CreateIndex(col string, models []mongo.IndexModel, prefix st
 
 	if len(existings) > 0 {
 		for _, name := range existings {
-			if _, err := iv.DropOne(context.TODO(), name); err != nil {
+			if err := iv.DropOne(context.TODO(), name); err != nil {
 				return err
 			}
 		}

@@ -14,7 +14,7 @@ import (
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func (hd *Handlers) handleOperation(w http.ResponseWriter, r *http.Request) {

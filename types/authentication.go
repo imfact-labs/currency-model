@@ -10,7 +10,7 @@ import (
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/multiformats/go-multibase"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 const (

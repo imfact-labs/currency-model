@@ -2,10 +2,11 @@ package common
 
 import (
 	"encoding/json"
-	"golang.org/x/exp/slices"
 	"sort"
 	"strings"
 	"sync"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"

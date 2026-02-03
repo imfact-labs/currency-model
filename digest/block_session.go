@@ -15,8 +15,8 @@ import (
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/fixedtree"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 var bulkWriteLimit = 500
@@ -130,7 +130,7 @@ func (bs *BlockSession) Commit(ctx context.Context) error {
 
 	_, err := bs.st.digestDB.Client().WithSession(
 		ctx,
-		func(txnCtx mongo.SessionContext, collection func(string) *mongo.Collection) (interface{}, error) {
+		func(txnCtx context.Context, collection func(string) *mongo.Collection) (interface{}, error) {
 			if err := bs.writeModels(txnCtx, DefaultColNameBlock, bs.blockModels); err != nil {
 				return nil, err
 			}

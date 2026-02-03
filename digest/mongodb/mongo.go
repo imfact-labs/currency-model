@@ -4,16 +4,16 @@ import (
 	"context"
 	"time"
 
-	"go.mongodb.org/mongo-driver/mongo/writeconcern"
+	"go.mongodb.org/mongo-driver/v2/mongo/writeconcern"
 
 	"github.com/ProtoconNet/mitum-currency/v3/digest/util"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readconcern"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/mongo/readconcern"
+	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
+	"go.mongodb.org/mongo-driver/v2/x/mongo/driver/connstring"
 )
 
 var errorDuplicateKey = 11000
@@ -46,10 +46,7 @@ func NewClient(uri string, connectTimeout, execTimeout time.Duration) (*Client, 
 
 	var client *mongo.Client
 	{
-		ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
-		defer cancel()
-
-		if c, err := mongo.Connect(ctx, clientOpts); err != nil {
+		if c, err := mongo.Connect(clientOpts); err != nil {
 			return nil, errors.Wrap(err, "connect timeout")
 		} else {
 			client = c
@@ -114,7 +111,7 @@ func (cl *Client) Find(
 	col string,
 	query interface{},
 	callback getRecordsCallback,
-	opts ...*options.FindOptions,
+	opts ...options.Lister[options.FindOptions],
 ) error {
 	if ctx == nil {
 		ctx = context.Background()
@@ -164,7 +161,7 @@ func (cl *Client) GetByID(
 	col string,
 	id interface{},
 	callback getRecordCallback,
-	opts ...*options.FindOneOptions,
+	opts ...options.Lister[options.FindOneOptions],
 ) error {
 	res, err := cl.getByFilter(col, util.NewBSONFilter("_id", id).D(), opts...)
 	if err != nil {
@@ -182,7 +179,7 @@ func (cl *Client) GetByFilter(
 	col string,
 	filter bson.D,
 	callback getRecordCallback,
-	opts ...*options.FindOneOptions,
+	opts ...options.Lister[options.FindOneOptions],
 ) error {
 	res, err := cl.getByFilter(col, filter, opts...)
 	if err != nil {
@@ -196,7 +193,7 @@ func (cl *Client) GetByFilter(
 	return callback(res)
 }
 
-func (cl *Client) getByFilter(col string, filter bson.D, opts ...*options.FindOneOptions) (*mongo.SingleResult, error) {
+func (cl *Client) getByFilter(col string, filter bson.D, opts ...options.Lister[options.FindOneOptions]) (*mongo.SingleResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), cl.execTimeout)
 	defer cancel()
 
@@ -217,7 +214,7 @@ func (cl *Client) Aggregate(
 	col string,
 	pipeline interface{}, // mongo.Pipeline 또는 []bson.D
 	callback getRecordsCallback,
-	opts ...*options.AggregateOptions,
+	opts ...options.Lister[options.AggregateOptions],
 ) error {
 	if ctx == nil {
 		ctx = context.Background()
@@ -325,13 +322,13 @@ func (cl *Client) Bulk(ctx context.Context, col string, models []mongo.WriteMode
 	}
 }
 
-func (cl *Client) Count(ctx context.Context, col string, filter interface{}, opts ...*options.CountOptions) (int64, error) {
+func (cl *Client) Count(ctx context.Context, col string, filter interface{}, opts ...options.Lister[options.CountOptions]) (int64, error) {
 	count, err := cl.db.Collection(col).CountDocuments(ctx, filter, opts...)
 
 	return count, err
 }
 
-func (cl *Client) Delete(col string, filter bson.D, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
+func (cl *Client) Delete(col string, filter bson.D, opts ...options.Lister[options.DeleteManyOptions]) (*mongo.DeleteResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), cl.execTimeout)
 	defer cancel()
 
@@ -346,7 +343,7 @@ func (cl *Client) Exists(col string, filter bson.D) (bool, error) {
 
 func (cl *Client) WithSession(
 	ctx context.Context,
-	callback func(mongo.SessionContext, func(string /* collection */) *mongo.Collection) (interface{}, error),
+	callback func(context.Context, func(string /* collection */) *mongo.Collection) (interface{}, error),
 ) (interface{}, error) {
 	if ctx == nil {
 		ctx = context.Background()
@@ -356,11 +353,15 @@ func (cl *Client) WithSession(
 	ctx, cancel = context.WithTimeout(ctx, cl.execTimeout)
 	defer cancel()
 
-	opts := options.Session().
+	txnDefaults := options.Transaction().
+		SetReadConcern(readconcern.Snapshot()).
+		SetWriteConcern(writeconcern.Majority()).
+		SetReadPreference(readpref.Primary())
+
+	sessOpts := options.Session().
 		SetCausalConsistency(true).
-		SetDefaultReadConcern(readconcern.Majority()).
-		SetDefaultWriteConcern(writeconcern.New(writeconcern.WMajority()))
-	sess, err := cl.client.StartSession(opts)
+		SetDefaultTransactionOptions(txnDefaults)
+	sess, err := cl.client.StartSession(sessOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -371,16 +372,12 @@ func (cl *Client) WithSession(
 		sess.EndSession(closeCtx)
 	}()
 
-	txnOpts := options.Transaction().
-		SetReadConcern(readconcern.Snapshot()).
-		SetWriteConcern(writeconcern.New(writeconcern.WMajority())).
-		SetReadPreference(readpref.Primary())
 	result, err := sess.WithTransaction(
 		ctx,
-		func(sessCtx mongo.SessionContext) (interface{}, error) {
-			return callback(sessCtx, cl.Collection)
+		func(txnCtx context.Context) (interface{}, error) {
+			return callback(txnCtx, cl.Collection)
 		},
-		txnOpts,
+		txnDefaults,
 	)
 	if err != nil {
 		return nil, err

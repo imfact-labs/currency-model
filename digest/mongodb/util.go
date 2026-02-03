@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/x/mongo/driver/connstring"
 )
 
 var defaultLimitWriteModels = 200
@@ -45,7 +45,7 @@ func writeBulkModels(
 	col string,
 	models []mongo.WriteModel,
 	limit int,
-	opts *options.BulkWriteOptions,
+	opts options.Lister[options.BulkWriteOptions],
 ) (*mongo.BulkWriteResult, error) {
 	if limit < 1 {
 		limit = defaultLimitWriteModels

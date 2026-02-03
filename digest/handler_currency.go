@@ -2,12 +2,13 @@ package digest
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
+
 	"github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"net/http"
-	"strings"
 )
 
 func (hd *Handlers) handleCurrencies(w http.ResponseWriter, r *http.Request) {

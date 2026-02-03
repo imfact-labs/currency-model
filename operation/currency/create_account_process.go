@@ -3,6 +3,8 @@ package currency
 import (
 	"context"
 	"fmt"
+	"sync"
+
 	"github.com/ProtoconNet/mitum-currency/v3/common"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/extras"
 	"github.com/ProtoconNet/mitum-currency/v3/state"
@@ -11,7 +13,6 @@ import (
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/pkg/errors"
-	"sync"
 )
 
 var createAccountItemProcessorPool = sync.Pool{
@@ -129,6 +130,7 @@ func (opp *CreateAccountItemProcessor) Close() {
 
 type CreateAccountProcessor struct {
 	*base.BaseOperationProcessor
+	states   map[string]base.State
 	ns       []*CreateAccountItemProcessor
 	required map[types.CurrencyID][2]common.Big // required[0] : amount + fee, required[1] : fee
 }
@@ -156,6 +158,7 @@ func NewCreateAccountProcessor() types.GetNewProcessor {
 
 		opp.BaseOperationProcessor = b
 		opp.ns = nil
+		opp.states = make(map[string]base.State)
 		opp.required = nil
 
 		return opp, nil

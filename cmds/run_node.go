@@ -73,8 +73,8 @@ func (cmd *RunCommand) Run(pctx context.Context) error {
 
 	pps := DefaultRunPS()
 
-	_ = pps.AddOK(PNameDigester, ProcessDigester, nil, PNameDigesterDataBase).
-		AddOK(PNameStartDigester, ProcessStartDigester, nil, PNameStartAPI)
+	_ = pps.AddOK(digest.PNameDigester, digest.ProcessDigester, nil, PNameDigesterDataBase).
+		AddOK(digest.PNameStartDigester, digest.ProcessStartDigester, nil, PNameStartAPI)
 	_ = pps.POK(launch.PNameStorage).PostAddOK(ps.Name("check-hold"), cmd.pCheckHold)
 	_ = pps.POK(launch.PNameStates).
 		PreAddOK(ps.Name("when-new-block-saved-in-consensus-state-func"), cmd.pWhenNewBlockSavedInConsensusStateFunc).
@@ -84,8 +84,8 @@ func (cmd *RunCommand) Run(pctx context.Context) error {
 		PostAddOK(launch.PNameAddHinters, PAddHinters)
 	_ = pps.POK(PNameAPI).
 		PostAddOK(PNameDigestAPIHandlers, cmd.pDigestAPIHandlers)
-	_ = pps.POK(PNameDigester).
-		PostAddOK(PNameDigesterFollowUp, PdigesterFollowUp)
+	_ = pps.POK(digest.PNameDigester).
+		PostAddOK(PNameDigesterFollowUp, digest.PdigesterFollowUp)
 
 	_ = pps.SetLogging(log)
 
@@ -278,7 +278,7 @@ func (cmd *RunCommand) pWhenNewBlockConfirmed(pctx context.Context) (context.Con
 	if !design.Equal(digest.YamlDigestDesign{}) && design.Digest {
 		f = func(height base.Height) {
 			l := log.Log().With().Interface("height", height).Logger()
-			err := DigestFollowup(pctx, height)
+			err := digest.DigestFollowup(pctx, height)
 			if err != nil {
 				cmd.exitf(err)
 

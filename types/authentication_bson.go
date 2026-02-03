@@ -5,22 +5,25 @@ import (
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-func (v VerificationMethodOrRef) MarshalBSONValue() (bsontype.Type, []byte, error) {
+func (v VerificationMethodOrRef) MarshalBSONValue() (byte, []byte, error) {
 	switch v.kind {
 	case VMRefKindReference:
 		if v.ref == nil {
 			return 0, nil, errors.New("reference not set")
 		}
-		return bson.MarshalValue(v.ref.String())
+
+		t, b, err := bson.MarshalValue(v.ref.String())
+		return byte(t), b, err
 	case VMRefKindEmbedded:
 		if v.method == nil {
 			return 0, nil, errors.New("method not set")
 		}
-		return bson.MarshalValue(v.method)
+		t, b, err := bson.MarshalValue(v.method)
+
+		return byte(t), b, err
 	default:
 		return 0, nil, errors.Errorf("unknown kind: %v", v.kind)
 	}
@@ -34,7 +37,7 @@ type VerificationMethodOrRefBSONUnmarshaler struct {
 	POLICY AttestationPolicy `bson:"policy"`
 }
 
-func (v *VerificationMethodOrRef) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
+func (v *VerificationMethodOrRef) UnmarshalBSONValue(t bson.Type, data []byte) error {
 	switch t {
 	case bson.TypeString:
 		var s string

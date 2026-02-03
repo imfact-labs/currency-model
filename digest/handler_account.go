@@ -11,7 +11,7 @@ import (
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 func (hd *Handlers) handleAccount(w http.ResponseWriter, r *http.Request) {

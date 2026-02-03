@@ -1,21 +1,21 @@
-package cmds
+package digest
 
 import (
 	"context"
 	"crypto/tls"
 
-	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	isaacnetwork "github.com/ProtoconNet/mitum2/isaac/network"
 	"github.com/ProtoconNet/mitum2/launch"
 	"github.com/ProtoconNet/mitum2/network/quicmemberlist"
 	"github.com/ProtoconNet/mitum2/network/quicstream"
 	"github.com/ProtoconNet/mitum2/util"
+	"github.com/ProtoconNet/mitum2/util/encoder"
 	"github.com/ProtoconNet/mitum2/util/logging"
 )
 
 func ProcessStartAPI(ctx context.Context) (context.Context, error) {
-	var nt *digest.HTTP2Server
-	if err := util.LoadFromContext(ctx, digest.ContextValueDigestNetwork, &nt); err != nil {
+	var nt *HTTP2Server
+	if err := util.LoadFromContext(ctx, ContextValueDigestNetwork, &nt); err != nil {
 		return ctx, err
 	}
 	if nt == nil {
@@ -27,18 +27,20 @@ func ProcessStartAPI(ctx context.Context) (context.Context, error) {
 
 func ProcessAPI(ctx context.Context) (context.Context, error) {
 	var nodeDesign launch.NodeDesign
-	var design digest.YamlDigestDesign
+	var design YamlDigestDesign
 	var log *logging.Logging
+	var encs *encoder.Encoders
 
 	if err := util.LoadFromContext(ctx,
+		launch.EncodersContextKey, &encs,
 		launch.DesignContextKey, &nodeDesign,
-		digest.ContextValueDigestDesign, &design,
+		ContextValueDigestDesign, &design,
 		launch.LoggingContextKey, &log,
 	); err != nil {
 		return ctx, err
 	}
 
-	if design.Equal(digest.YamlDigestDesign{}) {
+	if design.Equal(YamlDigestDesign{}) {
 		log.Log().Debug().Msg("digest api disabled; empty network")
 
 		return ctx, nil
@@ -80,18 +82,18 @@ func ProcessAPI(ctx context.Context) (context.Context, error) {
 	}
 
 	client := isaacnetwork.NewBaseClient( //nolint:gomnd //...
-		encs, enc,
+		encs, encs.JSON(),
 		connectionPool.Dial,
 		connectionPool.CloseAll,
 	)
 
-	var nt *digest.HTTP2Server
+	var nt *HTTP2Server
 	var certs []tls.Certificate
 	if design.Network().Bind().Scheme == "https" {
 		certs = design.Network().Certs()
 	}
 
-	if sv, err := digest.NewHTTP2Server(
+	if sv, err := NewHTTP2Server(
 		design.Network().Bind().Host,
 		design.Network().ConnInfo().URL().Host,
 		certs,
@@ -111,5 +113,5 @@ func ProcessAPI(ctx context.Context) (context.Context, error) {
 		},
 	)
 
-	return context.WithValue(ctx, digest.ContextValueDigestNetwork, nt), nil
+	return context.WithValue(ctx, ContextValueDigestNetwork, nt), nil
 }

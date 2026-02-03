@@ -2,7 +2,7 @@ package currency // nolint: dupl
 
 import (
 	"github.com/ProtoconNet/mitum-currency/v3/common"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/v2/bson"
 
 	bsonenc "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
 	"github.com/ProtoconNet/mitum2/util/hint"

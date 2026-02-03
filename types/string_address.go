@@ -6,9 +6,7 @@ import (
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
-	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 var StringAddressHint = hint.MustNewHint("sas-v2")
@@ -54,8 +52,13 @@ func (ad *StringAddress) UnmarshalText(b []byte) error {
 	return nil
 }
 
-func (ad StringAddress) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	return bson.TypeString, bsoncore.AppendString(nil, ad.s), nil
+func (ad StringAddress) MarshalBSONValue() (byte, []byte, error) {
+	typ, data, err := bson.MarshalValue(ad.s)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return byte(typ), data, nil
 }
 
 func (ad *StringAddress) DecodeBSON(b []byte, _ *bsonenc.Encoder) error {

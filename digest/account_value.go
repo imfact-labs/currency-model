@@ -1,11 +1,12 @@
 package digest
 
 import (
+	"reflect"
+
 	"github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/pkg/errors"
-	"reflect"
 )
 
 var (

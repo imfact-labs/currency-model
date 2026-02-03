@@ -1,6 +1,7 @@
 package cmds
 
 import (
+	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum2/launch"
 	"github.com/ProtoconNet/mitum2/util/ps"
 )
@@ -39,9 +40,9 @@ func DefaultRunPS() *ps.PS {
 			launch.PNameStartMemberlist,
 			launch.PNameStartNetwork,
 			launch.PNameStates).
-		AddOK(PNameDigesterDataBase, ProcessDigesterDatabase, nil, PNameDigestDesign, launch.PNameStorage).
-		AddOK(PNameAPI, ProcessAPI, nil, PNameDigestDesign, PNameDigesterDataBase, launch.PNameMemberlist).
-		AddOK(PNameStartAPI, ProcessStartAPI, nil, PNameAPI)
+		AddOK(PNameDigesterDataBase, digest.ProcessDigesterDatabase, nil, PNameDigestDesign, launch.PNameStorage).
+		AddOK(PNameAPI, digest.ProcessAPI, nil, PNameDigestDesign, PNameDigesterDataBase, launch.PNameMemberlist).
+		AddOK(PNameStartAPI, digest.ProcessStartAPI, nil, PNameAPI)
 
 	_ = pps.POK(launch.PNameDesign).
 		PostAddOK(launch.PNameCheckDesign, launch.PCheckDesign).

@@ -1,8 +1,7 @@
-package cmds
+package digest
 
 import (
 	"context"
-	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	mongodbst "github.com/ProtoconNet/mitum-currency/v3/digest/mongodb"
 	"github.com/ProtoconNet/mitum2/isaac"
 	isaacdatabase "github.com/ProtoconNet/mitum2/isaac/database"
@@ -14,12 +13,12 @@ import (
 )
 
 func ProcessDigesterDatabase(ctx context.Context) (context.Context, error) {
-	var design digest.YamlDigestDesign
-	if err := util.LoadFromContext(ctx, digest.ContextValueDigestDesign, &design); err != nil {
+	var design YamlDigestDesign
+	if err := util.LoadFromContext(ctx, ContextValueDigestDesign, &design); err != nil {
 		return ctx, err
 	}
 
-	if design.Equal(digest.YamlDigestDesign{}) || !design.Digest {
+	if design.Equal(YamlDigestDesign{}) || !design.Digest {
 		return ctx, nil
 	}
 
@@ -33,7 +32,7 @@ func ProcessDigesterDatabase(ctx context.Context) (context.Context, error) {
 	}
 }
 
-func processMongodbDatabase(ctx context.Context, design digest.YamlDigestDesign) (context.Context, error) {
+func processMongodbDatabase(ctx context.Context, design YamlDigestDesign) (context.Context, error) {
 	conf := design.Database()
 
 	/*
@@ -78,26 +77,26 @@ func processMongodbDatabase(ctx context.Context, design digest.YamlDigestDesign)
 
 	_ = dst.SetLogging(log)
 
-	return context.WithValue(ctx, digest.ContextValueDigestDatabase, dst), nil
+	return context.WithValue(ctx, ContextValueDigestDatabase, dst), nil
 }
 
-func loadDigestDatabase(mst *isaacdatabase.Center, st *mongodbst.Database, readonly bool) (*digest.Database, error) {
-	var dst *digest.Database
+func loadDigestDatabase(mst *isaacdatabase.Center, st *mongodbst.Database, readonly bool) (*Database, error) {
+	var dst *Database
 	if readonly {
-		s, err := digest.NewReadonlyDatabase(mst, st)
+		s, err := NewReadonlyDatabase(mst, st)
 		if err != nil {
 			return nil, err
 		}
 		dst = s
 	} else {
-		s, err := digest.NewDatabase(mst, st)
+		s, err := NewDatabase(mst, st)
 		if err != nil {
 			return nil, err
 		}
 		dst = s
 	}
 
-	if err := dst.Initialize(digest.DefaultIndexes); err != nil {
+	if err := dst.Initialize(DefaultIndexes); err != nil {
 		return nil, err
 	}
 
