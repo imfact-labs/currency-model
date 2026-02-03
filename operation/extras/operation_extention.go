@@ -190,10 +190,6 @@ func (ba BaseAuthentication) Verify(op base.Operation, getStateFunc base.GetStat
 
 		var allowed []types.AllowedOperation
 		switch t := op.Fact().(type) {
-		case ContractOwnerOnly:
-			for _, contract := range t.ContractOwnerOnly() {
-				allowed = append(allowed, *types.NewAllowedOperation(contract[0], op.Hint()))
-			}
 		case ActiveContract:
 			for _, contract := range t.ActiveContract() {
 				allowed = append(allowed, *types.NewAllowedOperation(contract, op.Hint()))
