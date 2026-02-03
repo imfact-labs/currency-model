@@ -2,16 +2,21 @@ package types // nolint: dupl, revive
 
 import (
 	"bytes"
-	"github.com/ProtoconNet/mitum-currency/v3/common"
-	"github.com/pkg/errors"
 	"regexp"
 	"sort"
+
+	"github.com/ProtoconNet/mitum-currency/v3/common"
+	"github.com/pkg/errors"
 
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/ProtoconNet/mitum2/util/valuehash"
 )
+
+type AccountStatus interface {
+	util.IsValider
+}
 
 var ContractAccountStatusHint = hint.MustNewHint("mitum-currency-contract-account-status-v0.0.1")
 
@@ -40,11 +45,12 @@ func (bs BalanceStatus) Bytes() []byte {
 
 type ContractAccountStatus struct {
 	hint.BaseHinter
-	owner         base.Address
-	isActive      bool
-	balanceStatus BalanceStatus
-	handlers      []base.Address
-	recipients    []base.Address
+	owner             base.Address
+	isActive          bool
+	balanceStatus     BalanceStatus
+	registerOperation *hint.Hint
+	handlers          []base.Address
+	recipients        []base.Address
 }
 
 func NewContractAccountStatus(owner base.Address, handlers []base.Address) ContractAccountStatus {
@@ -77,10 +83,16 @@ func (cs ContractAccountStatus) Bytes() []byte {
 		recipients[i] = cs.recipients[i].Bytes()
 	}
 
+	var h []byte
+	if cs.registerOperation != nil {
+		h = cs.registerOperation.Bytes()
+	}
+
 	return util.ConcatBytesSlice(
 		cs.owner.Bytes(),
 		[]byte{byte(isActive)},
 		cs.balanceStatus.Bytes(),
+		h,
 		util.ConcatBytesSlice(handlers...),
 		util.ConcatBytesSlice(recipients...),
 	)
@@ -130,6 +142,14 @@ func (cs *ContractAccountStatus) SetOwner(a base.Address) error { // nolint:revi
 	cs.owner = a
 
 	return nil
+}
+
+func (cs ContractAccountStatus) RegisterOperation() *hint.Hint {
+	return cs.registerOperation
+}
+
+func (cs *ContractAccountStatus) SetRegisterOperation(h *hint.Hint) {
+	cs.registerOperation = h
 }
 
 func (cs ContractAccountStatus) Handlers() []base.Address { // nolint:revive
@@ -196,18 +216,16 @@ func (cs ContractAccountStatus) IsActive() bool { // nolint:revive
 	return cs.isActive
 }
 
-func (cs ContractAccountStatus) SetActive(b bool) ContractAccountStatus { // nolint:revive
+func (cs *ContractAccountStatus) SetActive(b bool) { // nolint:revive
 	cs.isActive = b
-	return cs
 }
 
 func (cs ContractAccountStatus) BalanceStatus() BalanceStatus { // nolint:revive
 	return cs.balanceStatus
 }
 
-func (cs ContractAccountStatus) SetBalanceStatus(b BalanceStatus) ContractAccountStatus { // nolint:revive
+func (cs *ContractAccountStatus) SetBalanceStatus(b BalanceStatus) { // nolint:revive
 	cs.balanceStatus = b
-	return cs
 }
 
 func (cs ContractAccountStatus) Equal(b ContractAccountStatus) bool {

@@ -13,9 +13,11 @@ func (cs *ContractAccountStatus) unpack(
 	ow string,
 	ia bool,
 	bs uint8,
+	rht *hint.Hint,
 	hds, rcps []string,
 ) error {
 	cs.BaseHinter = hint.NewBaseHinter(ht)
+	cs.registerOperation = rht
 
 	switch a, err := base.DecodeAddress(ow, enc); {
 	case err != nil:
