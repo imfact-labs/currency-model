@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (hd *Handlers) handleManifestByHeight(w http.ResponseWriter, r *http.Request) {
+func HandleManifestByHeight(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	if err := LoadFromCache(hd.cache, CacheKeyPath(r), w); err == nil {
 		return
@@ -31,7 +31,7 @@ func (hd *Handlers) handleManifestByHeight(w http.ResponseWriter, r *http.Reques
 		height = h
 	}
 
-	v, err := hd.handleManifestByHeightInGroup(height)
+	v, err := handleManifestByHeightInGroup(hd, height)
 	if err != nil {
 		HTTP2HandleError(w, err)
 	} else {
@@ -39,15 +39,14 @@ func (hd *Handlers) handleManifestByHeight(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (hd *Handlers) handleManifestByHeightInGroup(
-	height base.Height,
+func handleManifestByHeightInGroup(hd *Handlers, height base.Height,
 ) ([]byte, error) {
 	m, ops, confirmed, proposer, round, err := hd.database.ManifestByHeight(height)
 	if err != nil {
 		return nil, err
 	}
 
-	hal, err := hd.buildManifestHal(m, *ops, confirmed, proposer, round)
+	hal, err := buildManifestHal(hd, m, *ops, confirmed, proposer, round)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +54,7 @@ func (hd *Handlers) handleManifestByHeightInGroup(
 	return b, err
 }
 
-func (hd *Handlers) handleManifestByHash(w http.ResponseWriter, r *http.Request) {
+func HandleManifestByHash(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	if err := LoadFromCache(hd.cache, CacheKeyPath(r), w); err == nil {
 		return
@@ -69,7 +68,7 @@ func (hd *Handlers) handleManifestByHash(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	v, err := hd.handleManifestByHashInGroup(h)
+	v, err := handleManifestByHashInGroup(hd, h)
 	if err != nil {
 		HTTP2HandleError(w, err)
 	} else {
@@ -77,15 +76,14 @@ func (hd *Handlers) handleManifestByHash(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func (hd *Handlers) handleManifestByHashInGroup(
-	hash util.Hash,
+func handleManifestByHashInGroup(hd *Handlers, hash util.Hash,
 ) ([]byte, error) {
 	m, ops, confirmed, proposer, round, err := hd.database.ManifestByHash(hash)
 	if err != nil {
 		return nil, err
 	}
 
-	hal, err := hd.buildManifestHal(m, *ops, confirmed, proposer, round)
+	hal, err := buildManifestHal(hd, m, *ops, confirmed, proposer, round)
 	if err != nil {
 		return nil, err
 	}
@@ -93,11 +91,11 @@ func (hd *Handlers) handleManifestByHashInGroup(
 	return b, err
 }
 
-func (hd *Handlers) buildManifestHal(manifest base.Manifest, ops mongodbstorage.OperationItemInfo, confirmed, proposer string, round uint64) (Hal, error) {
+func buildManifestHal(hd *Handlers, manifest base.Manifest, ops mongodbstorage.OperationItemInfo, confirmed, proposer string, round uint64) (Hal, error) {
 	height := manifest.Height()
 
 	var hal Hal
-	h, err := hd.combineURL(HandlerPathManifestByHeight, "height", height.String())
+	h, err := hd.CombineURL(HandlerPathManifestByHeight, "height", height.String())
 	if err != nil {
 		return nil, err
 	}
@@ -118,19 +116,19 @@ func (hd *Handlers) buildManifestHal(manifest base.Manifest, ops mongodbstorage.
 
 	hal = NewBaseHal(m, NewHalLink(h, nil))
 
-	// h, err = hd.combineURL(HandlerPathManifestByHash, "hash", manifest.Hash().String())
+	// h, err = hd.CombineURL(HandlerPathManifestByHash, "hash", manifest.Hash().String())
 	// if err != nil {
 	// 	return nil, err
 	// }
 	// hal = hal.AddLink("alternate", NewHalLink(h, nil))
 
-	h, err = hd.combineURL(HandlerPathManifestByHeight, "height", (height + 1).String())
+	h, err = hd.CombineURL(HandlerPathManifestByHeight, "height", (height + 1).String())
 	if err != nil {
 		return nil, err
 	}
 	hal = hal.AddLink("next", NewHalLink(h, nil))
 
-	h, err = hd.combineURL(HandlerPathBlockByHeight, "height", height.String())
+	h, err = hd.CombineURL(HandlerPathBlockByHeight, "height", height.String())
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +141,7 @@ func (hd *Handlers) buildManifestHal(manifest base.Manifest, ops mongodbstorage.
 	return hal, nil
 }
 
-func (hd *Handlers) handleManifests(w http.ResponseWriter, r *http.Request) {
+func HandleManifests(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	limit := ParseLimitQuery(r.URL.Query().Get("limit"))
 	offset := ParseStringQuery(r.URL.Query().Get("offset"))
@@ -166,7 +164,7 @@ func (hd *Handlers) handleManifests(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if v, err, shared := hd.rg.Do(cachekey, func() (interface{}, error) {
-		i, filled, err := hd.handleManifestsInGroup(height, offset, reverse, limit)
+		i, filled, err := handleManifestsInGroup(hd, height, offset, reverse, limit)
 
 		return []interface{}{i, filled}, err
 	}); err != nil {
@@ -193,7 +191,8 @@ func (hd *Handlers) handleManifests(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (hd *Handlers) handleManifestsInGroup(
+func handleManifestsInGroup(
+	hd *Handlers,
 	height base.Height,
 	offset string,
 	reverse bool,
@@ -201,7 +200,7 @@ func (hd *Handlers) handleManifestsInGroup(
 ) ([]byte, bool, error) {
 	var limit int64
 	if l < 0 {
-		limit = hd.itemsLimiter("manifests")
+		limit = hd.ItemsLimiter("manifests")
 	} else {
 		limit = l
 	}
@@ -214,7 +213,7 @@ func (hd *Handlers) handleManifestsInGroup(
 				return !reverse, nil
 			}
 
-			hal, err := hd.buildManifestHal(va, *ops, confirmed, proposer, round)
+			hal, err := buildManifestHal(hd, va, *ops, confirmed, proposer, round)
 			if err != nil {
 				return false, err
 			}
@@ -228,7 +227,7 @@ func (hd *Handlers) handleManifestsInGroup(
 		return nil, false, dutil.ErrNotFound.Errorf("manifests not found")
 	}
 
-	i, err := hd.buildManifestsHAL(vas, offset, reverse)
+	i, err := buildManifestsHAL(hd, vas, offset, reverse)
 	if err != nil {
 		return nil, false, err
 	}
@@ -236,8 +235,8 @@ func (hd *Handlers) handleManifestsInGroup(
 	return b, int64(len(vas)) == limit, err
 }
 
-func (hd *Handlers) buildManifestsHAL(vas []Hal, offset string, reverse bool) (Hal, error) {
-	baseSelf, err := hd.combineURL(HandlerPathManifests)
+func buildManifestsHAL(hd *Handlers, vas []Hal, offset string, reverse bool) (Hal, error) {
+	baseSelf, err := hd.CombineURL(HandlerPathManifests)
 	if err != nil {
 		return nil, err
 	}

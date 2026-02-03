@@ -82,6 +82,8 @@ func init() {
 	}
 }
 
+type HandlerFunc func(*Handlers, http.ResponseWriter, *http.Request)
+
 type Handlers struct {
 	*zerolog.Logger
 	networkID        base.NetworkID
@@ -95,7 +97,7 @@ type Handlers struct {
 	client           func() (*quicstream.ConnectionPool, *quicmemberlist.Memberlist, []quicstream.ConnInfo, error)
 	router           *mux.Router
 	routes           map[ /* path */ string]*mux.Route
-	itemsLimiter     func(string /* request type */) int64
+	ItemsLimiter     func(string /* request type */) int64
 	rg               *singleflight.Group
 	expireNotFilled  time.Duration
 	expireShortLived time.Duration
@@ -129,7 +131,7 @@ func NewHandlers(
 		node:             node,
 		router:           router,
 		routes:           map[string]*mux.Route{},
-		itemsLimiter:     DefaultItemsLimiter,
+		ItemsLimiter:     DefaultItemsLimiter,
 		rg:               &singleflight.Group{},
 		expireNotFilled:  ExpireFilled,
 		expireShortLived: ExpireShortLived,
@@ -137,7 +139,7 @@ func NewHandlers(
 	}
 }
 
-func (hd *Handlers) Initialize(digest bool) error {
+func (hd *Handlers) Initialize() error {
 	cors := handlers.CORS(
 		handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"}),
 		handlers.AllowedHeaders([]string{"content-type"}),
@@ -146,19 +148,55 @@ func (hd *Handlers) Initialize(digest bool) error {
 	)
 	hd.router.Use(cors)
 
-	hd.setHandlers(digest)
+	//hd.setHandlers(digest)
 
 	return nil
 }
 
 func (hd *Handlers) SetLimiter(f func(string) int64) *Handlers {
-	hd.itemsLimiter = f
+	hd.ItemsLimiter = f
 
 	return hd
 }
 
+func (hd *Handlers) RG() *singleflight.Group {
+	return hd.rg
+}
+
 func (hd *Handlers) Cache() Cache {
 	return hd.cache
+}
+
+func (hd *Handlers) ExpireNotFilled() time.Duration {
+	return hd.expireNotFilled
+}
+
+func (hd *Handlers) ExpireShortLived() time.Duration {
+	return hd.expireShortLived
+}
+
+func (hd *Handlers) ExpireLongLived() time.Duration {
+	return hd.expireLongLived
+}
+
+func (hd *Handlers) Encoders() *encoder.Encoders {
+	return hd.encs
+}
+
+func (hd *Handlers) SetEncoders(encoders *encoder.Encoders) {
+	hd.encs = encoders
+}
+
+func (hd *Handlers) Encoder() encoder.Encoder {
+	return hd.enc
+}
+
+func (hd *Handlers) SetEncoder(encoder encoder.Encoder) {
+	hd.enc = encoder
+}
+
+func (hd *Handlers) Database() *Database {
+	return hd.database
 }
 
 func (hd *Handlers) Router() *mux.Router {
@@ -173,12 +211,17 @@ func (hd *Handlers) Handler() http.Handler {
 	return network.HTTPLogHandler(hd.router, hd.Logger)
 }
 
-func (hd *Handlers) setHandler(prefix string, h network.HTTPHandlerFunc, useCache bool, rps, burst int) *mux.Route {
+func (hd *Handlers) SetHandler(prefix string, h HandlerFunc, useCache bool, rps, burst int) *mux.Route {
 	var handler http.Handler
+	nHandler := func(w http.ResponseWriter, req *http.Request) {
+		func(w http.ResponseWriter, req *http.Request) {
+			h(hd, w, req)
+		}(w, req)
+	}
 	if !useCache {
-		handler = http.HandlerFunc(h)
+		handler = http.HandlerFunc(nHandler)
 	} else {
-		ch := NewCachedHTTPHandler(hd.cache, h)
+		ch := NewCachedHTTPHandler(hd.cache, nHandler)
 
 		handler = ch
 	}
@@ -219,7 +262,7 @@ func (hd *Handlers) setHandler(prefix string, h network.HTTPHandlerFunc, useCach
 	return route
 }
 
-func (hd *Handlers) combineURL(path string, pairs ...string) (string, error) {
+func (hd *Handlers) CombineURL(path string, pairs ...string) (string, error) {
 	if n := len(pairs); n%2 != 0 {
 		return "", errors.Errorf("Combine url; uneven pairs to combine url")
 	} else if n < 1 {

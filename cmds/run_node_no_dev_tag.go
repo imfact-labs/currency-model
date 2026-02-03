@@ -5,6 +5,7 @@ package cmds
 
 import (
 	"context"
+
 	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/launch"
@@ -28,7 +29,7 @@ func (cmd *RunCommand) pDigestAPIHandlers(ctx context.Context) (context.Context,
 		return ctx, nil
 	}
 
-	cache, err := cmd.loadCache(ctx, design)
+	cache, err := LoadCache(cmd.log, ctx, design)
 	if err != nil {
 		return ctx, err
 	}
@@ -40,14 +41,15 @@ func (cmd *RunCommand) pDigestAPIHandlers(ctx context.Context) (context.Context,
 
 	router := dnt.Router()
 
-	handlers, err := cmd.setDigestAPIDefaultHandlers(ctx, params, cache, router, dnt.Queue())
+	handlers, err := SetDigestAPIDefaultHandlers(cmd.log, ctx, params, cache, router, dnt.Queue())
 	if err != nil {
 		return ctx, err
 	}
 
-	if err := handlers.Initialize(design.Digest); err != nil {
+	if err := handlers.Initialize(); err != nil {
 		return ctx, err
 	}
+	digest.SetHandlers(handlers, design.Digest)
 
 	return ctx, nil
 }

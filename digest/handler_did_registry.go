@@ -14,7 +14,7 @@ var (
 	HandlerPathDIDDocument = `/did-registry/{contract:(?i)` + types.REStringAddressString + `}/document`
 )
 
-func (hd *Handlers) handleDIDDesign(w http.ResponseWriter, r *http.Request) {
+func HandleDIDDesign(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	cacheKey := CacheKeyPath(r)
 	if err := LoadFromCache(hd.cache, cacheKey, w); err == nil {
 		return
@@ -27,7 +27,7 @@ func (hd *Handlers) handleDIDDesign(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if v, err, shared := hd.rg.Do(cacheKey, func() (interface{}, error) {
-		return hd.handleDIDDesignInGroup(contract)
+		return handleDIDDesignInGroup(hd, contract)
 	}); err != nil {
 		HTTP2HandleError(w, err)
 	} else {
@@ -39,7 +39,7 @@ func (hd *Handlers) handleDIDDesign(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (hd *Handlers) handleDIDDesignInGroup(contract string) ([]byte, error) {
+func handleDIDDesignInGroup(hd *Handlers, contract string) ([]byte, error) {
 	var de types.Design
 	var st base.State
 
@@ -48,15 +48,15 @@ func (hd *Handlers) handleDIDDesignInGroup(contract string) ([]byte, error) {
 		return nil, err
 	}
 
-	i, err := hd.buildDIDDesign(contract, de, st)
+	i, err := buildDIDDesign(hd, contract, de, st)
 	if err != nil {
 		return nil, err
 	}
 	return hd.enc.Marshal(i)
 }
 
-func (hd *Handlers) buildDIDDesign(contract string, de types.Design, st base.State) (Hal, error) {
-	h, err := hd.combineURL(HandlerPathDIDDesign, "contract", contract)
+func buildDIDDesign(hd *Handlers, contract string, de types.Design, st base.State) (Hal, error) {
+	h, err := hd.CombineURL(HandlerPathDIDDesign, "contract", contract)
 	if err != nil {
 		return nil, err
 	}
@@ -64,14 +64,14 @@ func (hd *Handlers) buildDIDDesign(contract string, de types.Design, st base.Sta
 	var hal Hal
 	hal = NewBaseHal(de, NewHalLink(h, nil))
 
-	h, err = hd.combineURL(HandlerPathBlockByHeight, "height", st.Height().String())
+	h, err = hd.CombineURL(HandlerPathBlockByHeight, "height", st.Height().String())
 	if err != nil {
 		return nil, err
 	}
 	hal = hal.AddLink("block", NewHalLink(h, nil))
 
 	for i := range st.Operations() {
-		h, err := hd.combineURL(HandlerPathOperation, "hash", st.Operations()[i].String())
+		h, err := hd.CombineURL(HandlerPathOperation, "hash", st.Operations()[i].String())
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +81,7 @@ func (hd *Handlers) buildDIDDesign(contract string, de types.Design, st base.Sta
 	return hal, nil
 }
 
-func (hd *Handlers) handleDIDData(w http.ResponseWriter, r *http.Request) {
+func HandleDIDData(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	cacheKey := CacheKeyPath(r)
 	if err := LoadFromCache(hd.cache, cacheKey, w); err == nil {
 		return
@@ -100,7 +100,7 @@ func (hd *Handlers) handleDIDData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if v, err, shared := hd.rg.Do(cacheKey, func() (interface{}, error) {
-		return hd.handleDIDDataInGroup(contract, key)
+		return handleDIDDataInGroup(hd, contract, key)
 	}); err != nil {
 		HTTP2HandleError(w, err)
 	} else {
@@ -112,7 +112,7 @@ func (hd *Handlers) handleDIDData(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (hd *Handlers) handleDIDDataInGroup(contract, key string) ([]byte, error) {
+func handleDIDDataInGroup(hd *Handlers, contract, key string) ([]byte, error) {
 	data, st, err := DIDData(hd.database, contract, key)
 	if err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (hd *Handlers) handleDIDDataInGroup(contract, key string) ([]byte, error) {
 
 func (hd *Handlers) buildDIDDataHal(
 	contract string, data types.Data, st base.State) (Hal, error) {
-	h, err := hd.combineURL(
+	h, err := hd.CombineURL(
 		HandlerPathDIDData,
 		"contract", contract, "method_specific_id", data.Address().String())
 	if err != nil {
@@ -136,14 +136,14 @@ func (hd *Handlers) buildDIDDataHal(
 
 	var hal Hal
 	hal = NewBaseHal(data, NewHalLink(h, nil))
-	h, err = hd.combineURL(HandlerPathBlockByHeight, "height", st.Height().String())
+	h, err = hd.CombineURL(HandlerPathBlockByHeight, "height", st.Height().String())
 	if err != nil {
 		return nil, err
 	}
 	hal = hal.AddLink("block", NewHalLink(h, nil))
 
 	for i := range st.Operations() {
-		h, err := hd.combineURL(HandlerPathOperation, "hash", st.Operations()[i].String())
+		h, err := hd.CombineURL(HandlerPathOperation, "hash", st.Operations()[i].String())
 		if err != nil {
 			return nil, err
 		}
@@ -153,7 +153,7 @@ func (hd *Handlers) buildDIDDataHal(
 	return hal, nil
 }
 
-func (hd *Handlers) handleDIDDocument(w http.ResponseWriter, r *http.Request) {
+func HandleDIDDocument(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	cacheKey := CacheKeyPath(r)
 	if err := LoadFromCache(hd.cache, cacheKey, w); err == nil {
 		return
@@ -172,7 +172,7 @@ func (hd *Handlers) handleDIDDocument(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if v, err, shared := hd.rg.Do(cacheKey, func() (interface{}, error) {
-		return hd.handleDIDDocumentInGroup(contract, did)
+		return handleDIDDocumentInGroup(hd, contract, did)
 	}); err != nil {
 		HTTP2HandleError(w, err)
 	} else {
@@ -184,22 +184,22 @@ func (hd *Handlers) handleDIDDocument(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (hd *Handlers) handleDIDDocumentInGroup(contract, key string) ([]byte, error) {
+func handleDIDDocumentInGroup(hd *Handlers, contract, key string) ([]byte, error) {
 	doc, st, err := DIDDocument(hd.database, contract, key)
 	if err != nil {
 		return nil, err
 	}
 
-	i, err := hd.buildDIDDocumentHal(contract, *doc, st)
+	i, err := buildDIDDocumentHal(hd, contract, *doc, st)
 	if err != nil {
 		return nil, err
 	}
 	return hd.enc.Marshal(i)
 }
 
-func (hd *Handlers) buildDIDDocumentHal(
-	contract string, doc types.DIDDocument, st base.State) (Hal, error) {
-	//h, err := hd.combineURL(
+func buildDIDDocumentHal(
+	hd *Handlers, contract string, doc types.DIDDocument, st base.State) (Hal, error) {
+	//h, err := hd.CombineURL(
 	//	HandlerPathDIDDocument,
 	//	"contract", contract)
 	//if err != nil {
@@ -208,14 +208,14 @@ func (hd *Handlers) buildDIDDocumentHal(
 
 	var hal Hal
 	hal = NewBaseHal(doc, NewHalLink("", nil))
-	h, err := hd.combineURL(HandlerPathBlockByHeight, "height", st.Height().String())
+	h, err := hd.CombineURL(HandlerPathBlockByHeight, "height", st.Height().String())
 	if err != nil {
 		return nil, err
 	}
 	hal = hal.AddLink("block", NewHalLink(h, nil))
 
 	for i := range st.Operations() {
-		h, err := hd.combineURL(HandlerPathOperation, "hash", st.Operations()[i].String())
+		h, err := hd.CombineURL(HandlerPathOperation, "hash", st.Operations()[i].String())
 		if err != nil {
 			return nil, err
 		}

@@ -16,7 +16,7 @@ type resourceMetrics struct {
 	raw     runtime.MemStats
 }
 
-func (hd *Handlers) handleResource(w http.ResponseWriter, r *http.Request) {
+func HandleResource(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	memUnit := ParseStringQuery(r.URL.Query().Get("unit"))
 	keys := ParseCSVStringQuery(strings.ToLower(r.URL.Query().Get("keys")))
 	cacheKey := CacheKeyPath(r)
@@ -25,7 +25,7 @@ func (hd *Handlers) handleResource(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if v, err, shared := hd.rg.Do(cacheKey, func() (interface{}, error) {
-		return hd.handleResourceInGroup(memUnit, keys)
+		return handleResourceInGroup(hd, memUnit, keys)
 	}); err != nil {
 		HTTP2HandleError(w, err)
 	} else {
@@ -36,8 +36,8 @@ func (hd *Handlers) handleResource(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (hd *Handlers) handleResourceInGroup(unit string, keys []string) (interface{}, error) {
-	rm, err := hd.collectResourceMetrics(unit, keys)
+func handleResourceInGroup(hd *Handlers, unit string, keys []string) (interface{}, error) {
+	rm, err := collectResourceMetrics(hd, unit, keys)
 	if err != nil {
 		return nil, err
 	}
@@ -48,14 +48,14 @@ func (hd *Handlers) handleResourceInGroup(unit string, keys []string) (interface
 
 	payload.MemInfo = rm.memInfo
 
-	hal, err := hd.buildResourceHal(payload)
+	hal, err := buildResourceHal(hd, payload)
 	if err != nil {
 		return nil, err
 	}
 	return hd.enc.Marshal(hal)
 }
 
-func (hd *Handlers) collectResourceMetrics(unit string, keys []string) (*resourceMetrics, error) {
+func collectResourceMetrics(hd *Handlers, unit string, keys []string) (*resourceMetrics, error) {
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
 
@@ -269,13 +269,13 @@ func (hd *Handlers) collectResourceMetrics(unit string, keys []string) (*resourc
 	}, nil
 }
 
-func (hd *Handlers) handleResourceProm(w http.ResponseWriter, r *http.Request) {
+func HandleResourceProm(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	memUnit := ParseStringQuery(r.URL.Query().Get("unit"))
 	keys := ParseCSVStringQuery(strings.ToLower(r.URL.Query().Get("keys")))
 
-	rm, err := hd.collectResourceMetrics(memUnit, keys)
+	rm, err := collectResourceMetrics(hd, memUnit, keys)
 	if err != nil {
 		HTTP2HandleError(w, err)
 
@@ -290,7 +290,7 @@ func (hd *Handlers) handleResourceProm(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(b.String()))
 }
 
-func (hd *Handlers) buildResourceHal(resource interface{}) (Hal, error) {
+func buildResourceHal(hd *Handlers, resource interface{}) (Hal, error) {
 	hal := NewBaseHal(resource, NewHalLink(HandlerPathResource, nil))
 
 	return hal, nil

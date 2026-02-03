@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (hd *Handlers) handleQueueSend(w http.ResponseWriter, r *http.Request) {
+func HandleQueueSend(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	body := &bytes.Buffer{}
 	if _, err := io.Copy(body, r.Body); err != nil {
 		HTTP2ProblemWithError(w, err, http.StatusInternalServerError)
@@ -28,7 +28,7 @@ func (hd *Handlers) handleQueueSend(w http.ResponseWriter, r *http.Request) {
 	HTTP2WriteHal(hd.enc, w, NewBaseHal("Send operation successfully", HalLink{}), http.StatusOK)
 }
 
-func (hd *Handlers) handleSend(w http.ResponseWriter, r *http.Request) {
+func HandleSend(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	body := &bytes.Buffer{}
 	defer body.Reset()
@@ -49,7 +49,7 @@ func (hd *Handlers) handleSend(w http.ResponseWriter, r *http.Request) {
 		}
 		HTTP2ProblemWithError(w, nerr, http.StatusBadRequest)
 		return
-	} else if h, err := hd.sendItem(hinter); err != nil {
+	} else if h, err := sendItem(hd, hinter); err != nil {
 		HTTP2ProblemWithError(w, err, http.StatusBadRequest)
 		return
 	} else {
@@ -58,11 +58,11 @@ func (hd *Handlers) handleSend(w http.ResponseWriter, r *http.Request) {
 	HTTP2WriteHal(hd.enc, w, hal, http.StatusOK)
 }
 
-func (hd *Handlers) sendItem(v interface{}) (Hal, error) {
-	return hd.sendOperation(v)
+func sendItem(hd *Handlers, v interface{}) (Hal, error) {
+	return sendOperation(hd, v)
 }
 
-func (hd *Handlers) sendOperation(v interface{}) (Hal, error) {
+func sendOperation(hd *Handlers, v interface{}) (Hal, error) {
 	op, ok := v.(base.Operation)
 	if !ok {
 		return nil, errors.Errorf("expected Operation, not %T", v)
@@ -156,10 +156,10 @@ loop:
 		}
 	}
 
-	return hd.buildSealHal(op)
+	return buildSealHal(op)
 }
 
-func (hd *Handlers) buildSealHal(op base.Operation) (Hal, error) {
+func buildSealHal(op base.Operation) (Hal, error) {
 	var hal Hal = NewBaseHal(op, HalLink{})
 
 	return hal, nil

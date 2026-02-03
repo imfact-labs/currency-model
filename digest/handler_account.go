@@ -14,7 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-func (hd *Handlers) handleAccount(w http.ResponseWriter, r *http.Request) {
+func HandleAccount(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	cachekey := CacheKeyPath(r)
 	if err := LoadFromCache(hd.cache, cachekey, w); err == nil {
@@ -34,7 +34,7 @@ func (hd *Handlers) handleAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if v, err, shared := hd.rg.Do(cachekey, func() (interface{}, error) {
-		return hd.handleAccountInGroup(address)
+		return handleAccountInGroup(hd, address)
 	}); err != nil {
 		//if errors.Is(err, mongo.ErrNoDocuments) {
 		//	err = util.ErrNotFound.Errorf("account, %v in handleAccount", address.String())
@@ -54,13 +54,13 @@ func (hd *Handlers) handleAccount(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (hd *Handlers) handleAccountInGroup(address base.Address) (interface{}, error) {
+func handleAccountInGroup(hd *Handlers, address base.Address) (interface{}, error) {
 	switch va, _, err := hd.database.Account(address); {
 	case err != nil:
 		if !errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, err
 		}
-		hal, err := hd.buildAccountHal(va)
+		hal, err := buildAccountHal(hd, va)
 		if err != nil {
 			return nil, err
 		}
@@ -68,7 +68,7 @@ func (hd *Handlers) handleAccountInGroup(address base.Address) (interface{}, err
 	//case !found:
 	//return nil, util.ErrNotFound
 	default:
-		hal, err := hd.buildAccountHal(va)
+		hal, err := buildAccountHal(hd, va)
 		if err != nil {
 			return nil, err
 		}
@@ -76,7 +76,7 @@ func (hd *Handlers) handleAccountInGroup(address base.Address) (interface{}, err
 	}
 }
 
-func (hd *Handlers) buildAccountHal(va AccountValue) (Hal, error) {
+func buildAccountHal(hd *Handlers, va AccountValue) (Hal, error) {
 	var hal Hal
 
 	if va.IsZeroValue() {
@@ -88,14 +88,14 @@ func (hd *Handlers) buildAccountHal(va AccountValue) (Hal, error) {
 	}
 
 	hinted := va.Account().Address().String()
-	h, err := hd.combineURL(HandlerPathAccount, "address", hinted)
+	h, err := hd.CombineURL(HandlerPathAccount, "address", hinted)
 	if err != nil {
 		return nil, err
 	}
 
 	hal = NewBaseHal(va, NewHalLink(h, nil))
 
-	h, err = hd.combineURL(HandlerPathAccountOperations, "address", hinted)
+	h, err = hd.CombineURL(HandlerPathAccountOperations, "address", hinted)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (hd *Handlers) buildAccountHal(va AccountValue) (Hal, error) {
 		AddLink("operations:{offset}", NewHalLink(h+"?offset={offset}", nil).SetTemplated()).
 		AddLink("operations:{offset,reverse}", NewHalLink(h+"?offset={offset}&reverse=1", nil).SetTemplated())
 
-	h, err = hd.combineURL(HandlerPathBlockByHeight, "height", va.Height().String())
+	h, err = hd.CombineURL(HandlerPathBlockByHeight, "height", va.Height().String())
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func (hd *Handlers) buildAccountHal(va AccountValue) (Hal, error) {
 	return hal, nil
 }
 
-func (hd *Handlers) handleAccountOperations(w http.ResponseWriter, r *http.Request) {
+func HandleAccountOperations(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	var address base.Address
 	if a, err := base.DecodeAddress(strings.TrimSpace(mux.Vars(r)["address"]), hd.enc); err != nil {
@@ -137,7 +137,7 @@ func (hd *Handlers) handleAccountOperations(w http.ResponseWriter, r *http.Reque
 	}
 
 	if v, err, shared := hd.rg.Do(cachekey, func() (interface{}, error) {
-		i, filled, err := hd.handleAccountOperationsInGroup(address, offset, reverse, limit)
+		i, filled, err := handleAccountOperationsInGroup(hd, address, offset, reverse, limit)
 
 		return []interface{}{i, filled}, err
 	}); err != nil {
@@ -164,7 +164,8 @@ func (hd *Handlers) handleAccountOperations(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func (hd *Handlers) handleAccountOperationsInGroup(
+func handleAccountOperationsInGroup(
+	hd *Handlers,
 	address base.Address,
 	offset string,
 	reverse bool,
@@ -172,7 +173,7 @@ func (hd *Handlers) handleAccountOperationsInGroup(
 ) ([]byte, bool, error) {
 	var limit int64
 	if l < 0 {
-		limit = hd.itemsLimiter("account-operations")
+		limit = hd.ItemsLimiter("account-operations")
 	} else {
 		limit = l
 	}
@@ -181,7 +182,7 @@ func (hd *Handlers) handleAccountOperationsInGroup(
 	if err := hd.database.OperationsByAddress(
 		address, true, reverse, offset, limit,
 		func(_ util.Hash, va OperationValue) (bool, error) {
-			hal, err := hd.buildOperationHal(va)
+			hal, err := buildOperationHal(hd, va)
 			if err != nil {
 				return false, err
 			}
@@ -196,7 +197,7 @@ func (hd *Handlers) handleAccountOperationsInGroup(
 	//	return nil, false, util.ErrNotFound.Errorf("operations in handleAccountsOperations")
 	//}
 
-	i, err := hd.buildAccountOperationsHal(address, vas, offset, reverse)
+	i, err := buildAccountOperationsHal(hd, address, vas, offset, reverse)
 	if err != nil {
 		return nil, false, err
 	}
@@ -205,7 +206,8 @@ func (hd *Handlers) handleAccountOperationsInGroup(
 	return b, int64(len(vas)) == limit, err
 }
 
-func (hd *Handlers) buildAccountOperationsHal(
+func buildAccountOperationsHal(
+	hd *Handlers,
 	address base.Address,
 	vas []Hal,
 	offset string,
@@ -218,7 +220,7 @@ func (hd *Handlers) buildAccountOperationsHal(
 		return hal, nil
 	}
 
-	baseSelf, err := hd.combineURL(HandlerPathAccountOperations, "address", address.String())
+	baseSelf, err := hd.CombineURL(HandlerPathAccountOperations, "address", address.String())
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +235,7 @@ func (hd *Handlers) buildAccountOperationsHal(
 
 	hal = NewBaseHal(vas, NewHalLink(self, nil))
 
-	h, err := hd.combineURL(HandlerPathAccount, "address", address.String())
+	h, err := hd.CombineURL(HandlerPathAccount, "address", address.String())
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +265,7 @@ func (hd *Handlers) buildAccountOperationsHal(
 	return hal, nil
 }
 
-func (hd *Handlers) handleAccounts(w http.ResponseWriter, r *http.Request) {
+func HandleAccounts(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	offset := ParseStringQuery(r.URL.Query().Get("offset"))
 
@@ -318,7 +320,7 @@ func (hd *Handlers) handleAccounts(w http.ResponseWriter, r *http.Request) {
 		items = i.([]Hal)
 	}
 
-	switch hal, err := hd.buildAccountsHal(url.Values{
+	switch hal, err := buildAccountsHal(url.Values{
 		"publickey": []string{pub.String()},
 	}, items, offset, offsetHeight, lastaddress); {
 	case err != nil:
@@ -345,7 +347,7 @@ func (hd *Handlers) handleAccounts(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (*Handlers) buildAccountsHal(
+func buildAccountsHal(
 	queries url.Values,
 	vas []Hal,
 	offset string,
@@ -436,9 +438,9 @@ func (hd *Handlers) accountsByPublickey(
 	}
 
 	var items []Hal
-	if err := hd.database.AccountsByPublickey(pub, false, offsetHeight, offsetAddress, hd.itemsLimiter("accounts"),
+	if err := hd.database.AccountsByPublickey(pub, false, offsetHeight, offsetAddress, hd.ItemsLimiter("accounts"),
 		func(va AccountValue) (bool, error) {
-			hal, err := hd.buildAccountHal(va)
+			hal, err := buildAccountHal(hd, va)
 			if err != nil {
 				return false, err
 			}

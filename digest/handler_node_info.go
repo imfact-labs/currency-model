@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (hd *Handlers) handleNodeInfo(w http.ResponseWriter, r *http.Request) {
+func HandleNodeInfo(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	self := ParseBoolQuery(r.URL.Query().Get("self"))
 
@@ -27,7 +27,7 @@ func (hd *Handlers) handleNodeInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if v, err, shared := hd.rg.Do(cacheKey, func() (interface{}, error) {
-		i, err := hd.handleNodeInfoInGroup(self)
+		i, err := handleNodeInfoInGroup(hd, self)
 
 		return i, err
 	}); err != nil {
@@ -48,7 +48,7 @@ type nodeInfoResult struct {
 	conn quicstream.ConnInfo
 }
 
-func (hd *Handlers) collectNodeInfo(self bool) ([]nodeInfoResult, error) {
+func collectNodeInfo(hd *Handlers, self bool) ([]nodeInfoResult, error) {
 	connectionPool, memberList, nodeList, err := hd.client()
 	if err != nil {
 		return nil, err
@@ -94,8 +94,8 @@ func (hd *Handlers) collectNodeInfo(self bool) ([]nodeInfoResult, error) {
 	return results, nil
 }
 
-func (hd *Handlers) handleNodeInfoInGroup(self bool) (interface{}, error) {
-	results, err := hd.collectNodeInfo(self)
+func handleNodeInfoInGroup(hd *Handlers, self bool) (interface{}, error) {
+	results, err := collectNodeInfo(hd, self)
 	if err != nil {
 		return nil, err
 	}
@@ -109,18 +109,18 @@ func (hd *Handlers) handleNodeInfoInGroup(self bool) (interface{}, error) {
 		nodeInfoList = append(nodeInfoList, *results[i].info)
 	}
 
-	if i, err := hd.buildNodeInfoHal(nodeInfoList); err != nil {
+	if i, err := buildNodeInfoHal(nodeInfoList); err != nil {
 		return nil, err
 	} else {
 		return hd.enc.Marshal(i)
 	}
 }
 
-func (hd *Handlers) handleNodeInfoProm(w http.ResponseWriter, r *http.Request) {
+func HandleNodeInfoProm(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	self := ParseBoolQuery(r.URL.Query().Get("self"))
 
-	results, err := hd.collectNodeInfo(self)
+	results, err := collectNodeInfo(hd, self)
 	if err != nil {
 		hd.Log().Err(err).Msg("get node info for prometheus")
 		HTTP2HandleError(w, err)
@@ -136,7 +136,7 @@ func (hd *Handlers) handleNodeInfoProm(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(b.String()))
 }
 
-func (hd *Handlers) buildNodeInfoHal(ni []isaacnetwork.NodeInfo) (Hal, error) {
+func buildNodeInfoHal(ni []isaacnetwork.NodeInfo) (Hal, error) {
 	var hal Hal = NewBaseHal(ni, NewHalLink(HandlerPathNodeInfo, nil))
 
 	return hal, nil

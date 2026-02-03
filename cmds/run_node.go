@@ -374,18 +374,19 @@ func (cmd *RunCommand) runHTTPState(bind string) error {
 	return nil
 }
 
-func (cmd *RunCommand) loadCache(_ context.Context, design digest.YamlDigestDesign) (digest.Cache, error) {
+func LoadCache(log *zerolog.Logger, _ context.Context, design digest.YamlDigestDesign) (digest.Cache, error) {
 	c, err := digest.NewCacheFromURI(design.Cache().String())
 	if err != nil {
-		cmd.log.Err(err).Str("cache", design.Cache().String()).Msg("connect cache server")
-		cmd.log.Warn().Msg("instead of remote cache server, internal mem cache can be available, `memory://`")
+		log.Err(err).Str("cache", design.Cache().String()).Msg("connect cache server")
+		log.Warn().Msg("instead of remote cache server, internal mem cache can be available, `memory://`")
 
 		return nil, err
 	}
 	return c, nil
 }
 
-func (cmd *RunCommand) setDigestAPIDefaultHandlers(
+func SetDigestAPIDefaultHandlers(
+	log *zerolog.Logger,
 	ctx context.Context,
 	params *launch.LocalParams,
 	cache digest.Cache,
@@ -414,7 +415,7 @@ func (cmd *RunCommand) setDigestAPIDefaultHandlers(
 
 	handlers := digest.NewHandlers(ctx, params.ISAAC.NetworkID(), encs, enc, st, cache, router, queue, node)
 
-	h, err := cmd.setDigestAPINetworkClient(ctx, params, handlers)
+	h, err := SetDigestAPINetworkClient(log, ctx, params, handlers)
 	if err != nil {
 		return nil, err
 	}
@@ -423,7 +424,8 @@ func (cmd *RunCommand) setDigestAPIDefaultHandlers(
 	return handlers, nil
 }
 
-func (cmd *RunCommand) setDigestAPINetworkClient(
+func SetDigestAPINetworkClient(
+	log *zerolog.Logger,
 	ctx context.Context,
 	params *launch.LocalParams,
 	handlers *digest.Handlers,
@@ -469,7 +471,7 @@ func (cmd *RunCommand) setDigestAPINetworkClient(
 		},
 	)
 
-	cmd.log.Debug().Msg("send handler attached")
+	log.Debug().Msg("send handler attached")
 
 	return handlers, nil
 }

@@ -15,7 +15,7 @@ var halBlockTemplate = map[string]HalLink{
 	"manifest:{hash}":   NewHalLink(HandlerPathManifestByHash, nil).SetTemplated(),
 }
 
-func (hd *Handlers) handleBlock(w http.ResponseWriter, r *http.Request) {
+func HandleBlock(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	cachekey := CacheKeyPath(r)
 	if err := LoadFromCache(hd.cache, cachekey, w); err == nil {
@@ -23,7 +23,7 @@ func (hd *Handlers) handleBlock(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if v, err, shared := hd.rg.Do(cachekey, func() (interface{}, error) {
-		return hd.handleBlockInGroup(mux.Vars(r))
+		return handleBlockInGroup(hd, mux.Vars(r))
 	}); err != nil {
 		HTTP2HandleError(w, err)
 	} else {
@@ -34,7 +34,7 @@ func (hd *Handlers) handleBlock(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (hd *Handlers) handleBlockInGroup(vars map[string]string) ([]byte, error) {
+func handleBlockInGroup(hd *Handlers, vars map[string]string) ([]byte, error) {
 	var hal Hal
 	if s, found := vars["height"]; found {
 		height, err := parseHeightFromPath(s)
@@ -42,7 +42,7 @@ func (hd *Handlers) handleBlockInGroup(vars map[string]string) ([]byte, error) {
 			return nil, ErrBadRequest.Errorf("Invalid height found for block by height: %v", err)
 		}
 
-		h, err := hd.buildBlockHalByHeight(height)
+		h, err := buildBlockHalByHeight(hd, height)
 		if err != nil {
 			return nil, err
 		}
@@ -53,7 +53,7 @@ func (hd *Handlers) handleBlockInGroup(vars map[string]string) ([]byte, error) {
 			return nil, util.NewIDError("Bad request").Errorf("Invalid hash for block by hash: %v", err)
 		}
 
-		i, err := hd.buildBlockHalByHash(h)
+		i, err := buildBlockHalByHash(hd, h)
 		if err != nil {
 			return nil, err
 		}
@@ -63,8 +63,8 @@ func (hd *Handlers) handleBlockInGroup(vars map[string]string) ([]byte, error) {
 	return hd.enc.Marshal(hal)
 }
 
-func (hd *Handlers) buildBlockHalByHeight(height base.Height) (Hal, error) {
-	h, err := hd.combineURL(HandlerPathBlockByHeight, "height", height.String())
+func buildBlockHalByHeight(hd *Handlers, height base.Height) (Hal, error) {
+	h, err := hd.CombineURL(HandlerPathBlockByHeight, "height", height.String())
 	if err != nil {
 		return nil, err
 	}
@@ -72,27 +72,27 @@ func (hd *Handlers) buildBlockHalByHeight(height base.Height) (Hal, error) {
 	var hal Hal
 	hal = NewBaseHal(nil, NewHalLink(h, nil))
 
-	h, err = hd.combineURL(HandlerPathBlockByHeight, "height", (height + 1).String())
+	h, err = hd.CombineURL(HandlerPathBlockByHeight, "height", (height + 1).String())
 	if err != nil {
 		return nil, err
 	}
 	hal = hal.AddLink("next", NewHalLink(h, nil))
 
 	if height > base.GenesisHeight {
-		h, err = hd.combineURL(HandlerPathBlockByHeight, "height", (height - 1).String())
+		h, err = hd.CombineURL(HandlerPathBlockByHeight, "height", (height - 1).String())
 		if err != nil {
 			return nil, err
 		}
 		hal = hal.AddLink("prev", NewHalLink(h, nil))
 	}
 
-	h, err = hd.combineURL(HandlerPathBlockByHeight, "height", height.String())
+	h, err = hd.CombineURL(HandlerPathBlockByHeight, "height", height.String())
 	if err != nil {
 		return nil, err
 	}
 	hal = hal.AddLink("current", NewHalLink(h, nil))
 
-	h, err = hd.combineURL(HandlerPathManifestByHeight, "height", height.String())
+	h, err = hd.CombineURL(HandlerPathManifestByHeight, "height", height.String())
 	if err != nil {
 		return nil, err
 	}
@@ -105,8 +105,8 @@ func (hd *Handlers) buildBlockHalByHeight(height base.Height) (Hal, error) {
 	return hal, nil
 }
 
-func (hd *Handlers) buildBlockHalByHash(h util.Hash) (Hal, error) {
-	i, err := hd.combineURL(HandlerPathBlockByHash, "hash", h.String())
+func buildBlockHalByHash(hd *Handlers, h util.Hash) (Hal, error) {
+	i, err := hd.CombineURL(HandlerPathBlockByHash, "hash", h.String())
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (hd *Handlers) buildBlockHalByHash(h util.Hash) (Hal, error) {
 	var hal Hal
 	hal = NewBaseHal(nil, NewHalLink(i, nil))
 
-	i, err = hd.combineURL(HandlerPathManifestByHash, "hash", h.String())
+	i, err = hd.CombineURL(HandlerPathManifestByHash, "hash", h.String())
 	if err != nil {
 		return nil, err
 	}

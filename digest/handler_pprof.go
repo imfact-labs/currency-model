@@ -6,18 +6,19 @@ package digest
 import (
 	"bytes"
 	"fmt"
-	"github.com/google/pprof/profile"
 	"io"
 	"net/http"
 	"regexp"
 	"runtime/pprof"
 	"sort"
 	"time"
+
+	"github.com/google/pprof/profile"
 )
 
 var defaultCount int = 10
 
-func (hd *Handlers) handlePProfProfile(w http.ResponseWriter, r *http.Request) {
+func HandlePProfProfile(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	duration := ParseLimitQuery(r.URL.Query().Get("duration"))
 	count := ParseLimitQuery(r.URL.Query().Get("count"))
@@ -27,7 +28,7 @@ func (hd *Handlers) handlePProfProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if v, err, shared := hd.rg.Do(cacheKey, func() (interface{}, error) {
-		return hd.handlePProfProfileInGroup(duration, count)
+		return handlePProfProfileInGroup(hd, duration, count)
 	}); err != nil {
 		HTTP2HandleError(w, err)
 	} else {
@@ -38,7 +39,7 @@ func (hd *Handlers) handlePProfProfile(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (hd *Handlers) handlePProfProfileInGroup(du, cnt int64) (interface{}, error) {
+func handlePProfProfileInGroup(hd *Handlers, du, cnt int64) (interface{}, error) {
 	var duration int
 	count := defaultCount
 	if du < 0 {
@@ -196,7 +197,7 @@ type funcStat struct {
 	CumPct  float64
 }
 
-func (hd *Handlers) handlePProfHeap(w http.ResponseWriter, r *http.Request) {
+func HandlePProfHeap(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	count := ParseLimitQuery(r.URL.Query().Get("count"))
 	cacheKey := CacheKeyPath(r)
 	if err := LoadFromCache(hd.cache, cacheKey, w); err == nil {
@@ -204,7 +205,7 @@ func (hd *Handlers) handlePProfHeap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if v, err, shared := hd.rg.Do(cacheKey, func() (interface{}, error) {
-		return hd.handlePProfHeapInGroup(count)
+		return handlePProfHeapInGroup(hd, count)
 	}); err != nil {
 		HTTP2HandleError(w, err)
 	} else {
@@ -215,7 +216,7 @@ func (hd *Handlers) handlePProfHeap(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (hd *Handlers) handlePProfHeapInGroup(cnt int64) (interface{}, error) {
+func handlePProfHeapInGroup(hd *Handlers, cnt int64) (interface{}, error) {
 	count := defaultCount
 	if cnt > 0 {
 		count = int(cnt)
@@ -368,7 +369,7 @@ func formatBytes(v int64, unit string) string {
 	}
 }
 
-func (hd *Handlers) handlePProfAllocs(w http.ResponseWriter, r *http.Request) {
+func HandlePProfAllocs(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	count := ParseLimitQuery(r.URL.Query().Get("count"))
 	cacheKey := CacheKeyPath(r)
 	if err := LoadFromCache(hd.cache, cacheKey, w); err == nil {
@@ -376,7 +377,7 @@ func (hd *Handlers) handlePProfAllocs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if v, err, shared := hd.rg.Do(cacheKey, func() (interface{}, error) {
-		return hd.handlePProfAllocsInGroup(count)
+		return handlePProfAllocsInGroup(hd, count)
 	}); err != nil {
 		HTTP2HandleError(w, err)
 	} else {
@@ -387,7 +388,7 @@ func (hd *Handlers) handlePProfAllocs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (hd *Handlers) handlePProfAllocsInGroup(cnt int64) (interface{}, error) {
+func handlePProfAllocsInGroup(hd *Handlers, cnt int64) (interface{}, error) {
 	count := defaultCount
 	if cnt > 0 {
 		count = int(cnt)
@@ -422,7 +423,7 @@ type goroutineStat struct {
 	Cum  int64
 }
 
-func (hd *Handlers) handlePProfGoroutine(w http.ResponseWriter, r *http.Request) {
+func HandlePProfGoroutine(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	count := ParseLimitQuery(r.URL.Query().Get("count"))
 	cacheKey := CacheKeyPath(r)
 	if err := LoadFromCache(hd.cache, cacheKey, w); err == nil {
@@ -430,7 +431,7 @@ func (hd *Handlers) handlePProfGoroutine(w http.ResponseWriter, r *http.Request)
 	}
 
 	if v, err, shared := hd.rg.Do(cacheKey, func() (interface{}, error) {
-		return hd.handlePProfGoroutineInGroup(count)
+		return handlePProfGoroutineInGroup(hd, count)
 	}); err != nil {
 		HTTP2HandleError(w, err)
 	} else {
@@ -441,7 +442,7 @@ func (hd *Handlers) handlePProfGoroutine(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func (hd *Handlers) handlePProfGoroutineInGroup(cnt int64) (interface{}, error) {
+func handlePProfGoroutineInGroup(hd *Handlers, cnt int64) (interface{}, error) {
 	count := defaultCount
 	if cnt > 0 {
 		count = int(cnt)
@@ -565,7 +566,7 @@ type blockStat struct {
 	CumCount  int64
 }
 
-func (hd *Handlers) handlePProfBlock(w http.ResponseWriter, r *http.Request) {
+func HandlePProfBlock(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	count := ParseLimitQuery(r.URL.Query().Get("count"))
 	cacheKey := CacheKeyPath(r)
 	if err := LoadFromCache(hd.cache, cacheKey, w); err == nil {
@@ -573,7 +574,7 @@ func (hd *Handlers) handlePProfBlock(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if v, err, shared := hd.rg.Do(cacheKey, func() (interface{}, error) {
-		return hd.handlePProfBlockInGroup(count)
+		return handlePProfBlockInGroup(hd, count)
 	}); err != nil {
 		HTTP2HandleError(w, err)
 	} else {
@@ -584,7 +585,7 @@ func (hd *Handlers) handlePProfBlock(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (hd *Handlers) handlePProfBlockInGroup(cnt int64) (interface{}, error) {
+func handlePProfBlockInGroup(hd *Handlers, cnt int64) (interface{}, error) {
 	count := defaultCount
 	if cnt > 0 {
 		count = int(cnt)

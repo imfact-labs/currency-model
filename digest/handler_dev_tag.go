@@ -19,73 +19,73 @@ var (
 	HandlerPathPProfAllocs    = `/pprof/allocs`
 )
 
-func (hd *Handlers) setHandlers(digest bool) {
+func SetHandlers(hd *Handlers, digest bool) {
 	runtime.SetBlockProfileRate(1)
 	post := 5
 	postQueue := 10000
 	get := 1000
 
-	_ = hd.setHandler(HandlerPathSend, hd.handleSend, false, post, post).
+	_ = hd.SetHandler(HandlerPathSend, HandleSend, false, post, post).
 		Methods(http.MethodOptions, http.MethodPost)
-	_ = hd.setHandler(HandlerPathQueueSend, hd.handleQueueSend, false, postQueue, postQueue).
+	_ = hd.SetHandler(HandlerPathQueueSend, HandleQueueSend, false, postQueue, postQueue).
 		Methods(http.MethodOptions, http.MethodPost)
-	_ = hd.setHandler(HandlerPathNodeInfo, hd.handleNodeInfo, true, get, get).
+	_ = hd.SetHandler(HandlerPathNodeInfo, HandleNodeInfo, true, get, get).
 		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathNodeMetric, hd.handleNodeMetric, true, get, get).
+	_ = hd.SetHandler(HandlerPathNodeMetric, HandleNodeMetric, true, get, get).
 		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathNodeInfoProm, hd.handleNodeInfoProm, false, get, get).
+	_ = hd.SetHandler(HandlerPathNodeInfoProm, HandleNodeInfoProm, false, get, get).
 		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathNodeMetricProm, hd.handleNodeMetricProm, false, get, get).
+	_ = hd.SetHandler(HandlerPathNodeMetricProm, HandleNodeMetricProm, false, get, get).
 		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathResource, hd.handleResource, true, get, get).
+	_ = hd.SetHandler(HandlerPathResource, HandleResource, true, get, get).
 		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathResourceProm, hd.handleResourceProm, false, get, get).
+	_ = hd.SetHandler(HandlerPathResourceProm, HandleResourceProm, false, get, get).
 		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathPProfProfile, hd.handlePProfProfile, true, get, get).
+	_ = hd.SetHandler(HandlerPathPProfProfile, HandlePProfProfile, true, get, get).
 		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathPProfHeap, hd.handlePProfHeap, true, get, get).
+	_ = hd.SetHandler(HandlerPathPProfHeap, HandlePProfHeap, true, get, get).
 		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathPProfAllocs, hd.handlePProfAllocs, true, get, get).
+	_ = hd.SetHandler(HandlerPathPProfAllocs, HandlePProfAllocs, true, get, get).
 		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathPProfGoroutine, hd.handlePProfGoroutine, true, get, get).
+	_ = hd.SetHandler(HandlerPathPProfGoroutine, HandlePProfGoroutine, true, get, get).
 		Methods(http.MethodOptions, "GET")
-	_ = hd.setHandler(HandlerPathPProfBlock, hd.handlePProfBlock, true, get, get).
+	_ = hd.SetHandler(HandlerPathPProfBlock, HandlePProfBlock, true, get, get).
 		Methods(http.MethodOptions, "GET")
 
 	if digest {
-		_ = hd.setHandler(HandlerPathCurrencies, hd.handleCurrencies, true, get, get).
+		_ = hd.SetHandler(HandlerPathCurrencies, HandleCurrencies, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathCurrency, hd.handleCurrency, true, get, get).
+		_ = hd.SetHandler(HandlerPathCurrency, HandleCurrency, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathManifests, hd.handleManifests, true, get, get).
+		_ = hd.SetHandler(HandlerPathManifests, HandleManifests, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathOperations, hd.handleOperations, true, get, get).
+		_ = hd.SetHandler(HandlerPathOperations, HandleOperations, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathOperationsByHash, hd.handleOperationsByHash, true, get, get).
+		_ = hd.SetHandler(HandlerPathOperationsByHash, HandleOperationsByHash, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathOperation, hd.handleOperation, true, get, get).
+		_ = hd.SetHandler(HandlerPathOperation, HandleOperation, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathOperationsByHeight, hd.handleOperationsByHeight, true, get, get).
+		_ = hd.SetHandler(HandlerPathOperationsByHeight, HandleOperationsByHeight, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathManifestByHeight, hd.handleManifestByHeight, true, get, get).
+		_ = hd.SetHandler(HandlerPathManifestByHeight, HandleManifestByHeight, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathManifestByHash, hd.handleManifestByHash, true, get, get).
+		_ = hd.SetHandler(HandlerPathManifestByHash, HandleManifestByHash, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathBlockByHeight, hd.handleBlock, true, get, get).
+		_ = hd.SetHandler(HandlerPathBlockByHeight, HandleBlock, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathBlockByHash, hd.handleBlock, true, get, get).
+		_ = hd.SetHandler(HandlerPathBlockByHash, HandleBlock, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathAccount, hd.handleAccount, true, get, get).
+		_ = hd.SetHandler(HandlerPathAccount, HandleAccount, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathAccountOperations, hd.handleAccountOperations, true, get, get).
+		_ = hd.SetHandler(HandlerPathAccountOperations, HandleAccountOperations, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathAccounts, hd.handleAccounts, true, get, get).
+		_ = hd.SetHandler(HandlerPathAccounts, HandleAccounts, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathDIDData, hd.handleDIDData, true, get, get).
+		_ = hd.SetHandler(HandlerPathDIDData, HandleDIDData, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathDIDDesign, hd.handleDIDDesign, true, get, get).
+		_ = hd.SetHandler(HandlerPathDIDDesign, HandleDIDDesign, true, get, get).
 			Methods(http.MethodOptions, "GET")
-		_ = hd.setHandler(HandlerPathDIDDocument, hd.handleDIDDocument, true, get, get).
+		_ = hd.SetHandler(HandlerPathDIDDocument, HandleDIDDocument, true, get, get).
 			Methods(http.MethodOptions, "GET")
 	}
 }

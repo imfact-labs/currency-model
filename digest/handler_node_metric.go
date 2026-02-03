@@ -16,7 +16,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (hd *Handlers) handleNodeMetric(w http.ResponseWriter, r *http.Request) {
+func HandleNodeMetric(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	self := ParseBoolQuery(r.URL.Query().Get("self"))
 
@@ -26,7 +26,7 @@ func (hd *Handlers) handleNodeMetric(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if v, err, shared := hd.rg.Do(cacheKey, func() (interface{}, error) {
-		i, err := hd.handleNodeMetricInGroup(self)
+		i, err := handleNodeMetricInGroup(hd, self)
 
 		return i, err
 	}); err != nil {
@@ -47,7 +47,7 @@ type nodeMetricResult struct {
 	conn   quicstream.ConnInfo
 }
 
-func (hd *Handlers) collectNodeMetrics(self bool) ([]nodeMetricResult, error) {
+func collectNodeMetrics(hd *Handlers, self bool) ([]nodeMetricResult, error) {
 	connectionPool, memberList, nodeList, err := hd.client()
 	if err != nil {
 		return nil, err
@@ -93,8 +93,8 @@ func (hd *Handlers) collectNodeMetrics(self bool) ([]nodeMetricResult, error) {
 	return results, nil
 }
 
-func (hd *Handlers) handleNodeMetricInGroup(self bool) (interface{}, error) {
-	results, err := hd.collectNodeMetrics(self)
+func handleNodeMetricInGroup(hd *Handlers, self bool) (interface{}, error) {
+	results, err := collectNodeMetrics(hd, self)
 	if err != nil {
 		return nil, err
 	}
@@ -109,18 +109,18 @@ func (hd *Handlers) handleNodeMetricInGroup(self bool) (interface{}, error) {
 		nodeMetricList = append(nodeMetricList, nm)
 	}
 
-	if i, err := hd.buildNodeMetricHal(nodeMetricList); err != nil {
+	if i, err := buildNodeMetricHal(nodeMetricList); err != nil {
 		return nil, err
 	} else {
 		return hd.enc.Marshal(i)
 	}
 }
 
-func (hd *Handlers) handleNodeMetricProm(w http.ResponseWriter, r *http.Request) {
+func HandleNodeMetricProm(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	self := ParseBoolQuery(r.URL.Query().Get("self"))
 
-	results, err := hd.collectNodeMetrics(self)
+	results, err := collectNodeMetrics(hd, self)
 	if err != nil {
 		hd.Log().Err(err).Msg("get node metric for prometheus")
 		HTTP2HandleError(w, err)
@@ -136,7 +136,7 @@ func (hd *Handlers) handleNodeMetricProm(w http.ResponseWriter, r *http.Request)
 	_, _ = w.Write([]byte(b.String()))
 }
 
-func (hd *Handlers) buildNodeMetricHal(ni []map[string]interface{}) (Hal, error) {
+func buildNodeMetricHal(ni []map[string]interface{}) (Hal, error) {
 	var hal Hal = NewBaseHal(ni, NewHalLink(HandlerPathNodeMetric, nil))
 
 	return hal, nil
