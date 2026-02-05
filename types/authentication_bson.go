@@ -37,7 +37,9 @@ type VerificationMethodOrRefBSONUnmarshaler struct {
 	POLICY AttestationPolicy `bson:"policy"`
 }
 
-func (v *VerificationMethodOrRef) UnmarshalBSONValue(t bson.Type, data []byte) error {
+func (v *VerificationMethodOrRef) UnmarshalBSONValue(bt byte, data []byte) error {
+	t := bson.Type(bt)
+
 	switch t {
 	case bson.TypeString:
 		var s string

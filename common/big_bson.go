@@ -15,9 +15,9 @@ func (a Big) MarshalBSONValue() (byte, []byte, error) {
 	return byte(typ), data, nil
 }
 
-func (a *Big) UnmarshalBSONValue(t bson.Type, b []byte) error {
-	if t != bson.TypeString {
-		return errors.Errorf("Invalid marshaled type for Big, %v", t)
+func (a *Big) UnmarshalBSONValue(t byte, b []byte) error {
+	if bson.Type(t) != bson.TypeString {
+		return errors.Errorf("Invalid marshaled type for Big, %v", bson.Type(t))
 	}
 
 	s, _, ok := bsoncore.ReadString(b)
