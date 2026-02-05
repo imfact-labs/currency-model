@@ -37,14 +37,6 @@ var (
 	DefaultColNameBlock           = "digest_bm"
 )
 
-var AllCollections = []string{
-	DefaultColNameAccount,
-	DefaultColNameBalance,
-	DefaultColNameCurrency,
-	DefaultColNameOperation,
-	DefaultColNameBlock,
-}
-
 var DigestStorageLastBlockKey = "digest_last_block"
 
 type Database struct {
@@ -149,7 +141,7 @@ func (db *Database) CreateIndex(dIndexes map[string][]mongo.IndexModel) error {
 	}
 
 	for col, models := range dIndexes {
-		if err := db.digestDB.CreateIndex(col, models, IndexPrefix); err != nil {
+		if err := db.digestDB.CreateIndex(col, models); err != nil {
 			return err
 		}
 	}

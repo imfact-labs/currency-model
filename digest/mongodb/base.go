@@ -159,7 +159,7 @@ func (st *Database) initialize() error {
 	}
 
 	for col, models := range defaultIndexes {
-		if err := st.CreateIndex(col, models, IndexPrefix); err != nil {
+		if err := st.CreateIndex(col, models); err != nil {
 			return err
 		}
 	}
@@ -227,7 +227,7 @@ func (st *Database) cleanByHeight(height base.Height) error {
 	return nil
 }
 
-func (st *Database) CreateIndex(col string, models []mongo.IndexModel, prefix string) error {
+func (st *Database) CreateIndex(col string, models []mongo.IndexModel) error {
 	if st.readonly {
 		return errors.Errorf("readonly mode")
 	}
@@ -235,40 +235,21 @@ func (st *Database) CreateIndex(col string, models []mongo.IndexModel, prefix st
 	st.Lock()
 	defer st.Unlock()
 
-	iv := st.client.Collection(col).Indexes()
-
-	cursor, err := iv.List(context.TODO())
-	if err != nil {
-		return err
-	}
-
-	var existings []string
-	var results []bson.M
-	if err = cursor.All(context.TODO(), &results); err != nil {
-		return err
-	} else {
-		for _, r := range results {
-			name := r["name"].(string)
-			if !isIndexName(name, prefix) {
-				continue
-			}
-
-			existings = append(existings, name)
-		}
-	}
-
-	if len(existings) > 0 {
-		for _, name := range existings {
-			if err := iv.DropOne(context.TODO(), name); err != nil {
-				return err
-			}
-		}
-	}
-
 	if len(models) < 1 {
 		return nil
 	}
 
+	cols, err := st.client.Collections()
+	if err != nil {
+		return err
+	}
+	for _, c := range cols {
+		if c == col {
+			return nil
+		}
+	}
+
+	iv := st.client.Collection(col).Indexes()
 	if _, err := iv.CreateMany(context.TODO(), models); err != nil {
 		return err
 	}
