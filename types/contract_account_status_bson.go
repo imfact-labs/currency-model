@@ -49,7 +49,7 @@ func (cs *ContractAccountStatus) DecodeBSON(b []byte, enc *bsonenc.Encoder) erro
 	}
 
 	var rht *hint.Hint
-	if ucs.Owner != "" {
+	if ucs.RegisterOperation != "" {
 		h, err := hint.ParseHint(ucs.RegisterOperation)
 		if err != nil {
 			return e.Wrap(err)
