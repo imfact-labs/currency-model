@@ -1,8 +1,10 @@
 package utils
 
 import (
-	"github.com/pkg/errors"
 	"reflect"
+
+	"github.com/json-iterator/go"
+	"github.com/pkg/errors"
 )
 
 func HasValue(slice interface{}, value interface{}) (bool, error) {
@@ -115,3 +117,9 @@ func HasFieldAndSliceValue(
 	}
 	return false, false, nil
 }
+
+var JSON = jsoniter.Config{
+	EscapeHTML:             true,
+	SortMapKeys:            false,
+	ValidateJsonRawMessage: false,
+}.Froze()

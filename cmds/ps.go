@@ -8,11 +8,11 @@ import (
 	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	did "github.com/ProtoconNet/mitum-currency/v3/operation/did-registry"
 
-	bsonenc "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/currency"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/extension"
 	isaacoperation "github.com/ProtoconNet/mitum-currency/v3/operation/isaac"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/processor"
+	"github.com/ProtoconNet/mitum-currency/v3/utils/bsonenc"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/isaac"
 	isaacdatabase "github.com/ProtoconNet/mitum2/isaac/database"

@@ -1,4 +1,4 @@
-package digest
+package api
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/gorilla/mux"
@@ -76,7 +77,7 @@ func handleAccountInGroup(hd *Handlers, address base.Address) (interface{}, erro
 	}
 }
 
-func buildAccountHal(hd *Handlers, va AccountValue) (Hal, error) {
+func buildAccountHal(hd *Handlers, va digest.AccountValue) (Hal, error) {
 	var hal Hal
 
 	if va.IsZeroValue() {
@@ -181,7 +182,7 @@ func handleAccountOperationsInGroup(
 	var vas []Hal
 	if err := hd.database.OperationsByAddress(
 		address, true, reverse, offset, limit,
-		func(_ util.Hash, va OperationValue) (bool, error) {
+		func(_ util.Hash, va digest.OperationValue) (bool, error) {
 			hal, err := buildOperationHal(hd, va)
 			if err != nil {
 				return false, err
@@ -243,7 +244,7 @@ func buildAccountOperationsHal(
 
 	var nextoffset string
 	if len(vas) > 0 {
-		va := vas[len(vas)-1].Interface().(OperationValue)
+		va := vas[len(vas)-1].Interface().(digest.OperationValue)
 		nextoffset = buildOffset(va.Height(), va.Index())
 	}
 
@@ -424,7 +425,7 @@ func (hd *Handlers) accountsByPublickey(
 	offsetHeight := base.NilHeight
 	var lastaddress base.Address
 
-	switch h, err := hd.database.topHeightByPublickey(pub); {
+	switch h, err := hd.database.TopHeightByPublickey(pub); {
 	case err != nil:
 		return offsetHeight, nil, nil, err
 	case h == base.NilHeight:
@@ -439,7 +440,7 @@ func (hd *Handlers) accountsByPublickey(
 
 	var items []Hal
 	if err := hd.database.AccountsByPublickey(pub, false, offsetHeight, offsetAddress, hd.ItemsLimiter("accounts"),
-		func(va AccountValue) (bool, error) {
+		func(va digest.AccountValue) (bool, error) {
 			hal, err := buildAccountHal(hd, va)
 			if err != nil {
 				return false, err

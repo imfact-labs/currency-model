@@ -1,8 +1,9 @@
-package digest
+package api
 
 import (
 	"net/http"
 
+	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/pkg/errors"
@@ -43,7 +44,7 @@ func handleDIDDesignInGroup(hd *Handlers, contract string) ([]byte, error) {
 	var de types.Design
 	var st base.State
 
-	de, st, err := DIDDesign(hd.database, contract)
+	de, st, err := digest.DIDDesign(hd.database, contract)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +114,7 @@ func HandleDIDData(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDIDDataInGroup(hd *Handlers, contract, key string) ([]byte, error) {
-	data, st, err := DIDData(hd.database, contract, key)
+	data, st, err := digest.DIDData(hd.database, contract, key)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +186,7 @@ func HandleDIDDocument(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDIDDocumentInGroup(hd *Handlers, contract, key string) ([]byte, error) {
-	doc, st, err := DIDDocument(hd.database, contract, key)
+	doc, st, err := digest.DIDDocument(hd.database, contract, key)
 	if err != nil {
 		return nil, err
 	}

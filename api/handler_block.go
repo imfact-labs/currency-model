@@ -1,8 +1,9 @@
-package digest
+package api
 
 import (
 	"net/http"
 
+	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/gorilla/mux"
@@ -39,7 +40,7 @@ func handleBlockInGroup(hd *Handlers, vars map[string]string) ([]byte, error) {
 	if s, found := vars["height"]; found {
 		height, err := parseHeightFromPath(s)
 		if err != nil {
-			return nil, ErrBadRequest.Errorf("Invalid height found for block by height: %v", err)
+			return nil, digest.ErrBadRequest.Errorf("Invalid height found for block by height: %v", err)
 		}
 
 		h, err := buildBlockHalByHeight(hd, height)

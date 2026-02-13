@@ -1,4 +1,4 @@
-package digest
+package api
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ProtoconNet/mitum-currency/v3/digest/network"
+	"github.com/ProtoconNet/mitum-currency/v3/api/network"
 	dutil "github.com/ProtoconNet/mitum-currency/v3/digest/util"
 	"github.com/ProtoconNet/mitum2/base"
 	isaacnetwork "github.com/ProtoconNet/mitum2/isaac/network"

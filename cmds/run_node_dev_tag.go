@@ -7,6 +7,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/ProtoconNet/mitum-currency/v3/api"
 	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/launch"
@@ -35,8 +36,8 @@ func (cmd *RunCommand) pDigestAPIHandlers(ctx context.Context) (context.Context,
 		return ctx, err
 	}
 
-	var dnt *digest.HTTP2Server
-	if err := util.LoadFromContext(ctx, digest.ContextValueDigestNetwork, &dnt); err != nil {
+	var dnt *api.HTTP2Server
+	if err := util.LoadFromContext(ctx, api.ContextValueDigestNetwork, &dnt); err != nil {
 		return ctx, err
 	}
 
@@ -51,7 +52,7 @@ func (cmd *RunCommand) pDigestAPIHandlers(ctx context.Context) (context.Context,
 	if err := handlers.Initialize(); err != nil {
 		return ctx, err
 	}
-	digest.SetHandlers(handlers, design.Digest)
+	api.SetHandlers(handlers, design.Digest)
 
 	return ctx, nil
 }

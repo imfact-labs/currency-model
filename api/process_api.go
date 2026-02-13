@@ -1,9 +1,10 @@
-package digest
+package api
 
 import (
 	"context"
 	"crypto/tls"
 
+	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	isaacnetwork "github.com/ProtoconNet/mitum2/isaac/network"
 	"github.com/ProtoconNet/mitum2/launch"
 	"github.com/ProtoconNet/mitum2/network/quicmemberlist"
@@ -27,20 +28,20 @@ func ProcessStartAPI(ctx context.Context) (context.Context, error) {
 
 func ProcessAPI(ctx context.Context) (context.Context, error) {
 	var nodeDesign launch.NodeDesign
-	var design YamlDigestDesign
+	var design digest.YamlDigestDesign
 	var log *logging.Logging
 	var encs *encoder.Encoders
 
 	if err := util.LoadFromContext(ctx,
 		launch.EncodersContextKey, &encs,
 		launch.DesignContextKey, &nodeDesign,
-		ContextValueDigestDesign, &design,
+		digest.ContextValueDigestDesign, &design,
 		launch.LoggingContextKey, &log,
 	); err != nil {
 		return ctx, err
 	}
 
-	if design.Equal(YamlDigestDesign{}) {
+	if design.Equal(digest.YamlDigestDesign{}) {
 		log.Log().Debug().Msg("digest api disabled; empty network")
 
 		return ctx, nil

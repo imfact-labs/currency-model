@@ -1,4 +1,4 @@
-package digest
+package api
 
 import (
 	"context"
@@ -7,8 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ProtoconNet/mitum-currency/v3/digest/network"
+	"github.com/ProtoconNet/mitum-currency/v3/api/network"
+	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/ProtoconNet/mitum-currency/v3/utils"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/launch"
 	"github.com/ProtoconNet/mitum2/network/quicmemberlist"
@@ -75,7 +77,7 @@ const (
 var GlobalItemsLimit int64 = 10
 
 func init() {
-	if b, err := JSON.Marshal(UnknownProblem); err != nil {
+	if b, err := utils.JSON.Marshal(UnknownProblem); err != nil {
 		panic(err)
 	} else {
 		UnknownProblemJSON = b
@@ -89,7 +91,7 @@ type Handlers struct {
 	networkID        base.NetworkID
 	encs             *encoder.Encoders
 	enc              encoder.Encoder
-	database         *Database
+	database         *digest.Database
 	cache            Cache
 	queue            chan RequestWrapper
 	node             quicstream.ConnInfo
@@ -109,7 +111,7 @@ func NewHandlers(
 	networkID base.NetworkID,
 	encs *encoder.Encoders,
 	enc encoder.Encoder,
-	st *Database,
+	st *digest.Database,
 	cache Cache,
 	router *mux.Router,
 	queue chan RequestWrapper,
@@ -195,7 +197,7 @@ func (hd *Handlers) SetEncoder(encoder encoder.Encoder) {
 	hd.enc = encoder
 }
 
-func (hd *Handlers) Database() *Database {
+func (hd *Handlers) Database() *digest.Database {
 	return hd.database
 }
 

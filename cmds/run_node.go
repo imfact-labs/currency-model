@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/ProtoconNet/mitum-currency/v3/api"
 	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/isaac"
@@ -73,8 +74,8 @@ func (cmd *RunCommand) Run(pctx context.Context) error {
 
 	pps := DefaultRunPS()
 
-	_ = pps.AddOK(digest.PNameDigester, digest.ProcessDigester, nil, PNameDigesterDataBase).
-		AddOK(digest.PNameStartDigester, digest.ProcessStartDigester, nil, PNameStartAPI)
+	_ = pps.AddOK(digest.PNameDigester, digest.ProcessDigester, nil, digest.PNameDigesterDataBase).
+		AddOK(digest.PNameStartDigester, digest.ProcessStartDigester, nil, api.PNameStartAPI)
 	_ = pps.POK(launch.PNameStorage).PostAddOK(ps.Name("check-hold"), cmd.pCheckHold)
 	_ = pps.POK(launch.PNameStates).
 		PreAddOK(ps.Name("when-new-block-saved-in-consensus-state-func"), cmd.pWhenNewBlockSavedInConsensusStateFunc).
@@ -82,7 +83,7 @@ func (cmd *RunCommand) Run(pctx context.Context) error {
 		PreAddOK(ps.Name("when-new-block-saved-in-syncing-state-func"), cmd.pWhenNewBlockSavedInSyncingStateFunc)
 	_ = pps.POK(launch.PNameEncoder).
 		PostAddOK(launch.PNameAddHinters, PAddHinters)
-	_ = pps.POK(PNameAPI).
+	_ = pps.POK(api.PNameAPI).
 		PostAddOK(PNameDigestAPIHandlers, cmd.pDigestAPIHandlers)
 	_ = pps.POK(digest.PNameDigester).
 		PostAddOK(PNameDigesterFollowUp, digest.PdigesterFollowUp)
@@ -374,8 +375,8 @@ func (cmd *RunCommand) runHTTPState(bind string) error {
 	return nil
 }
 
-func LoadCache(log *zerolog.Logger, _ context.Context, design digest.YamlDigestDesign) (digest.Cache, error) {
-	c, err := digest.NewCacheFromURI(design.Cache().String())
+func LoadCache(log *zerolog.Logger, _ context.Context, design digest.YamlDigestDesign) (api.Cache, error) {
+	c, err := api.NewCacheFromURI(design.Cache().String())
 	if err != nil {
 		log.Err(err).Str("cache", design.Cache().String()).Msg("connect cache server")
 		log.Warn().Msg("instead of remote cache server, internal mem cache can be available, `memory://`")
@@ -389,10 +390,10 @@ func SetDigestAPIDefaultHandlers(
 	log *zerolog.Logger,
 	ctx context.Context,
 	params *launch.LocalParams,
-	cache digest.Cache,
+	cache api.Cache,
 	router *mux.Router,
-	queue chan digest.RequestWrapper,
-) (*digest.Handlers, error) {
+	queue chan api.RequestWrapper,
+) (*api.Handlers, error) {
 	var nodeDesign launch.NodeDesign
 	var design digest.YamlDigestDesign
 	var st *digest.Database
@@ -413,7 +414,7 @@ func SetDigestAPIDefaultHandlers(
 		return nil, err
 	}
 
-	handlers := digest.NewHandlers(ctx, params.ISAAC.NetworkID(), encs, enc, st, cache, router, queue, node)
+	handlers := api.NewHandlers(ctx, params.ISAAC.NetworkID(), encs, enc, st, cache, router, queue, node)
 
 	h, err := SetDigestAPINetworkClient(log, ctx, params, handlers)
 	if err != nil {
@@ -428,8 +429,8 @@ func SetDigestAPINetworkClient(
 	log *zerolog.Logger,
 	ctx context.Context,
 	params *launch.LocalParams,
-	handlers *digest.Handlers,
-) (*digest.Handlers, error) {
+	handlers *api.Handlers,
+) (*api.Handlers, error) {
 	var memberList *quicmemberlist.Memberlist
 	if err := util.LoadFromContextOK(ctx, launch.MemberlistContextKey, &memberList); err != nil {
 		return nil, err

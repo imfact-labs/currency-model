@@ -1,4 +1,4 @@
-package digest
+package api
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ProtoconNet/mitum-currency/v3/digest"
 	"github.com/ProtoconNet/mitum2/util/valuehash"
 
 	"github.com/ProtoconNet/mitum-currency/v3/operation/currency"
@@ -47,7 +48,7 @@ func HandleOperation(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 
 func handleOperationInGroup(hd *Handlers, h util.Hash) ([]byte, error) {
 	var (
-		va  OperationValue
+		va  digest.OperationValue
 		err error
 	)
 	switch va, _, err = hd.database.Operation(h, true); {
@@ -281,7 +282,7 @@ func handleOperationsByHashInGroup(
 	return b, err
 }
 
-func buildOperationHal(hd *Handlers, va OperationValue) (Hal, error) {
+func buildOperationHal(hd *Handlers, va digest.OperationValue) (Hal, error) {
 	var hal Hal
 	var h string
 	var err error
@@ -454,7 +455,7 @@ func buildOperationsByHashesFilter(hashes string) (bson.M, error) {
 func nextOffsetOfOperations(baseSelf string, vas []Hal, reverse bool) string {
 	var nextoffset string
 	if len(vas) > 0 {
-		va := vas[len(vas)-1].Interface().(OperationValue)
+		va := vas[len(vas)-1].Interface().(digest.OperationValue)
 		nextoffset = buildOffset(va.Height(), va.Index())
 	}
 
@@ -477,7 +478,7 @@ func nextOffsetOfOperations(baseSelf string, vas []Hal, reverse bool) string {
 func nextOffsetOfOperationsByHeight(baseSelf string, vas []Hal, reverse bool) string {
 	var nextoffset string
 	if len(vas) > 0 {
-		va := vas[len(vas)-1].Interface().(OperationValue)
+		va := vas[len(vas)-1].Interface().(digest.OperationValue)
 		nextoffset = fmt.Sprintf("%d", va.Index())
 	}
 
@@ -509,7 +510,7 @@ func (hd *Handlers) loadOperationsHALFromDatabase(filter bson.M, reverse bool, l
 	var opsCount int64
 	if err := hd.database.Operations(
 		filter, true, reverse, limit,
-		func(_ util.Hash, va OperationValue, count int64) (bool, error) {
+		func(_ util.Hash, va digest.OperationValue, count int64) (bool, error) {
 			hal, err := buildOperationHal(hd, va)
 			if err != nil {
 				return false, err
@@ -532,7 +533,7 @@ func loadOperationsHALFromDatabaseByHash(hd *Handlers, filter bson.M) ([]Hal, in
 	var opsCount int64
 	if err := hd.database.OperationsByHash(
 		filter,
-		func(_ util.Hash, va OperationValue, count int64) (bool, error) {
+		func(_ util.Hash, va digest.OperationValue, count int64) (bool, error) {
 			hal, err := buildOperationHal(hd, va)
 			if err != nil {
 				return false, err

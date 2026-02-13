@@ -1,4 +1,4 @@
-package digest
+package api
 
 import (
 	"github.com/ProtoconNet/mitum2/network/quicmemberlist"

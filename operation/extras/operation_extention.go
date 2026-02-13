@@ -582,7 +582,7 @@ const (
 	DuplicationKeyTypeSender           types.DuplicationKeyType = "currency-sender"
 	DuplicationKeyTypeCurrency         types.DuplicationKeyType = "currency-id"
 	DuplicationKeyTypeNewContract      types.DuplicationKeyType = "new-contract"
-	DuplicationKeyTypeContractRegister types.DuplicationKeyType = "contract-register"
+	DuplicationKeyTypeContractStatus   types.DuplicationKeyType = "contract-status"
 	DuplicationKeyTypeContractWithdraw types.DuplicationKeyType = "contract-withdraw"
 	DuplicationKeyTypeDIDAccount       types.DuplicationKeyType = "did-account"
 )

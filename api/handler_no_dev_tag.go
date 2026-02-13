@@ -1,7 +1,7 @@
 //go:build !dev
 // +build !dev
 
-package digest
+package api
 
 import "net/http"
 

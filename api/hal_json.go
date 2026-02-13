@@ -1,8 +1,9 @@
-package digest
+package api
 
 import (
 	"encoding/json"
 
+	"github.com/ProtoconNet/mitum-currency/v3/utils"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	jsoniter "github.com/json-iterator/go"
@@ -39,7 +40,7 @@ type BaseHalJSONUnpacker struct {
 
 func (hal *BaseHal) UnmarshalJSON(b []byte) error {
 	var uh BaseHalJSONUnpacker
-	if err := JSON.Unmarshal(b, &uh); err != nil {
+	if err := utils.JSON.Unmarshal(b, &uh); err != nil {
 		return err
 	}
 
@@ -59,7 +60,7 @@ func (hl HalLink) MarshalJSON() ([]byte, error) {
 	}
 	all["href"] = hl.href
 
-	return JSON.Marshal(all)
+	return utils.JSON.Marshal(all)
 }
 
 type HalLinkJSONUnpacker struct {
@@ -69,7 +70,7 @@ type HalLinkJSONUnpacker struct {
 
 func (hl *HalLink) UnmarshalJSON(b []byte) error {
 	var uh HalLinkJSONUnpacker
-	if err := JSON.Unmarshal(b, &uh); err != nil {
+	if err := utils.JSON.Unmarshal(b, &uh); err != nil {
 		return err
 	}
 

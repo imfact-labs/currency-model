@@ -1,4 +1,4 @@
-package digest
+package api
 
 import (
 	"fmt"
@@ -35,7 +35,7 @@ func handleCurrenciesInGroup(hd *Handlers) ([]byte, error) {
 	var hal Hal = NewBaseHal(nil, NewHalLink(HandlerPathCurrencies, nil))
 	hal = hal.AddLink("currency:{currency_id}", NewHalLink(HandlerPathCurrency, nil).SetTemplated())
 
-	cids, err := hd.database.currencies()
+	cids, err := hd.database.Currencies()
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func handleCurrencyInGroup(hd *Handlers, cid string) ([]byte, error) {
 	var de types.CurrencyDesign
 	var st base.State
 
-	de, st, err := hd.database.currency(cid)
+	de, st, err := hd.database.Currency(cid)
 	if err != nil {
 		return nil, err
 	}
