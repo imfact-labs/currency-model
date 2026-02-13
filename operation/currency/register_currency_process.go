@@ -2,12 +2,12 @@ package currency
 
 import (
 	"context"
-	"github.com/ProtoconNet/mitum-currency/v3/common"
+	"github.com/imfact-labs/imfact-currency/common"
 	"sync"
 
-	"github.com/ProtoconNet/mitum-currency/v3/state"
-	"github.com/ProtoconNet/mitum-currency/v3/state/currency"
-	"github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/imfact-labs/imfact-currency/state"
+	"github.com/imfact-labs/imfact-currency/state/currency"
+	"github.com/imfact-labs/imfact-currency/types"
 	"github.com/ProtoconNet/mitum2/base"
 
 	"github.com/ProtoconNet/mitum2/isaac"

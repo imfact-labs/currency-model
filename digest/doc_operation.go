@@ -3,12 +3,12 @@ package digest
 import (
 	"time"
 
-	"github.com/ProtoconNet/mitum-currency/v3/operation/extras"
-	"github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/imfact-labs/imfact-currency/operation/extras"
+	"github.com/imfact-labs/imfact-currency/types"
 	"github.com/pkg/errors"
 
-	mongodbst "github.com/ProtoconNet/mitum-currency/v3/digest/mongodb"
-	bsonenc "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
+	mongodbst "github.com/imfact-labs/imfact-currency/digest/mongodb"
+	"github.com/imfact-labs/imfact-currency/utils/bsonenc"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util/encoder"
 )

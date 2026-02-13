@@ -3,11 +3,11 @@ package extras
 import (
 	"encoding/json"
 
-	"github.com/ProtoconNet/mitum-currency/v3/common"
-	"github.com/ProtoconNet/mitum-currency/v3/state"
-	didstate "github.com/ProtoconNet/mitum-currency/v3/state/did-registry"
-	estate "github.com/ProtoconNet/mitum-currency/v3/state/extension"
-	"github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/imfact-labs/imfact-currency/common"
+	"github.com/imfact-labs/imfact-currency/state"
+	didstate "github.com/imfact-labs/imfact-currency/state/did-registry"
+	estate "github.com/imfact-labs/imfact-currency/state/extension"
+	"github.com/imfact-labs/imfact-currency/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
@@ -582,7 +582,7 @@ const (
 	DuplicationKeyTypeSender           types.DuplicationKeyType = "currency-sender"
 	DuplicationKeyTypeCurrency         types.DuplicationKeyType = "currency-id"
 	DuplicationKeyTypeNewContract      types.DuplicationKeyType = "new-contract"
-	DuplicationKeyTypeContractRegister types.DuplicationKeyType = "contract-register"
+	DuplicationKeyTypeContractStatus   types.DuplicationKeyType = "contract-status"
 	DuplicationKeyTypeContractWithdraw types.DuplicationKeyType = "contract-withdraw"
 	DuplicationKeyTypeDIDAccount       types.DuplicationKeyType = "did-account"
 )

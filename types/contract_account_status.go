@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"sort"
 
-	"github.com/ProtoconNet/mitum-currency/v3/common"
+	"github.com/imfact-labs/imfact-currency/common"
 	"github.com/pkg/errors"
 
 	"github.com/ProtoconNet/mitum2/base"

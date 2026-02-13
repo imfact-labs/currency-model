@@ -1,9 +1,9 @@
 package did_registry
 
 import (
-	"github.com/ProtoconNet/mitum-currency/v3/common"
-	bsonenc "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
-	"github.com/ProtoconNet/mitum-currency/v3/operation/extras"
+	"github.com/imfact-labs/imfact-currency/common"
+	"github.com/imfact-labs/imfact-currency/operation/extras"
+	"github.com/imfact-labs/imfact-currency/utils/bsonenc"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/ProtoconNet/mitum2/util/valuehash"
 	"go.mongodb.org/mongo-driver/v2/bson"

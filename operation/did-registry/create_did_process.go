@@ -5,12 +5,12 @@ import (
 
 	"sync"
 
-	"github.com/ProtoconNet/mitum-currency/v3/common"
-	"github.com/ProtoconNet/mitum-currency/v3/state"
-	ccstate "github.com/ProtoconNet/mitum-currency/v3/state/currency"
-	dstate "github.com/ProtoconNet/mitum-currency/v3/state/did-registry"
-	"github.com/ProtoconNet/mitum-currency/v3/types"
-	ctypes "github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/imfact-labs/imfact-currency/common"
+	"github.com/imfact-labs/imfact-currency/state"
+	ccstate "github.com/imfact-labs/imfact-currency/state/currency"
+	dstate "github.com/imfact-labs/imfact-currency/state/did-registry"
+	"github.com/imfact-labs/imfact-currency/types"
+	ctypes "github.com/imfact-labs/imfact-currency/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 )

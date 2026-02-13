@@ -2,18 +2,17 @@ package digest
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 
-	digestmongo "github.com/ProtoconNet/mitum-currency/v3/digest/mongodb"
-	dutil "github.com/ProtoconNet/mitum-currency/v3/digest/util"
-	"github.com/ProtoconNet/mitum-currency/v3/state/currency"
-	"github.com/ProtoconNet/mitum-currency/v3/state/extension"
-	"github.com/ProtoconNet/mitum-currency/v3/types"
+	digestmongo "github.com/imfact-labs/imfact-currency/digest/mongodb"
+	dutil "github.com/imfact-labs/imfact-currency/digest/util"
+	"github.com/imfact-labs/imfact-currency/state/currency"
+	"github.com/imfact-labs/imfact-currency/state/extension"
+	"github.com/imfact-labs/imfact-currency/types"
 	"github.com/ProtoconNet/mitum2/base"
 	isaacdatabase "github.com/ProtoconNet/mitum2/isaac/database"
 	"github.com/ProtoconNet/mitum2/util"
@@ -718,7 +717,7 @@ func (db *Database) contractAccountStatus(a base.Address) (types.ContractAccount
 	}
 }
 
-func (db *Database) currencies() ([]string, error) {
+func (db *Database) Currencies() ([]string, error) {
 	var cids []string
 
 	for {
@@ -840,7 +839,7 @@ func (db *Database) ManifestByHash(hash util.Hash) (
 	}
 }
 
-func (db *Database) currency(cid string) (types.CurrencyDesign, base.State, error) {
+func (db *Database) Currency(cid string) (types.CurrencyDesign, base.State, error) {
 	q := dutil.NewBSONFilter("currency", cid).D()
 
 	opt := options.FindOne().SetSort(
@@ -874,7 +873,7 @@ func (db *Database) currency(cid string) (types.CurrencyDesign, base.State, erro
 	}
 }
 
-func (db *Database) topHeightByPublickey(pub base.Publickey) (base.Height, error) {
+func (db *Database) TopHeightByPublickey(pub base.Publickey) (base.Height, error) {
 	var sas []string
 	res := db.digestDB.Client().Collection(DefaultColNameAccount).Distinct(
 		context.Background(),
@@ -1115,10 +1114,6 @@ func parseOffset(s string) (base.Height, uint64, error) {
 	}
 }
 
-func buildOffset(height base.Height, index uint64) string {
-	return fmt.Sprintf("%d,%d", height, index)
-}
-
 func buildOperationsFilterByAddress(address base.Address, offset string, reverse bool) (bson.M, error) {
 	filter := bson.M{"addresses": bson.M{"$in": []string{address.String()}}}
 	if len(offset) > 0 {
@@ -1147,30 +1142,6 @@ func buildOperationsFilterByAddress(address base.Address, offset string, reverse
 	}
 
 	return filter, nil
-}
-
-func parseOffsetByString(s string) (base.Height, string, error) {
-	var a, b string
-	switch n := strings.SplitN(s, ",", 2); {
-	case n == nil:
-		return base.NilHeight, "", errors.Errorf("Invalid offset string, %q", s)
-	case len(n) < 2:
-		return base.NilHeight, "", errors.Errorf("Invalid offset, %q", s)
-	default:
-		a = n[0]
-		b = n[1]
-	}
-
-	h, err := base.ParseHeightString(a)
-	if err != nil {
-		return base.NilHeight, "", errors.Wrap(err, "invalid height of offset")
-	}
-
-	return h, b, nil
-}
-
-func buildOffsetByString(height base.Height, s string) string {
-	return fmt.Sprintf("%d,%s", height, s)
 }
 
 func buildAccountsFilterByPublickey(pub base.Publickey) bson.M {

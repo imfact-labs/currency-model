@@ -1,11 +1,11 @@
 package digest
 
 import (
-	mongodb "github.com/ProtoconNet/mitum-currency/v3/digest/mongodb"
-	bsonutil "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
-	cstate "github.com/ProtoconNet/mitum-currency/v3/state"
-	state "github.com/ProtoconNet/mitum-currency/v3/state/did-registry"
-	"github.com/ProtoconNet/mitum-currency/v3/types"
+	mongodb "github.com/imfact-labs/imfact-currency/digest/mongodb"
+	cstate "github.com/imfact-labs/imfact-currency/state"
+	state "github.com/imfact-labs/imfact-currency/state/did-registry"
+	"github.com/imfact-labs/imfact-currency/types"
+	"github.com/imfact-labs/imfact-currency/utils/bsonenc"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util/encoder"
 )
@@ -47,7 +47,7 @@ func (doc DIDRegistryDesignDoc) MarshalBSON() ([]byte, error) {
 	m["contract"] = parsedKey[1]
 	m["height"] = doc.st.Height()
 
-	return bsonutil.Marshal(m)
+	return bsonenc.Marshal(m)
 }
 
 type DIDDataDoc struct {
@@ -89,7 +89,7 @@ func (doc DIDDataDoc) MarshalBSON() ([]byte, error) {
 	m["method_specific_id"] = doc.data.Address()
 	m["height"] = doc.st.Height()
 
-	return bsonutil.Marshal(m)
+	return bsonenc.Marshal(m)
 }
 
 type DIDDocumentDoc struct {
@@ -131,5 +131,5 @@ func (doc DIDDocumentDoc) MarshalBSON() ([]byte, error) {
 	m["did"] = doc.document.DID()
 	m["height"] = doc.st.Height()
 
-	return bsonutil.Marshal(m)
+	return bsonenc.Marshal(m)
 }

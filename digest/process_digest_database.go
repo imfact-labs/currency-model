@@ -3,7 +3,7 @@ package digest
 import (
 	"context"
 
-	mongodbst "github.com/ProtoconNet/mitum-currency/v3/digest/mongodb"
+	mongodbst "github.com/imfact-labs/imfact-currency/digest/mongodb"
 	"github.com/ProtoconNet/mitum2/isaac"
 	isaacdatabase "github.com/ProtoconNet/mitum2/isaac/database"
 	"github.com/ProtoconNet/mitum2/launch"

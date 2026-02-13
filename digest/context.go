@@ -1,12 +1,19 @@
 package digest
 
-import "github.com/ProtoconNet/mitum2/util"
+import (
+	"github.com/ProtoconNet/mitum2/util"
+	"github.com/ProtoconNet/mitum2/util/ps"
+)
 
 var (
 	ContextValueDigestDesign    util.ContextKey = "digest_design"
 	ContextValueSequencerDesign util.ContextKey = "sequencer_design"
 	ContextValueDigestDatabase  util.ContextKey = "digest_database"
-	ContextValueDigestNetwork   util.ContextKey = "digest_network"
-	ContextValueDigester        util.ContextKey = "digester"
-	ContextValueLocalNetwork    util.ContextKey = "local_network"
+
+	ContextValueDigester     util.ContextKey = "digester"
+	ContextValueLocalNetwork util.ContextKey = "local_network"
+)
+
+var (
+	PNameDigesterDataBase = ps.Name("digester_database")
 )

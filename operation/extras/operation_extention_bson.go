@@ -1,8 +1,8 @@
 package extras
 
 import (
-	"github.com/ProtoconNet/mitum-currency/v3/common"
-	bsonenc "github.com/ProtoconNet/mitum-currency/v3/digest/util/bson"
+	"github.com/imfact-labs/imfact-currency/common"
+	"github.com/imfact-labs/imfact-currency/utils/bsonenc"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/pkg/errors"

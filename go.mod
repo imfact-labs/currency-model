@@ -1,4 +1,4 @@
-module github.com/ProtoconNet/mitum-currency/v3
+module github.com/imfact-labs/imfact-currency
 
 go 1.24.0
 
@@ -6,8 +6,6 @@ toolchain go1.24.6
 
 require (
 	github.com/ProtoconNet/mitum2 v0.0.0-20251029064552-48aef1088f5f
-	github.com/alecthomas/kong v1.12.1
-	github.com/arl/statsviz v0.7.1
 	github.com/bluele/gcache v0.0.2
 	github.com/btcsuite/btcd/btcec/v2 v2.3.5
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
@@ -15,8 +13,7 @@ require (
 	github.com/google/pprof v0.0.0-20250903194437-c28834ac2320
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
-	github.com/hashicorp/memberlist v0.5.1
-	github.com/json-iterator/go v1.1.12
+	github.com/json-iterator/go v1.1.12:
 	github.com/justinas/alice v1.2.0
 	github.com/multiformats/go-multibase v0.2.0
 	github.com/pkg/errors v0.9.1
@@ -28,11 +25,11 @@ require (
 	golang.org/x/net v0.47.0
 	golang.org/x/sync v0.18.0
 	golang.org/x/time v0.13.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
+	github.com/alecthomas/kong v1.12.1 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/beevik/ntp v1.4.3 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
@@ -51,7 +48,6 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
 	github.com/google/btree v1.1.2 // indirect
-	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/hashicorp/consul/api v1.32.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -66,6 +62,7 @@ require (
 	github.com/hashicorp/go-sockaddr v1.0.6 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
 	github.com/hashicorp/hcl v1.0.1-vault-7 // indirect
+	github.com/hashicorp/memberlist v0.5.1 // indirect
 	github.com/hashicorp/serf v0.10.1 // indirect
 	github.com/hashicorp/vault/api v1.20.0 // indirect
 	github.com/holiman/uint256 v1.3.1 // indirect
@@ -85,6 +82,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/quic-go/quic-go v0.54.1 // indirect
 	github.com/redis/go-redis/v9 v9.13.0 // indirect
+	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529 // indirect
@@ -103,6 +101,7 @@ require (
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/tools v0.38.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace github.com/hashicorp/memberlist => github.com/spikeekips/memberlist v0.0.0-20230626195851-39f17fa10d23 // latest fix-data-race branch

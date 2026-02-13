@@ -1,7 +1,7 @@
 package digest
 
 import (
-	mongodbst "github.com/ProtoconNet/mitum-currency/v3/digest/mongodb"
+	mongodbst "github.com/imfact-labs/imfact-currency/digest/mongodb"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/encoder"
