@@ -2,6 +2,7 @@ package currency
 
 import (
 	"github.com/ProtoconNet/mitum-currency/v3/common"
+	"github.com/ProtoconNet/mitum-currency/v3/operation/extras"
 	"github.com/ProtoconNet/mitum-currency/v3/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
@@ -74,6 +75,13 @@ func (fact UpdateCurrencyFact) Currency() types.CurrencyID {
 
 func (fact UpdateCurrencyFact) Policy() types.CurrencyPolicy {
 	return fact.policy
+}
+
+func (fact UpdateCurrencyFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+	r[extras.DuplicationKeyTypeCurrency] = []string{fact.Currency().String()}
+
+	return r, nil
 }
 
 type UpdateCurrency struct {

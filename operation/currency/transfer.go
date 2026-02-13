@@ -194,6 +194,13 @@ func (fact TransferFact) FactUser() base.Address {
 	return fact.sender
 }
 
+func (fact TransferFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+	r[extras.DuplicationKeyTypeSender] = []string{fact.sender.String()}
+
+	return r, nil
+}
+
 type Transfer struct {
 	extras.ExtendedOperation
 }

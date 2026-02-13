@@ -577,6 +577,20 @@ func (be *BaseOperationExtensions) AddExtension(extension OperationExtension) er
 	return nil
 }
 
+const (
+	DuplicationKeyTypeNewAddress       types.DuplicationKeyType = "new-address"
+	DuplicationKeyTypeSender           types.DuplicationKeyType = "currency-sender"
+	DuplicationKeyTypeCurrency         types.DuplicationKeyType = "currency-id"
+	DuplicationKeyTypeNewContract      types.DuplicationKeyType = "new-contract"
+	DuplicationKeyTypeContractRegister types.DuplicationKeyType = "contract-register"
+	DuplicationKeyTypeContractWithdraw types.DuplicationKeyType = "contract-withdraw"
+	DuplicationKeyTypeDIDAccount       types.DuplicationKeyType = "did-account"
+)
+
+type DeDupeKeyer interface {
+	DupKey() (map[types.DuplicationKeyType][]string, error)
+}
+
 // FeeAble is an interface type for fee calculation. Operations than requires fee must implement this interface.
 type FeeAble interface {
 	FeeBase() map[types.CurrencyID][]common.Big

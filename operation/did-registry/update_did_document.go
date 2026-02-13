@@ -1,6 +1,8 @@
 package did_registry
 
 import (
+	"fmt"
+
 	"github.com/ProtoconNet/mitum-currency/v3/common"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/extras"
 	"github.com/ProtoconNet/mitum-currency/v3/types"
@@ -149,6 +151,14 @@ func (fact UpdateDIDDocumentFact) FeeItemCount() (uint, bool) {
 
 func (fact UpdateDIDDocumentFact) ActiveContract() []base.Address {
 	return []base.Address{fact.contract}
+}
+
+func (fact UpdateDIDDocumentFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+	r[extras.DuplicationKeyTypeSender] = []string{fact.sender.String()}
+	r[extras.DuplicationKeyTypeDIDAccount] = []string{fmt.Sprintf("%s:%s", fact.Contract().String(), fact.Sender())}
+
+	return r, nil
 }
 
 type UpdateDIDDocument struct {

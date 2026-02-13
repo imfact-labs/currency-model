@@ -123,6 +123,13 @@ func (fact UpdateKeyFact) FactUser() base.Address {
 	return fact.sender
 }
 
+func (fact UpdateKeyFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+	r[extras.DuplicationKeyTypeSender] = []string{fact.sender.String()}
+
+	return r, nil
+}
+
 type UpdateKey struct {
 	extras.ExtendedOperation
 }

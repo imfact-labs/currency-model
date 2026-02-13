@@ -227,6 +227,20 @@ func (fact CreateAccountFact) FactUser() base.Address {
 	return fact.sender
 }
 
+func (fact CreateAccountFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+	r[extras.DuplicationKeyTypeSender] = []string{fact.sender.String()}
+	addrs, err := fact.Targets()
+	if err != nil {
+		return nil, err
+	}
+	for _, addr := range addrs {
+		r[extras.DuplicationKeyTypeNewAddress] = append(r[extras.DuplicationKeyTypeNewAddress], addr.String())
+	}
+
+	return r, nil
+}
+
 type CreateAccount struct {
 	extras.ExtendedOperation
 }

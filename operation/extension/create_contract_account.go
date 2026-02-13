@@ -196,6 +196,21 @@ func (fact CreateContractAccountFact) FactUser() base.Address {
 	return fact.sender
 }
 
+func (fact CreateContractAccountFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+	r[extras.DuplicationKeyTypeSender] = []string{fact.sender.String()}
+	addrs, err := fact.Targets()
+	if err != nil {
+		return nil, err
+	}
+	for _, addr := range addrs {
+		r[extras.DuplicationKeyTypeNewAddress] = append(r[extras.DuplicationKeyTypeNewAddress], addr.String())
+		r[extras.DuplicationKeyTypeNewContract] = append(r[extras.DuplicationKeyTypeNewContract], addr.String())
+	}
+
+	return r, nil
+}
+
 func (fact CreateContractAccountFact) Rebuild() CreateContractAccountFact {
 	items := make([]CreateContractAccountItem, len(fact.items))
 	for i := range fact.items {
