@@ -6,12 +6,11 @@ import (
 	"io"
 	"sync"
 
-	"github.com/ProtoconNet/mitum-currency/v3/operation/extras"
-
 	"github.com/ProtoconNet/mitum-currency/v3/common"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/currency"
-	"github.com/ProtoconNet/mitum-currency/v3/operation/did-registry"
+	did_registry "github.com/ProtoconNet/mitum-currency/v3/operation/did-registry"
 	"github.com/ProtoconNet/mitum-currency/v3/operation/extension"
+	"github.com/ProtoconNet/mitum-currency/v3/operation/extras"
 	"github.com/ProtoconNet/mitum-currency/v3/state"
 	ccstate "github.com/ProtoconNet/mitum-currency/v3/state/currency"
 	"github.com/ProtoconNet/mitum-currency/v3/types"
@@ -209,6 +208,35 @@ func (opr *OperationProcessor) PreProcess(ctx context.Context, op base.Operation
 		opp = i
 	}
 
+	if extOp, ok := op.(extras.OperationExtensions); ok {
+		auth := extOp.Extension(extras.AuthenticationExtensionType)
+		settlement := extOp.Extension(extras.SettlementExtensionType)
+		if settlement != nil && auth != nil {
+			if err := extOp.Verify(op, getStateFunc); err != nil {
+				return ctx, base.NewBaseOperationProcessReasonError(
+					common.ErrMPreProcess.Errorf("%v", err)), nil
+			}
+		} else {
+			fact := op.Fact()
+			signerFact, ok := fact.(currency.Signer)
+			if ok {
+				if err := state.CheckFactSignsByState(signerFact.Signer(), op.Signs(), getStateFunc); err != nil {
+					return ctx,
+						base.NewBaseOperationProcessReasonError(
+							common.ErrMPreProcess.
+								Wrap(common.ErrMSignInvalid).
+								Errorf("%v", err),
+						), nil
+				}
+			} else {
+				return ctx,
+					base.NewBaseOperationProcessReasonError(
+						common.ErrMPreProcess.Wrap(common.ErrMTypeMismatch).
+							Errorf("expected Signer but %T", fact)), nil
+			}
+		}
+	}
+
 	if fact, ok := op.Fact().(extras.FeeAble); ok {
 		if err := extras.VerifyFeeAble(fact, getStateFunc); err != nil {
 			return ctx, err, nil
@@ -250,35 +278,6 @@ func (opr *OperationProcessor) PreProcess(ctx context.Context, op base.Operation
 		return ctx, nil, e.Wrap(err)
 	case reasonErr != nil:
 		return ctx, reasonErr, nil
-	}
-
-	if extOp, ok := op.(extras.OperationExtensions); ok {
-		auth := extOp.Extension(extras.AuthenticationExtensionType)
-		settlement := extOp.Extension(extras.SettlementExtensionType)
-		if settlement != nil && auth != nil {
-			if err := extOp.Verify(op, getStateFunc); err != nil {
-				return ctx, base.NewBaseOperationProcessReasonError(
-					common.ErrMPreProcess.Errorf("%v", err)), nil
-			}
-		} else {
-			fact := op.Fact()
-			signerFact, ok := fact.(currency.Signer)
-			if ok {
-				if err := state.CheckFactSignsByState(signerFact.Signer(), op.Signs(), getStateFunc); err != nil {
-					return ctx,
-						base.NewBaseOperationProcessReasonError(
-							common.ErrMPreProcess.
-								Wrap(common.ErrMSignInvalid).
-								Errorf("%v", err),
-						), nil
-				}
-			} else {
-				return ctx,
-					base.NewBaseOperationProcessReasonError(
-						common.ErrMPreProcess.Wrap(common.ErrMTypeMismatch).
-							Errorf("expected Signer but %T", fact)), nil
-			}
-		}
 	}
 
 	return ctx, nil, nil
