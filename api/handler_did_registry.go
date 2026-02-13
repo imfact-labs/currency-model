@@ -3,8 +3,8 @@ package api
 import (
 	"net/http"
 
-	"github.com/ProtoconNet/mitum-currency/v3/digest"
-	"github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/imfact-labs/imfact-currency/digest"
+	"github.com/imfact-labs/imfact-currency/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/pkg/errors"
 )

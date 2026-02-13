@@ -8,7 +8,7 @@ import (
 	"net/textproto"
 	"time"
 
-	dutil "github.com/ProtoconNet/mitum-currency/v3/digest/util"
+	dutil "github.com/imfact-labs/imfact-currency/digest/util"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/valuehash"
 	"github.com/bluele/gcache"

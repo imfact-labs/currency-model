@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ProtoconNet/mitum-currency/v3/digest/mongodb"
+	"github.com/imfact-labs/imfact-currency/digest/mongodb"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	dutil "github.com/ProtoconNet/mitum2/util"

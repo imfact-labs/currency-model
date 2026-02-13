@@ -1,0 +1,33 @@
+=============== Feb 13, 2026 (KST) ===============
+21:52:55.701747 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:52:55.722848 db@open opening
+21:52:55.724898 version@stat F·[] S·0B[] Sc·[]
+21:52:55.732846 db@janitor F·2 G·0
+21:52:55.732882 db@open done T·10.016417ms
+21:52:55.758180 db@close closing
+21:52:55.758297 db@close done T·116.125µs
+=============== Feb 13, 2026 (KST) ===============
+21:52:59.133144 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:52:59.133335 version@stat F·[] S·0B[] Sc·[]
+21:52:59.133356 db@open opening
+21:52:59.133386 journal@recovery F·1
+21:52:59.133832 journal@recovery recovering @1
+21:52:59.140288 memdb@flush created L0@2 N·21 S·7KiB "\x01\x01\x00..nce,v12":"\x01\x01\x00..\x00\x00\x00,v21"
+21:52:59.140513 version@stat F·[1] S·7KiB[7KiB] Sc·[0.25]
+21:52:59.167458 db@janitor F·3 G·0
+21:52:59.167486 db@open done T·34.123541ms
+21:52:59.195910 memdb@flush N·0 S·0B
+21:52:59.195932 memdb@flush skipping
+21:52:59.195996 journal@remove removed @3
+21:52:59.196018 table@compaction range L-1 "":""
+21:52:59.196030 table@compaction L0·1 -> L1·0 S·7KiB Q·22
+21:52:59.201174 table@build created L1@6 N·17 S·7KiB "\x01\x01\x00..nce,v12":"\x01\x01\x00..\x00\x00\x00,v21"
+21:52:59.201205 version@stat F·[0 1] S·7KiB[0B 7KiB] Sc·[0.00 0.00]
+21:52:59.205220 table@compaction committed F~ S-25B Ke·0 D·4 T·9.1795ms
+21:55:45.384507 memdb@flush N·3281 S·3MiB
+21:55:45.400220 memdb@flush created L0@8 N·3281 S·1MiB "\x01\x03\x02..\x14\xac\xfe,v2999":"\x01\x03\x02..IT-,v3301"
+21:55:45.400265 version@stat F·[1 1] S·1MiB[1MiB 7KiB] Sc·[0.25 0.00]
+21:55:45.405294 memdb@flush committed F·1 T·20.700292ms
+21:55:45.405768 journal@remove removed @5
+21:56:50.367476 db@close closing
+21:56:50.368031 db@close done T·552.875µs

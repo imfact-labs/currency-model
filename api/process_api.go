@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 
-	"github.com/ProtoconNet/mitum-currency/v3/digest"
+	"github.com/imfact-labs/imfact-currency/digest"
 	isaacnetwork "github.com/ProtoconNet/mitum2/isaac/network"
 	"github.com/ProtoconNet/mitum2/launch"
 	"github.com/ProtoconNet/mitum2/network/quicmemberlist"

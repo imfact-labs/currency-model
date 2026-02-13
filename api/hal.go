@@ -3,7 +3,7 @@ package api
 import (
 	"net/url"
 
-	"github.com/ProtoconNet/mitum-currency/v3/digest/util"
+	"github.com/imfact-labs/imfact-currency/digest/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 )
 

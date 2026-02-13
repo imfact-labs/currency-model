@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/ProtoconNet/mitum-currency/v3/digest/cache"
-	"github.com/ProtoconNet/mitum-currency/v3/digest/util"
+	"github.com/imfact-labs/imfact-currency/digest/cache"
+	"github.com/imfact-labs/imfact-currency/digest/util"
 )
 
 var (

@@ -1,10 +1,10 @@
 package currency // nolint: dupl
 
 import (
-	"github.com/ProtoconNet/mitum-currency/v3/common"
+	"github.com/imfact-labs/imfact-currency/common"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
-	"github.com/ProtoconNet/mitum-currency/v3/utils/bsonenc"
+	"github.com/imfact-labs/imfact-currency/utils/bsonenc"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/ProtoconNet/mitum2/util/valuehash"
 )

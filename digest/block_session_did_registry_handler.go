@@ -1,7 +1,7 @@
 package digest
 
 import (
-	dstate "github.com/ProtoconNet/mitum-currency/v3/state/did-registry"
+	dstate "github.com/imfact-labs/imfact-currency/state/did-registry"
 	"github.com/ProtoconNet/mitum2/base"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )

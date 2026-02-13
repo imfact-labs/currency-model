@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"github.com/ProtoconNet/mitum-currency/v3/common"
+	"github.com/imfact-labs/imfact-currency/common"
 	"math/big"
 	"strings"
 

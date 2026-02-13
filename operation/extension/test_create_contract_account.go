@@ -1,8 +1,8 @@
 package extension
 
 import (
-	"github.com/ProtoconNet/mitum-currency/v3/operation/test"
-	"github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/imfact-labs/imfact-currency/operation/test"
+	"github.com/imfact-labs/imfact-currency/types"
 	"github.com/ProtoconNet/mitum2/base"
 )
 

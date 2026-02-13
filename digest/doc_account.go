@@ -1,11 +1,11 @@
 package digest
 
 import (
-	mongodbst "github.com/ProtoconNet/mitum-currency/v3/digest/mongodb"
-	"github.com/ProtoconNet/mitum-currency/v3/state/currency"
-	"github.com/ProtoconNet/mitum-currency/v3/state/extension"
-	"github.com/ProtoconNet/mitum-currency/v3/types"
-	"github.com/ProtoconNet/mitum-currency/v3/utils/bsonenc"
+	mongodbst "github.com/imfact-labs/imfact-currency/digest/mongodb"
+	"github.com/imfact-labs/imfact-currency/state/currency"
+	"github.com/imfact-labs/imfact-currency/state/extension"
+	"github.com/imfact-labs/imfact-currency/types"
+	"github.com/imfact-labs/imfact-currency/utils/bsonenc"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util/encoder"
 	"github.com/pkg/errors"

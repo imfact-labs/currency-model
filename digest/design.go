@@ -14,8 +14,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/ProtoconNet/mitum-currency/v3/digest/config"
-	dutil "github.com/ProtoconNet/mitum-currency/v3/digest/util"
+	"github.com/imfact-labs/imfact-currency/digest/config"
+	dutil "github.com/imfact-labs/imfact-currency/digest/util"
 	"github.com/ProtoconNet/mitum2/launch"
 	"github.com/ProtoconNet/mitum2/network/quicstream"
 	"github.com/ProtoconNet/mitum2/util"

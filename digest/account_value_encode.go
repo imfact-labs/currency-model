@@ -1,7 +1,7 @@
 package digest
 
 import (
-	"github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/imfact-labs/imfact-currency/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util/encoder"
 	"github.com/ProtoconNet/mitum2/util/hint"

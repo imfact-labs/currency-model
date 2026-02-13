@@ -2,10 +2,10 @@ package did_registry
 
 import (
 	"encoding/json"
-	"github.com/ProtoconNet/mitum-currency/v3/common"
-	"github.com/ProtoconNet/mitum-currency/v3/operation/extras"
-	"github.com/ProtoconNet/mitum-currency/v3/types"
-	dtypes "github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/imfact-labs/imfact-currency/common"
+	"github.com/imfact-labs/imfact-currency/operation/extras"
+	"github.com/imfact-labs/imfact-currency/types"
+	dtypes "github.com/imfact-labs/imfact-currency/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/encoder"

@@ -1,8 +1,8 @@
 package digest
 
 import (
-	"github.com/ProtoconNet/mitum-currency/v3/state/currency"
-	"github.com/ProtoconNet/mitum-currency/v3/types"
+	"github.com/imfact-labs/imfact-currency/state/currency"
+	"github.com/imfact-labs/imfact-currency/types"
 	"github.com/ProtoconNet/mitum2/base"
 	isaacnetwork "github.com/ProtoconNet/mitum2/isaac/network"
 	"github.com/ProtoconNet/mitum2/util"

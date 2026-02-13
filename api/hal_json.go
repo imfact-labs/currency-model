@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/json"
 
-	"github.com/ProtoconNet/mitum-currency/v3/utils"
+	"github.com/imfact-labs/imfact-currency/utils"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	jsoniter "github.com/json-iterator/go"

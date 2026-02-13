@@ -1,9 +1,9 @@
 package digest
 
 import (
-	dutil "github.com/ProtoconNet/mitum-currency/v3/digest/util"
-	state "github.com/ProtoconNet/mitum-currency/v3/state/did-registry"
-	"github.com/ProtoconNet/mitum-currency/v3/types"
+	dutil "github.com/imfact-labs/imfact-currency/digest/util"
+	state "github.com/imfact-labs/imfact-currency/state/did-registry"
+	"github.com/imfact-labs/imfact-currency/types"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/pkg/errors"

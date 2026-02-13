@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ProtoconNet/mitum-currency/v3/digest"
+	"github.com/imfact-labs/imfact-currency/digest"
 	"github.com/ProtoconNet/mitum2/util/valuehash"
 
-	"github.com/ProtoconNet/mitum-currency/v3/operation/currency"
+	"github.com/imfact-labs/imfact-currency/operation/currency"
 
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"

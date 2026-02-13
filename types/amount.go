@@ -2,7 +2,7 @@ package types
 
 import (
 	"fmt"
-	"github.com/ProtoconNet/mitum-currency/v3/common"
+	"github.com/imfact-labs/imfact-currency/common"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/ProtoconNet/mitum2/util/valuehash"

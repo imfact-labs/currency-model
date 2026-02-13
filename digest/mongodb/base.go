@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	dutil "github.com/ProtoconNet/mitum-currency/v3/digest/util"
-	"github.com/ProtoconNet/mitum-currency/v3/utils/bsonenc"
+	dutil "github.com/imfact-labs/imfact-currency/digest/util"
+	"github.com/imfact-labs/imfact-currency/utils/bsonenc"
 	"github.com/ProtoconNet/mitum2/base"
 	"github.com/ProtoconNet/mitum2/util"
 	"github.com/ProtoconNet/mitum2/util/encoder"
