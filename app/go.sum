@@ -194,10 +194,12 @@ github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSo
 github.com/holiman/uint256 v1.3.1 h1:JfTzmih28bittyHM8z360dCjIA9dbPIBlcTI6lmctQs=
 github.com/holiman/uint256 v1.3.1/go.mod h1:EOMSn4q6Nyt9P6efbI3bueV4e1b3dGlUCXeiRV4ng7E=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
-github.com/imfact-labs/imfact-currency v0.0.3 h1:SmnzHeYO7hRFqkgKM3B1vPIHXg+cb92TZblcBxtq+7g=
-github.com/imfact-labs/imfact-currency v0.0.3/go.mod h1:MUfmOJfPG+SJzMRz+uQhhVpLz1d1F0p16z1eoOzBhXU=
-github.com/imfact-labs/imfact-currency/digest v0.0.3 h1:CQ9LrSd7bf3eJF3uYAyFsCaS7QZ2rXkCmRSP7GYm1+I=
-github.com/imfact-labs/imfact-currency/digest v0.0.3/go.mod h1:DN8ebr/AUu7Zb49VRzuIocZ+0YsuvvRz5Pas4et90ho=
+github.com/imfact-labs/imfact-currency v0.0.5 h1:qod/MVRq9wRewnvhUwpNLIVTJe13nmUFQEMWGlTXYic=
+github.com/imfact-labs/imfact-currency v0.0.5/go.mod h1:i2+Ana8hpUnYX2fPTLQD68MvthWizytktetbBXmrWvI=
+github.com/imfact-labs/imfact-currency/api v0.0.5 h1:SlmsMyK4VyoQQ+yQKcu1/XfHDDOi0UdHJInzYIZC4Gg=
+github.com/imfact-labs/imfact-currency/api v0.0.5/go.mod h1:Quy45gaDDIUJE+nRqAif8lYEMP51KShR90ZEQd2NFvs=
+github.com/imfact-labs/imfact-currency/digest v0.0.5 h1:wJh1t8kILN5e0uJfMjIIed5fHOyH+vANDMB3+e0pLYQ=
+github.com/imfact-labs/imfact-currency/digest v0.0.5/go.mod h1:Q0pTb/DhhuYEBd0/EM0OtLmlZwbnPIchngyjEJgf2Z8=
 github.com/jessevdk/go-flags v0.0.0-20141203071132-1679536dcc89/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/jrick/logrotate v1.0.0/go.mod h1:LNinyqDIJnpAur+b8yyulnQw/wDuN1+BYKlTRt3OuAQ=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
