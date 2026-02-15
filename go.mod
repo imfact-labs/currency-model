@@ -13,7 +13,7 @@ require (
 	github.com/google/pprof v0.0.0-20250903194437-c28834ac2320
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
-	github.com/imfact-labs/imfact-currency/digest v0.0.3
+	github.com/imfact-labs/imfact-currency/digest v0.0.4
 	github.com/json-iterator/go v1.1.12
 	github.com/justinas/alice v1.2.0
 	github.com/multiformats/go-multibase v0.2.0
