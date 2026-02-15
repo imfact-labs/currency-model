@@ -8,6 +8,7 @@ require (
 	github.com/ProtoconNet/mitum2 v0.0.0-20251029064552-48aef1088f5f
 	github.com/bluele/gcache v0.0.2
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
+	github.com/imfact-labs/imfact-currency v0.0.3
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.34.0
 	go.mongodb.org/mongo-driver/v2 v2.5.0
@@ -94,4 +95,3 @@ require (
 	golang.org/x/tools v0.38.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-

@@ -10,6 +10,8 @@ require (
 	github.com/arl/statsviz v0.7.1
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/memberlist v0.5.1
+	github.com/imfact-labs/imfact-currency v0.0.3
+	github.com/imfact-labs/imfact-currency/digest v0.0.3
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.34.0
 	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b
@@ -103,4 +105,3 @@ require (
 	golang.org/x/time v0.13.0 // indirect
 	golang.org/x/tools v0.38.0 // indirect
 )
-
