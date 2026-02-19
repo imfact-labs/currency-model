@@ -4,8 +4,8 @@ import (
 	"crypto/tls"
 	"net/url"
 
-	"github.com/imfact-labs/imfact-currency/digest/cache"
-	"github.com/imfact-labs/imfact-currency/digest/util"
+	"github.com/imfact-labs/currency-model/digest/cache"
+	"github.com/imfact-labs/currency-model/digest/util"
 )
 
 var (

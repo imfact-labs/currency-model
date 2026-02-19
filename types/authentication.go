@@ -3,12 +3,12 @@ package types
 import (
 	"fmt"
 
-	"github.com/imfact-labs/imfact-currency/common"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util"
-	jsonutil "github.com/ProtoconNet/mitum2/util/encoder/json"
-	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/imfact-labs/currency-model/common"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util"
+	jsonutil "github.com/imfact-labs/mitum2/util/encoder/json"
+	"github.com/imfact-labs/mitum2/util/hint"
 	"github.com/multiformats/go-multibase"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )

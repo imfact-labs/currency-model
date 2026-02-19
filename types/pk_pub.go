@@ -4,17 +4,17 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"github.com/imfact-labs/imfact-currency/common"
+	"github.com/imfact-labs/currency-model/common"
 	"math/big"
 	"strings"
 
 	"crypto/ecdsa"
 	"crypto/sha256"
 
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util"
-	"github.com/ProtoconNet/mitum2/util/hint"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util"
+	"github.com/imfact-labs/mitum2/util/hint"
 	"github.com/pkg/errors"
 )
 

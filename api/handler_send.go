@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/imfact-labs/imfact-currency/common"
-	"github.com/ProtoconNet/mitum2/base"
-	isaacnetwork "github.com/ProtoconNet/mitum2/isaac/network"
-	"github.com/ProtoconNet/mitum2/network/quicmemberlist"
-	"github.com/ProtoconNet/mitum2/network/quicstream"
+	"github.com/imfact-labs/currency-model/common"
+	"github.com/imfact-labs/mitum2/base"
+	isaacnetwork "github.com/imfact-labs/mitum2/isaac/network"
+	"github.com/imfact-labs/mitum2/network/quicmemberlist"
+	"github.com/imfact-labs/mitum2/network/quicstream"
 	"github.com/pkg/errors"
 )
 

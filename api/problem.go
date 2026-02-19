@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ProtoconNet/mitum2/util/hint"
+	"github.com/imfact-labs/mitum2/util/hint"
 	"github.com/pkg/errors"
 )
 
 const (
 	ProblemMimetype    = "application/problem+json; charset=utf-8"
-	ProblemNamespace   = "https://github.com/ProtoconNet/mitum-currency/v3/problems"
+	ProblemNamespace   = "https://github.com/imfact-labs/mitum-currency/v3/problems"
 	DefaultProblemType = "others"
 )
 

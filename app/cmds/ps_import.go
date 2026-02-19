@@ -1,8 +1,8 @@
 package cmds
 
 import (
-	"github.com/ProtoconNet/mitum2/launch"
-	"github.com/ProtoconNet/mitum2/util/ps"
+	"github.com/imfact-labs/mitum2/launch"
+	"github.com/imfact-labs/mitum2/util/ps"
 )
 
 func DefaultImportPS() *ps.PS {

@@ -1,11 +1,11 @@
 package digest
 
 import (
-	dutil "github.com/imfact-labs/imfact-currency/digest/util"
-	state "github.com/imfact-labs/imfact-currency/state/did-registry"
-	"github.com/imfact-labs/imfact-currency/types"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util"
+	dutil "github.com/imfact-labs/currency-model/digest/util"
+	state "github.com/imfact-labs/currency-model/state/did-registry"
+	"github.com/imfact-labs/currency-model/types"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"

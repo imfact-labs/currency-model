@@ -4,17 +4,17 @@ import (
 	"context"
 	"sync"
 
-	"github.com/imfact-labs/imfact-currency/common"
+	"github.com/imfact-labs/currency-model/common"
 
-	"github.com/imfact-labs/imfact-currency/state"
-	dstate "github.com/imfact-labs/imfact-currency/state/did-registry"
-	cestate "github.com/imfact-labs/imfact-currency/state/extension"
-	"github.com/imfact-labs/imfact-currency/types"
-	ctypes "github.com/imfact-labs/imfact-currency/types"
+	"github.com/imfact-labs/currency-model/state"
+	dstate "github.com/imfact-labs/currency-model/state/did-registry"
+	cestate "github.com/imfact-labs/currency-model/state/extension"
+	"github.com/imfact-labs/currency-model/types"
+	ctypes "github.com/imfact-labs/currency-model/types"
 
-	ccstate "github.com/imfact-labs/imfact-currency/state/currency"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util"
+	ccstate "github.com/imfact-labs/currency-model/state/currency"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util"
 	"github.com/pkg/errors"
 )
 

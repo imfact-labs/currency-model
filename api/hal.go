@@ -3,8 +3,8 @@ package api
 import (
 	"net/url"
 
-	"github.com/imfact-labs/imfact-currency/digest/util"
-	"github.com/ProtoconNet/mitum2/util/hint"
+	"github.com/imfact-labs/currency-model/digest/util"
+	"github.com/imfact-labs/mitum2/util/hint"
 )
 
 type Hal interface {

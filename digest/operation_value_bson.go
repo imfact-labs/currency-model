@@ -1,14 +1,14 @@
 package digest
 
 import (
-	"github.com/imfact-labs/imfact-currency/common"
-	"github.com/imfact-labs/imfact-currency/operation/extras"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util"
-	"github.com/ProtoconNet/mitum2/util/hint"
+	"github.com/imfact-labs/currency-model/common"
+	"github.com/imfact-labs/currency-model/operation/extras"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util"
+	"github.com/imfact-labs/mitum2/util/hint"
 	"time"
 
-	"github.com/imfact-labs/imfact-currency/utils/bsonenc"
+	"github.com/imfact-labs/currency-model/utils/bsonenc"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 

@@ -1,11 +1,11 @@
 package digest
 
 import (
-	"github.com/imfact-labs/imfact-currency/state/currency"
-	"github.com/imfact-labs/imfact-currency/types"
-	"github.com/ProtoconNet/mitum2/base"
-	isaacnetwork "github.com/ProtoconNet/mitum2/isaac/network"
-	"github.com/ProtoconNet/mitum2/util"
+	"github.com/imfact-labs/currency-model/state/currency"
+	"github.com/imfact-labs/currency-model/types"
+	"github.com/imfact-labs/mitum2/base"
+	isaacnetwork "github.com/imfact-labs/mitum2/isaac/network"
+	"github.com/imfact-labs/mitum2/util"
 )
 
 var (

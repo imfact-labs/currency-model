@@ -3,9 +3,9 @@ package cmds
 import (
 	"context"
 
-	"github.com/imfact-labs/imfact-currency/types"
-	"github.com/ProtoconNet/mitum2/base"
 	"github.com/alecthomas/kong"
+	"github.com/imfact-labs/currency-model/types"
+	"github.com/imfact-labs/mitum2/base"
 )
 
 var KeyAddressVars = kong.Vars{

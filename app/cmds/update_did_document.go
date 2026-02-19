@@ -3,13 +3,13 @@ package cmds
 import (
 	"context"
 
-	did "github.com/imfact-labs/imfact-currency/operation/did-registry"
-	"github.com/imfact-labs/imfact-currency/operation/extras"
-	"github.com/imfact-labs/imfact-currency/types"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/launch"
-	"github.com/ProtoconNet/mitum2/util"
-	"github.com/ProtoconNet/mitum2/util/encoder"
+	did "github.com/imfact-labs/currency-model/operation/did-registry"
+	"github.com/imfact-labs/currency-model/operation/extras"
+	"github.com/imfact-labs/currency-model/types"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/launch"
+	"github.com/imfact-labs/mitum2/util"
+	"github.com/imfact-labs/mitum2/util/encoder"
 	"github.com/pkg/errors"
 )
 

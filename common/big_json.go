@@ -1,6 +1,6 @@
 package common
 
-import "github.com/ProtoconNet/mitum2/util"
+import "github.com/imfact-labs/mitum2/util"
 
 func (a Big) MarshalJSON() ([]byte, error) {
 	return util.MarshalJSON(a.String())

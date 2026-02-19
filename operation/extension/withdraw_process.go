@@ -4,14 +4,14 @@ import (
 	"context"
 	"sync"
 
-	"github.com/imfact-labs/imfact-currency/common"
-	"github.com/imfact-labs/imfact-currency/operation/extras"
-	cstate "github.com/imfact-labs/imfact-currency/state"
-	ccstate "github.com/imfact-labs/imfact-currency/state/currency"
-	cestate "github.com/imfact-labs/imfact-currency/state/extension"
-	"github.com/imfact-labs/imfact-currency/types"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util"
+	"github.com/imfact-labs/currency-model/common"
+	"github.com/imfact-labs/currency-model/operation/extras"
+	cstate "github.com/imfact-labs/currency-model/state"
+	ccstate "github.com/imfact-labs/currency-model/state/currency"
+	cestate "github.com/imfact-labs/currency-model/state/extension"
+	"github.com/imfact-labs/currency-model/types"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util"
 )
 
 var withdrawItemProcessorPool = sync.Pool{

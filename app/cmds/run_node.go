@@ -8,19 +8,19 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/imfact-labs/imfact-currency/api"
-	"github.com/imfact-labs/imfact-currency/digest"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/isaac"
-	isaacstates "github.com/ProtoconNet/mitum2/isaac/states"
-	"github.com/ProtoconNet/mitum2/launch"
-	"github.com/ProtoconNet/mitum2/network/quicmemberlist"
-	"github.com/ProtoconNet/mitum2/network/quicstream"
-	"github.com/ProtoconNet/mitum2/util"
-	"github.com/ProtoconNet/mitum2/util/logging"
-	"github.com/ProtoconNet/mitum2/util/ps"
 	"github.com/arl/statsviz"
 	"github.com/gorilla/mux"
+	"github.com/imfact-labs/currency-model/api"
+	"github.com/imfact-labs/currency-model/digest"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/isaac"
+	isaacstates "github.com/imfact-labs/mitum2/isaac/states"
+	"github.com/imfact-labs/mitum2/launch"
+	"github.com/imfact-labs/mitum2/network/quicmemberlist"
+	"github.com/imfact-labs/mitum2/network/quicstream"
+	"github.com/imfact-labs/mitum2/util"
+	"github.com/imfact-labs/mitum2/util/logging"
+	"github.com/imfact-labs/mitum2/util/ps"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
@@ -38,6 +38,14 @@ type RunCommand struct { //nolint:govet //...
 	log    *zerolog.Logger
 	holded bool
 	//revive:enable:line-length-limit
+}
+
+func (cmd *RunCommand) Log() *zerolog.Logger {
+	return cmd.log
+}
+
+func (cmd *RunCommand) SetLog(l *zerolog.Logger) {
+	cmd.log = l
 }
 
 func (cmd *RunCommand) Run(pctx context.Context) error {
@@ -59,7 +67,7 @@ func (cmd *RunCommand) Run(pctx context.Context) error {
 	cmd.log = log.Log()
 
 	if len(cmd.HTTPState) > 0 {
-		if err := cmd.runHTTPState(cmd.HTTPState); err != nil {
+		if err := cmd.RunHTTPState(cmd.HTTPState); err != nil {
 			return errors.Wrap(err, "run http state")
 		}
 	}
@@ -76,11 +84,11 @@ func (cmd *RunCommand) Run(pctx context.Context) error {
 
 	_ = pps.AddOK(digest.PNameDigester, digest.ProcessDigester, nil, digest.PNameDigesterDataBase).
 		AddOK(digest.PNameStartDigester, digest.ProcessStartDigester, nil, api.PNameStartAPI)
-	_ = pps.POK(launch.PNameStorage).PostAddOK(ps.Name("check-hold"), cmd.pCheckHold)
+	_ = pps.POK(launch.PNameStorage).PostAddOK(ps.Name("check-hold"), cmd.PCheckHold)
 	_ = pps.POK(launch.PNameStates).
-		PreAddOK(ps.Name("when-new-block-saved-in-consensus-state-func"), cmd.pWhenNewBlockSavedInConsensusStateFunc).
-		PreAddOK(ps.Name("when-new-block-confirmed-func"), cmd.pWhenNewBlockConfirmed).
-		PreAddOK(ps.Name("when-new-block-saved-in-syncing-state-func"), cmd.pWhenNewBlockSavedInSyncingStateFunc)
+		PreAddOK(ps.Name("when-new-block-saved-in-consensus-state-func"), cmd.PWhenNewBlockSavedInConsensusStateFunc).
+		PreAddOK(ps.Name("when-new-block-confirmed-func"), cmd.PWhenNewBlockConfirmed).
+		PreAddOK(ps.Name("when-new-block-saved-in-syncing-state-func"), cmd.PWhenNewBlockSavedInSyncingStateFunc)
 	_ = pps.POK(launch.PNameEncoder).
 		PostAddOK(launch.PNameAddHinters, PAddHinters)
 	_ = pps.POK(api.PNameAPI).
@@ -110,12 +118,12 @@ func (cmd *RunCommand) Run(pctx context.Context) error {
 		Interface("hold", cmd.Hold.Height()).
 		Msg("node started")
 
-	return cmd.run(nctx)
+	return cmd.RunNode(nctx)
 }
 
 var errHoldStop = util.NewIDError("hold stop")
 
-func (cmd *RunCommand) run(pctx context.Context) error {
+func (cmd *RunCommand) RunNode(pctx context.Context) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -182,7 +190,7 @@ func (cmd *RunCommand) runStates(ctx, pctx context.Context) (func(), error) {
 	}, nil
 }
 
-func (cmd *RunCommand) pWhenNewBlockSavedInSyncingStateFunc(pctx context.Context) (context.Context, error) {
+func (cmd *RunCommand) PWhenNewBlockSavedInSyncingStateFunc(pctx context.Context) (context.Context, error) {
 	var log *logging.Logging
 	var db isaac.Database
 	var design digest.YamlDigestDesign
@@ -235,7 +243,7 @@ func (cmd *RunCommand) pWhenNewBlockSavedInSyncingStateFunc(pctx context.Context
 	), nil
 }
 
-func (cmd *RunCommand) pWhenNewBlockSavedInConsensusStateFunc(pctx context.Context) (context.Context, error) {
+func (cmd *RunCommand) PWhenNewBlockSavedInConsensusStateFunc(pctx context.Context) (context.Context, error) {
 	var log *logging.Logging
 
 	if err := util.LoadFromContextOK(pctx,
@@ -262,7 +270,7 @@ func (cmd *RunCommand) pWhenNewBlockSavedInConsensusStateFunc(pctx context.Conte
 	return context.WithValue(pctx, launch.WhenNewBlockSavedInConsensusStateFuncContextKey, f), nil
 }
 
-func (cmd *RunCommand) pWhenNewBlockConfirmed(pctx context.Context) (context.Context, error) {
+func (cmd *RunCommand) PWhenNewBlockConfirmed(pctx context.Context) (context.Context, error) {
 	var log *logging.Logging
 	var db isaac.Database
 	var design digest.YamlDigestDesign
@@ -332,7 +340,7 @@ func (cmd *RunCommand) whenBlockSaved(
 	}
 }
 
-func (cmd *RunCommand) pCheckHold(pctx context.Context) (context.Context, error) {
+func (cmd *RunCommand) PCheckHold(pctx context.Context) (context.Context, error) {
 	var db isaac.Database
 	if err := util.LoadFromContextOK(pctx, launch.CenterDatabaseContextKey, &db); err != nil {
 		return pctx, err
@@ -355,7 +363,7 @@ func (cmd *RunCommand) pCheckHold(pctx context.Context) (context.Context, error)
 	return pctx, nil
 }
 
-func (cmd *RunCommand) runHTTPState(bind string) error {
+func (cmd *RunCommand) RunHTTPState(bind string) error {
 	addr, err := net.ResolveTCPAddr("tcp", bind)
 	if err != nil {
 		return errors.Wrap(err, "parse --http-state")

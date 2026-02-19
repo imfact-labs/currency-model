@@ -1,13 +1,13 @@
 package digest
 
 import (
-	mongodb "github.com/imfact-labs/imfact-currency/digest/mongodb"
-	cstate "github.com/imfact-labs/imfact-currency/state"
-	state "github.com/imfact-labs/imfact-currency/state/did-registry"
-	"github.com/imfact-labs/imfact-currency/types"
-	"github.com/imfact-labs/imfact-currency/utils/bsonenc"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util/encoder"
+	mongodb "github.com/imfact-labs/currency-model/digest/mongodb"
+	cstate "github.com/imfact-labs/currency-model/state"
+	state "github.com/imfact-labs/currency-model/state/did-registry"
+	"github.com/imfact-labs/currency-model/types"
+	"github.com/imfact-labs/currency-model/utils/bsonenc"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util/encoder"
 )
 
 type DIDRegistryDesignDoc struct {

@@ -4,13 +4,13 @@ import (
 	"context"
 	"sync"
 
-	"github.com/imfact-labs/imfact-currency/common"
-	"github.com/imfact-labs/imfact-currency/state"
-	"github.com/imfact-labs/imfact-currency/state/currency"
-	"github.com/imfact-labs/imfact-currency/types"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/isaac"
-	"github.com/ProtoconNet/mitum2/util"
+	"github.com/imfact-labs/currency-model/common"
+	"github.com/imfact-labs/currency-model/state"
+	"github.com/imfact-labs/currency-model/state/currency"
+	"github.com/imfact-labs/currency-model/types"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/isaac"
+	"github.com/imfact-labs/mitum2/util"
 )
 
 var mintProcessorPool = sync.Pool{

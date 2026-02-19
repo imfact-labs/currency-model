@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/ProtoconNet/mitum2/util/encoder"
+	"github.com/imfact-labs/mitum2/util/encoder"
 )
 
 func (ca Address) MarshalText() ([]byte, error) {

@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"os"
 
-	cmds2 "github.com/imfact-labs/imfact-currency/app/cmds"
-	launchcmd "github.com/ProtoconNet/mitum2/launch/cmd"
+	"github.com/imfact-labs/currency-model/app/cmds"
+	launchcmd "github.com/imfact-labs/mitum2/launch/cmd"
 
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/launch"
-	"github.com/ProtoconNet/mitum2/util"
-	"github.com/ProtoconNet/mitum2/util/logging"
 	"github.com/alecthomas/kong"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/launch"
+	"github.com/imfact-labs/mitum2/util"
+	"github.com/imfact-labs/mitum2/util/logging"
 	"github.com/pkg/errors"
 )
 
@@ -26,22 +26,22 @@ var (
 //revive:disable:nested-structs
 var CLI struct { //nolint:govet //...
 	launch.BaseFlags
-	Init      cmds2.INITCommand `cmd:"" help:"init node"`
-	Run       cmds2.RunCommand  `cmd:"" help:"run node"`
-	Storage   cmds2.Storage     `cmd:""`
+	Init      cmds.INITCommand `cmd:"" help:"init node"`
+	Run       cmds.RunCommand  `cmd:"" help:"run node"`
+	Storage   cmds.Storage     `cmd:""`
 	Operation struct {
-		Currency cmds2.CurrencyCommand `cmd:"" help:"currency operation"`
-		Suffrage cmds2.SuffrageCommand `cmd:"" help:"suffrage operation"`
-		DID      cmds2.DIDCommand      `cmd:"" help:"did-registry operation"`
+		Currency cmds.CurrencyCommand `cmd:"" help:"currency operation"`
+		Suffrage cmds.SuffrageCommand `cmd:"" help:"suffrage operation"`
+		DID      cmds.DIDCommand      `cmd:"" help:"did-registry operation"`
 	} `cmd:"" help:"create operation"`
 	Network struct {
-		Client cmds2.NetworkClientCommand `cmd:"" help:"network client"`
+		Client cmds.NetworkClientCommand `cmd:"" help:"network client"`
 	} `cmd:"" help:"network"`
 	Key struct {
-		New     cmds2.KeyNewCommand     `cmd:"" help:"generate new key"`
-		Address cmds2.KeyAddressCommand `cmd:"" help:"generate address from key"`
-		Load    cmds2.KeyLoadCommand    `cmd:"" help:"load key"`
-		Sign    cmds2.KeySignCommand    `cmd:"" help:"sign"`
+		New     cmds.KeyNewCommand     `cmd:"" help:"generate new key"`
+		Address cmds.KeyAddressCommand `cmd:"" help:"generate address from key"`
+		Load    cmds.KeyLoadCommand    `cmd:"" help:"load key"`
+		Sign    cmds.KeySignCommand    `cmd:"" help:"sign"`
 	} `cmd:"" help:"key"`
 	Handover launchcmd.HandoverCommands `cmd:""`
 	Version  struct{}                   `cmd:"" help:"version"`

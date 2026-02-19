@@ -6,13 +6,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/imfact-labs/imfact-currency/common"
-	"github.com/imfact-labs/imfact-currency/types"
+	"github.com/imfact-labs/currency-model/common"
+	"github.com/imfact-labs/currency-model/types"
 
 	"github.com/pkg/errors"
 
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util/encoder"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util/encoder"
 )
 
 type KeyFlag struct {

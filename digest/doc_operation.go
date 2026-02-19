@@ -3,14 +3,14 @@ package digest
 import (
 	"time"
 
-	"github.com/imfact-labs/imfact-currency/operation/extras"
-	"github.com/imfact-labs/imfact-currency/types"
+	"github.com/imfact-labs/currency-model/operation/extras"
+	"github.com/imfact-labs/currency-model/types"
 	"github.com/pkg/errors"
 
-	mongodbst "github.com/imfact-labs/imfact-currency/digest/mongodb"
-	"github.com/imfact-labs/imfact-currency/utils/bsonenc"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util/encoder"
+	mongodbst "github.com/imfact-labs/currency-model/digest/mongodb"
+	"github.com/imfact-labs/currency-model/utils/bsonenc"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util/encoder"
 )
 
 type OperationDoc struct {

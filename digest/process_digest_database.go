@@ -3,13 +3,13 @@ package digest
 import (
 	"context"
 
-	mongodbst "github.com/imfact-labs/imfact-currency/digest/mongodb"
-	"github.com/ProtoconNet/mitum2/isaac"
-	isaacdatabase "github.com/ProtoconNet/mitum2/isaac/database"
-	"github.com/ProtoconNet/mitum2/launch"
-	"github.com/ProtoconNet/mitum2/util"
-	"github.com/ProtoconNet/mitum2/util/encoder"
-	"github.com/ProtoconNet/mitum2/util/logging"
+	mongodbst "github.com/imfact-labs/currency-model/digest/mongodb"
+	"github.com/imfact-labs/mitum2/isaac"
+	isaacdatabase "github.com/imfact-labs/mitum2/isaac/database"
+	"github.com/imfact-labs/mitum2/launch"
+	"github.com/imfact-labs/mitum2/util"
+	"github.com/imfact-labs/mitum2/util/encoder"
+	"github.com/imfact-labs/mitum2/util/logging"
 	"github.com/pkg/errors"
 )
 

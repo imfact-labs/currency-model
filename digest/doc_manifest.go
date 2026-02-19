@@ -3,10 +3,10 @@ package digest
 import (
 	"time"
 
-	mongodbst "github.com/imfact-labs/imfact-currency/digest/mongodb"
-	"github.com/imfact-labs/imfact-currency/utils/bsonenc"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util/encoder"
+	mongodbst "github.com/imfact-labs/currency-model/digest/mongodb"
+	"github.com/imfact-labs/currency-model/utils/bsonenc"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util/encoder"
 )
 
 type ManifestDoc struct {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 
-	"github.com/ProtoconNet/mitum2/util"
+	"github.com/imfact-labs/mitum2/util"
 	"github.com/pkg/errors"
 )
 

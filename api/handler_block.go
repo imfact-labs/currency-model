@@ -3,10 +3,10 @@ package api
 import (
 	"net/http"
 
-	"github.com/imfact-labs/imfact-currency/digest"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util"
 	"github.com/gorilla/mux"
+	"github.com/imfact-labs/currency-model/digest"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util"
 )
 
 var halBlockTemplate = map[string]HalLink{

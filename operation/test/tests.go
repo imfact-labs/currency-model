@@ -9,14 +9,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/imfact-labs/imfact-currency/common"
-	ccstate "github.com/imfact-labs/imfact-currency/state/currency"
-	"github.com/imfact-labs/imfact-currency/state/extension"
-	"github.com/imfact-labs/imfact-currency/types"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/isaac"
-	"github.com/ProtoconNet/mitum2/util"
-	"github.com/ProtoconNet/mitum2/util/encoder"
+	"github.com/imfact-labs/currency-model/common"
+	ccstate "github.com/imfact-labs/currency-model/state/currency"
+	"github.com/imfact-labs/currency-model/state/extension"
+	"github.com/imfact-labs/currency-model/types"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/isaac"
+	"github.com/imfact-labs/mitum2/util"
+	"github.com/imfact-labs/mitum2/util/encoder"
 )
 
 type TestOperationProcessorNoItem interface {

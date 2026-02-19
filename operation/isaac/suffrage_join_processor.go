@@ -2,14 +2,14 @@ package isaacoperation
 
 import (
 	"context"
-	"github.com/imfact-labs/imfact-currency/common"
-	"github.com/ProtoconNet/mitum2/base"
+	"github.com/imfact-labs/currency-model/common"
+	"github.com/imfact-labs/mitum2/base"
 	"sort"
 	"strings"
 	"sync"
 
-	"github.com/ProtoconNet/mitum2/isaac"
-	"github.com/ProtoconNet/mitum2/util"
+	"github.com/imfact-labs/mitum2/isaac"
+	"github.com/imfact-labs/mitum2/util"
 	"github.com/pkg/errors"
 )
 

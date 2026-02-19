@@ -1,14 +1,14 @@
-module github.com/imfact-labs/imfact-currency
+module github.com/imfact-labs/currency-model
 
 go 1.24.0
 
 toolchain go1.24.6
 
 require (
-	github.com/ProtoconNet/mitum2 v0.0.0-20251029064552-48aef1088f5f
 	github.com/btcsuite/btcd/btcec/v2 v2.3.5
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/ethereum/go-ethereum v1.14.13
+	github.com/imfact-labs/mitum2 v0.0.0-20260219060841-f51dacce1321
 	github.com/json-iterator/go v1.1.12
 	github.com/multiformats/go-multibase v0.2.0
 	github.com/pkg/errors v0.9.1

@@ -14,11 +14,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/imfact-labs/imfact-currency/digest/config"
-	dutil "github.com/imfact-labs/imfact-currency/digest/util"
-	"github.com/ProtoconNet/mitum2/launch"
-	"github.com/ProtoconNet/mitum2/network/quicstream"
-	"github.com/ProtoconNet/mitum2/util"
+	"github.com/imfact-labs/currency-model/digest/config"
+	dutil "github.com/imfact-labs/currency-model/digest/util"
+	"github.com/imfact-labs/mitum2/launch"
+	"github.com/imfact-labs/mitum2/network/quicstream"
+	"github.com/imfact-labs/mitum2/util"
 	"github.com/rs/zerolog"
 )
 

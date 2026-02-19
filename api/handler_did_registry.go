@@ -3,9 +3,9 @@ package api
 import (
 	"net/http"
 
-	"github.com/imfact-labs/imfact-currency/digest"
-	"github.com/imfact-labs/imfact-currency/types"
-	"github.com/ProtoconNet/mitum2/base"
+	"github.com/imfact-labs/currency-model/digest"
+	"github.com/imfact-labs/currency-model/types"
+	"github.com/imfact-labs/mitum2/base"
 	"github.com/pkg/errors"
 )
 

@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/imfact-labs/imfact-currency/digest/mongodb"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util"
-	dutil "github.com/ProtoconNet/mitum2/util"
 	"github.com/gorilla/mux"
+	"github.com/imfact-labs/currency-model/digest/mongodb"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util"
+	dutil "github.com/imfact-labs/mitum2/util"
 	"github.com/pkg/errors"
 )
 

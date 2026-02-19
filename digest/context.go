@@ -1,8 +1,8 @@
 package digest
 
 import (
-	"github.com/ProtoconNet/mitum2/util"
-	"github.com/ProtoconNet/mitum2/util/ps"
+	"github.com/imfact-labs/mitum2/util"
+	"github.com/imfact-labs/mitum2/util/ps"
 )
 
 var (

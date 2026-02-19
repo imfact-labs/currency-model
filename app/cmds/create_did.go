@@ -3,10 +3,10 @@ package cmds
 import (
 	"context"
 
-	did "github.com/imfact-labs/imfact-currency/operation/did-registry"
-	"github.com/imfact-labs/imfact-currency/operation/extras"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util"
+	did "github.com/imfact-labs/currency-model/operation/did-registry"
+	"github.com/imfact-labs/currency-model/operation/extras"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util"
 	"github.com/pkg/errors"
 )
 

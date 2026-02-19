@@ -1,10 +1,10 @@
 package state
 
 import (
-	"github.com/imfact-labs/imfact-currency/types"
-	"github.com/imfact-labs/imfact-currency/utils/bsonenc"
-	"github.com/ProtoconNet/mitum2/util"
-	"github.com/ProtoconNet/mitum2/util/hint"
+	"github.com/imfact-labs/currency-model/types"
+	"github.com/imfact-labs/currency-model/utils/bsonenc"
+	"github.com/imfact-labs/mitum2/util"
+	"github.com/imfact-labs/mitum2/util/hint"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )

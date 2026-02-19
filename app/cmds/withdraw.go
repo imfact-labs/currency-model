@@ -3,13 +3,13 @@ package cmds
 import (
 	"context"
 
-	"github.com/imfact-labs/imfact-currency/operation/extension"
-	"github.com/imfact-labs/imfact-currency/operation/extras"
-	"github.com/imfact-labs/imfact-currency/types"
+	"github.com/imfact-labs/currency-model/operation/extension"
+	"github.com/imfact-labs/currency-model/operation/extras"
+	"github.com/imfact-labs/currency-model/types"
 
 	"github.com/pkg/errors"
 
-	"github.com/ProtoconNet/mitum2/base"
+	"github.com/imfact-labs/mitum2/base"
 )
 
 type WithdrawCommand struct {

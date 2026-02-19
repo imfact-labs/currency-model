@@ -1,17 +1,17 @@
-module github.com/imfact-labs/imfact-currency/api
+module github.com/imfact-labs/currency-model/api
 
 go 1.24.0
 
 toolchain go1.24.6
 
 require (
-	github.com/ProtoconNet/mitum2 v0.0.0-20251029064552-48aef1088f5f
 	github.com/bluele/gcache v0.0.2
 	github.com/google/pprof v0.0.0-20230207041349-798e818bf904
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
-	github.com/imfact-labs/imfact-currency v0.0.5
-	github.com/imfact-labs/imfact-currency/digest v0.0.5
+	github.com/imfact-labs/currency-model v0.0.6
+	github.com/imfact-labs/currency-model/digest v0.0.6
+	github.com/imfact-labs/mitum2 v0.0.0-20260219060841-f51dacce1321
 	github.com/json-iterator/go v1.1.12
 	github.com/justinas/alice v1.2.0
 	github.com/pkg/errors v0.9.1

@@ -1,8 +1,8 @@
 package types
 
 import (
-	"github.com/imfact-labs/imfact-currency/common"
-	"github.com/ProtoconNet/mitum2/base"
+	"github.com/imfact-labs/currency-model/common"
+	"github.com/imfact-labs/mitum2/base"
 )
 
 type GetNewProcessor func(

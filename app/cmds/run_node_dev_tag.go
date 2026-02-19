@@ -7,11 +7,11 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/imfact-labs/imfact-currency/api"
-	"github.com/imfact-labs/imfact-currency/digest"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/launch"
-	"github.com/ProtoconNet/mitum2/util"
+	"github.com/imfact-labs/currency-model/api"
+	"github.com/imfact-labs/currency-model/digest"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/launch"
+	"github.com/imfact-labs/mitum2/util"
 )
 
 func (cmd *RunCommand) pDigestAPIHandlers(ctx context.Context) (context.Context, error) {

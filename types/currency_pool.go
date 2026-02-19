@@ -4,7 +4,7 @@ package types
 import (
 	"sync"
 
-	"github.com/ProtoconNet/mitum2/base"
+	"github.com/imfact-labs/mitum2/base"
 )
 
 type CurrencyPool struct {

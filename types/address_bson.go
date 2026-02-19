@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/imfact-labs/imfact-currency/utils/bsonenc"
+	"github.com/imfact-labs/currency-model/utils/bsonenc"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 

@@ -1,8 +1,8 @@
 package isaacoperation
 
 import (
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util/encoder"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util/encoder"
 )
 
 func (fact *SuffrageJoinFact) unpack(

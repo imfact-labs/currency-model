@@ -6,7 +6,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/v2/mongo/writeconcern"
 
-	"github.com/imfact-labs/imfact-currency/digest/util"
+	"github.com/imfact-labs/currency-model/digest/util"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"

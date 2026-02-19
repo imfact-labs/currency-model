@@ -1,9 +1,9 @@
 package extension
 
 import (
-	"github.com/imfact-labs/imfact-currency/types"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util/encoder"
+	"github.com/imfact-labs/currency-model/types"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util/encoder"
 )
 
 func (fact *UpdateHandlerFact) unpack(enc encoder.Encoder, sd, ct string, hds []string, cid string) error {

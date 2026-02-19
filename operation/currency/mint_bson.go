@@ -1,12 +1,12 @@
 package currency // nolint: dupl
 
 import (
-	"github.com/imfact-labs/imfact-currency/common"
+	"github.com/imfact-labs/currency-model/common"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
-	"github.com/imfact-labs/imfact-currency/utils/bsonenc"
-	"github.com/ProtoconNet/mitum2/util/hint"
-	"github.com/ProtoconNet/mitum2/util/valuehash"
+	"github.com/imfact-labs/currency-model/utils/bsonenc"
+	"github.com/imfact-labs/mitum2/util/hint"
+	"github.com/imfact-labs/mitum2/util/valuehash"
 )
 
 func (fact MintFact) MarshalBSON() ([]byte, error) {

@@ -4,9 +4,9 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/util"
-	"github.com/ProtoconNet/mitum2/util/hint"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/util"
+	"github.com/imfact-labs/mitum2/util/hint"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/sha3"
 )
@@ -47,7 +47,7 @@ func NewAddressFromKeys(keys AccountKeys) (Address, error) {
 	if keys == nil {
 		return Address{}, errors.Errorf("nil account keys")
 	}
-	
+
 	var buf [42]byte
 	copy(buf[:2], "0x")
 	hex.Encode(buf[2:], keys.Hash().Bytes())

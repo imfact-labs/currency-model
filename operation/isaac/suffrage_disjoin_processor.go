@@ -2,11 +2,11 @@ package isaacoperation
 
 import (
 	"context"
-	"github.com/imfact-labs/imfact-currency/common"
-	"github.com/ProtoconNet/mitum2/base"
-	"github.com/ProtoconNet/mitum2/isaac"
-	isaacoperation "github.com/ProtoconNet/mitum2/isaac/operation"
-	"github.com/ProtoconNet/mitum2/util"
+	"github.com/imfact-labs/currency-model/common"
+	"github.com/imfact-labs/mitum2/base"
+	"github.com/imfact-labs/mitum2/isaac"
+	isaacoperation "github.com/imfact-labs/mitum2/isaac/operation"
+	"github.com/imfact-labs/mitum2/util"
 	"golang.org/x/exp/slices"
 )
 

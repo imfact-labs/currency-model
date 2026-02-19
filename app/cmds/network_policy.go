@@ -3,9 +3,9 @@ package cmds
 import (
 	"context"
 
-	isaacoperation "github.com/imfact-labs/imfact-currency/operation/isaac"
-	"github.com/imfact-labs/imfact-currency/types"
-	"github.com/ProtoconNet/mitum2/base"
+	isaacoperation "github.com/imfact-labs/currency-model/operation/isaac"
+	"github.com/imfact-labs/currency-model/types"
+	"github.com/imfact-labs/mitum2/base"
 	"github.com/pkg/errors"
 )
 

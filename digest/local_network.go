@@ -5,9 +5,9 @@ import (
 	"crypto/tls"
 	"strings"
 
-	"github.com/imfact-labs/imfact-currency/digest/config"
-	dutil "github.com/imfact-labs/imfact-currency/digest/util"
-	"github.com/ProtoconNet/mitum2/util"
+	"github.com/imfact-labs/currency-model/digest/config"
+	dutil "github.com/imfact-labs/currency-model/digest/util"
+	"github.com/imfact-labs/mitum2/util"
 	"github.com/pkg/errors"
 )
 
