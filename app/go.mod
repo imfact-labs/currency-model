@@ -9,7 +9,7 @@ require (
 	github.com/arl/statsviz v0.7.1
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/memberlist v0.5.1
-	github.com/imfact-labs/currency-model v0.0.6
+	github.com/imfact-labs/currency-model v0.0.7
 	github.com/imfact-labs/currency-model/api v0.0.6
 	github.com/imfact-labs/currency-model/digest v0.0.6
 	github.com/imfact-labs/mitum2 v0.0.0-20260219060841-f51dacce1321

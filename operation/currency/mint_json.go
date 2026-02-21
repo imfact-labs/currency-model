@@ -39,6 +39,10 @@ func (fact *MintFact) DecodeJSON(b []byte, enc encoder.Encoder) error {
 
 	fact.BaseFact.SetJSONUnmarshaler(uf.BaseFactJSONUnmarshaler)
 
+	if err := fact.unpack(enc, uf.Receiver, uf.Amount); err != nil {
+		return common.DecorateError(err, common.ErrDecodeJson, *fact)
+	}
+
 	return nil
 }
 
