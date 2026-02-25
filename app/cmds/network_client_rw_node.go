@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
 	"github.com/imfact-labs/mitum2/base"
+	isaacnetwork "github.com/imfact-labs/mitum2/isaac/network"
 	"github.com/imfact-labs/mitum2/launch"
+	quicstreamheader "github.com/imfact-labs/mitum2/network/quicstream/header"
 	"github.com/imfact-labs/mitum2/util"
 	"github.com/pkg/errors"
 	"golang.org/x/exp/slices"
@@ -246,4 +249,137 @@ func (*NetworkClientWriteNodeCommand) helpACL() string {
 	}
 
 	return buf.String()
+}
+
+func WriteNodeFromNetworkHandler(
+	ctx context.Context,
+	priv base.Privatekey,
+	networkID base.NetworkID,
+	key string,
+	value string,
+	stream quicstreamheader.StreamFunc,
+) (found bool, _ error) {
+	header := launch.NewWriteNodeHeader(key, priv.Publickey())
+	if err := header.IsValid(nil); err != nil {
+		return false, err
+	}
+
+	body := bytes.NewBuffer([]byte(value))
+	bodyclosef := func() {
+		body.Reset()
+	}
+
+	err := stream(ctx, func(ctx context.Context, broker *quicstreamheader.ClientBroker) error {
+		if err := broker.WriteRequestHead(ctx, header); err != nil {
+			defer bodyclosef()
+
+			return err
+		}
+
+		if err := isaacnetwork.VerifyNode(ctx, broker, priv, networkID); err != nil {
+			defer bodyclosef()
+
+			return err
+		}
+
+		wch := make(chan error, 1)
+		go func() {
+			defer bodyclosef()
+
+			wch <- broker.WriteBody(ctx, quicstreamheader.StreamBodyType, 0, body)
+		}()
+
+		switch _, res, err := broker.ReadResponseHead(ctx); {
+		case err != nil:
+			return err
+		case res.Err() != nil:
+			return res.Err()
+		case !res.OK():
+			return nil
+		default:
+			found = true
+
+			return <-wch
+		}
+	})
+
+	return found, err
+}
+
+func ReadNodeFromNetworkHandler(
+	ctx context.Context,
+	priv base.Privatekey,
+	networkID base.NetworkID,
+	key string,
+	stream quicstreamheader.StreamFunc,
+) (t interface{}, found bool, _ error) {
+	header := launch.NewReadNodeHeader(key, priv.Publickey())
+	if err := header.IsValid(nil); err != nil {
+		return t, false, err
+	}
+
+	err := stream(ctx, func(ctx context.Context, broker *quicstreamheader.ClientBroker) error {
+		switch b, i, err := readNodeFromNetworkHandler(ctx, priv, networkID, broker, header); {
+		case err != nil:
+			return err
+		case !i:
+			return nil
+		default:
+			found = true
+
+			if err := yaml.Unmarshal(b, &t); err != nil {
+				return errors.WithStack(err)
+			}
+
+			return nil
+		}
+	})
+
+	return t, found, err
+}
+
+func readNodeFromNetworkHandler(
+	ctx context.Context,
+	priv base.Privatekey,
+	networkID base.NetworkID,
+	broker *quicstreamheader.ClientBroker,
+	header launch.ReadNodeHeader,
+) ([]byte, bool, error) {
+	if err := broker.WriteRequestHead(ctx, header); err != nil {
+		return nil, false, err
+	}
+
+	if err := isaacnetwork.VerifyNode(ctx, broker, priv, networkID); err != nil {
+		return nil, false, err
+	}
+
+	switch _, res, err := broker.ReadResponseHead(ctx); {
+	case err != nil:
+		return nil, false, err
+	case res.Err() != nil, !res.OK():
+		return nil, res.OK(), res.Err()
+	}
+
+	var body io.Reader
+
+	switch bodyType, bodyLength, b, _, res, err := broker.ReadBody(ctx); {
+	case err != nil:
+		return nil, false, err
+	case res != nil:
+		return nil, res.OK(), res.Err()
+	case bodyType == quicstreamheader.FixedLengthBodyType:
+		if bodyLength > 0 {
+			body = b
+		}
+	case bodyType == quicstreamheader.StreamBodyType:
+		body = b
+	}
+
+	if body == nil {
+		return nil, false, errors.Errorf("empty value")
+	}
+
+	b, err := io.ReadAll(body)
+
+	return b, true, errors.WithStack(err)
 }

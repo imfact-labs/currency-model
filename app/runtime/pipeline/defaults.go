@@ -1,0 +1,165 @@
+package pipeline
+
+import (
+	"github.com/imfact-labs/currency-model/api"
+	"github.com/imfact-labs/currency-model/app/runtime/steps"
+	"github.com/imfact-labs/currency-model/digest"
+	"github.com/imfact-labs/mitum2/launch"
+	"github.com/imfact-labs/mitum2/util/ps"
+)
+
+func DefaultRunPS() *ps.PS {
+	pps := ps.NewPS("cmd-run")
+
+	_ = pps.
+		AddOK(launch.PNameEncoder, steps.PEncoder, nil).
+		AddOK(launch.PNameDesign, launch.PLoadDesign, nil, launch.PNameEncoder).
+		AddOK(steps.PNameDigestDesign, steps.PLoadDigestDesign, nil, launch.PNameEncoder).
+		AddOK(launch.PNameTimeSyncer, launch.PStartTimeSyncer, launch.PCloseTimeSyncer, launch.PNameDesign).
+		AddOK(launch.PNameLocal, launch.PLocal, nil, launch.PNameDesign).
+		AddOK(launch.PNameBlockItemReaders, launch.PBlockItemReaders, nil, launch.PNameDesign).
+		AddOK(launch.PNameStorage, launch.PStorage, nil, launch.PNameLocal, launch.PNameBlockItemReaders).
+		AddOK(launch.PNameProposalMaker, steps.PProposalMaker, nil, launch.PNameStorage).
+		AddOK(launch.PNameNetwork, launch.PNetwork, nil, launch.PNameStorage).
+		AddOK(launch.PNameMemberlist, steps.PMemberlist, nil, launch.PNameNetwork).
+		AddOK(launch.PNameStartStorage, launch.PStartStorage, launch.PCloseStorage, launch.PNameStartNetwork).
+		AddOK(launch.PNameStartNetwork, launch.PStartNetwork, launch.PCloseNetwork, launch.PNameStates).
+		AddOK(launch.PNameStartMemberlist, steps.PStartMemberlist, steps.PCloseMemberlist, launch.PNameStartNetwork).
+		AddOK(launch.PNameStartSyncSourceChecker, launch.PStartSyncSourceChecker, launch.PCloseSyncSourceChecker, launch.PNameStartNetwork).
+		AddOK(launch.PNameStartLastConsensusNodesWatcher,
+			launch.PStartLastConsensusNodesWatcher, launch.PCloseLastConsensusNodesWatcher, launch.PNameStartNetwork).
+		AddOK(launch.PNameStates, launch.PStates, nil, launch.PNameNetwork).
+		AddOK(launch.PNameStatesReady, nil, launch.PCloseStates,
+			launch.PNameStartStorage,
+			launch.PNameStartSyncSourceChecker,
+			launch.PNameStartLastConsensusNodesWatcher,
+			launch.PNameStartMemberlist,
+			launch.PNameStartNetwork,
+			launch.PNameStates).
+		AddOK(digest.PNameDigesterDataBase, digest.ProcessDigesterDatabase, nil, steps.PNameDigestDesign, launch.PNameStorage).
+		AddOK(api.PNameAPI, api.ProcessAPI, nil, steps.PNameDigestDesign, digest.PNameDigesterDataBase, launch.PNameMemberlist).
+		AddOK(api.PNameStartAPI, api.ProcessStartAPI, nil, api.PNameAPI)
+
+	_ = pps.POK(launch.PNameDesign).
+		PostAddOK(launch.PNameCheckDesign, launch.PCheckDesign).
+		PostAddOK(launch.PNameINITObjectCache, launch.PINITObjectCache)
+
+	_ = pps.POK(launch.PNameLocal).
+		PostAddOK(launch.PNameDiscoveryFlag, launch.PDiscoveryFlag).
+		PostAddOK(launch.PNameLoadACL, launch.PLoadACL)
+
+	_ = pps.POK(launch.PNameBlockItemReaders).
+		PreAddOK(launch.PNameBlockItemReadersDecompressFunc, launch.PBlockItemReadersDecompressFunc).
+		PostAddOK(launch.PNameRemotesBlockItemReaderFunc, launch.PRemotesBlockItemReaderFunc)
+
+	_ = pps.POK(launch.PNameStorage).
+		PreAddOK(launch.PNameCheckLocalFS, launch.PCheckAndCreateLocalFS).
+		PreAddOK(launch.PNameLoadDatabase, launch.PLoadDatabase).
+		PostAddOK(launch.PNameCheckLeveldbStorage, launch.PCheckLeveldbStorage).
+		PostAddOK(launch.PNameLoadFromDatabase, launch.PLoadFromDatabase).
+		PostAddOK(launch.PNameCheckBlocksOfStorage, launch.PCheckBlocksOfStorage).
+		PostAddOK(launch.PNamePatchBlockItemReaders, launch.PPatchBlockItemReaders).
+		PostAddOK(launch.PNameNodeInfo, launch.PNodeInfo).
+		PostAddOK(launch.PNameNodeMetric, launch.PNodeMetric)
+
+	_ = pps.POK(launch.PNameNetwork).
+		PreAddOK(launch.PNameQuicstreamClient, launch.PQuicstreamClient).
+		PostAddOK(launch.PNameSyncSourceChecker, launch.PSyncSourceChecker).
+		PostAddOK(launch.PNameSuffrageCandidateLimiterSet, steps.PSuffrageCandidateLimiterSet)
+
+	_ = pps.POK(launch.PNameMemberlist).
+		PreAddOK(launch.PNameLastConsensusNodesWatcher, launch.PLastConsensusNodesWatcher).
+		PreAddOK(launch.PNameRateLimiterContextKey, launch.PNetworkRateLimiter).
+		PostAddOK(launch.PNameBallotbox, launch.PBallotbox).
+		PostAddOK(launch.PNameLongRunningMemberlistJoin, steps.PLongRunningMemberlistJoin).
+		PostAddOK(launch.PNameSuffrageVoting, launch.PSuffrageVoting).
+		PostAddOK(launch.PNameEventLoggingNetworkHandlers, launch.PEventLoggingNetworkHandlers)
+
+	_ = pps.POK(launch.PNameStates).
+		PreAddOK(launch.PNameProposerSelector, launch.PProposerSelector).
+		PreAddOK(steps.PNameOperationProcessorsMap, steps.POperationProcessorsMap).
+		PreAddOK(launch.PNameNetworkHandlers, steps.PNetworkHandlers).
+		PreAddOK(launch.PNameNodeInConsensusNodesFunc, launch.PNodeInConsensusNodesFunc).
+		PreAddOK(launch.PNameProposalProcessors, steps.PProposalProcessors).
+		PreAddOK(launch.PNameBallotStuckResolver, launch.PBallotStuckResolver).
+		PostAddOK(launch.PNamePatchLastConsensusNodesWatcher, launch.PPatchLastConsensusNodesWatcher).
+		PostAddOK(launch.PNameStatesSetHandlers, launch.PStatesSetHandlers).
+		PostAddOK(launch.PNameNetworkHandlersReadWriteNode, steps.PNetworkHandlersReadWriteNode).
+		PostAddOK(launch.PNamePatchMemberlist, steps.PPatchMemberlist).
+		PostAddOK(launch.PNameStatesNetworkHandlers, steps.PStatesNetworkHandlers).
+		PostAddOK(launch.PNameHandoverNetworkHandlers, launch.PHandoverNetworkHandlers)
+
+	_ = pps.POK(launch.PNameEncoder).
+		PostAddOK(launch.PNameAddHinters, steps.PAddHinters)
+
+	return pps
+}
+
+func DefaultINITPS() *ps.PS {
+	pps := ps.NewPS("cmd-init")
+
+	_ = pps.
+		AddOK(launch.PNameEncoder, steps.PEncoder, nil).
+		AddOK(launch.PNameDesign, launch.PLoadDesign, nil, launch.PNameEncoder).
+		AddOK(steps.PNameDigestDesign, steps.PLoadDigestDesign, nil, launch.PNameEncoder).
+		AddOK(launch.PNameTimeSyncer, launch.PStartTimeSyncer, launch.PCloseTimeSyncer, launch.PNameDesign).
+		AddOK(launch.PNameLocal, launch.PLocal, nil, launch.PNameDesign).
+		AddOK(launch.PNameBlockItemReaders, launch.PBlockItemReaders, nil, launch.PNameDesign).
+		AddOK(launch.PNameStorage, launch.PStorage, launch.PCloseStorage, launch.PNameLocal).
+		AddOK(steps.PNameGenerateGenesis, steps.PGenerateGenesis, nil, launch.PNameStorage, launch.PNameDesign)
+
+	_ = pps.POK(launch.PNameEncoder).
+		PostAddOK(launch.PNameAddHinters, steps.PAddHinters)
+
+	_ = pps.POK(launch.PNameDesign).
+		PostAddOK(launch.PNameCheckDesign, launch.PCheckDesign).
+		PostAddOK(launch.PNameINITObjectCache, launch.PINITObjectCache).
+		PostAddOK(launch.PNameGenesisDesign, launch.PGenesisDesign)
+
+	_ = pps.POK(launch.PNameBlockItemReaders).
+		PreAddOK(launch.PNameBlockItemReadersDecompressFunc, launch.PBlockItemReadersDecompressFunc).
+		PostAddOK(launch.PNameRemotesBlockItemReaderFunc, launch.PRemotesBlockItemReaderFunc)
+
+	_ = pps.POK(launch.PNameStorage).
+		PreAddOK(launch.PNameCleanStorage, launch.PCleanStorage).
+		PreAddOK(launch.PNameCreateLocalFS, launch.PCreateLocalFS).
+		PreAddOK(launch.PNameLoadDatabase, launch.PLoadDatabase)
+
+	return pps
+}
+
+type ImportHooks struct {
+}
+
+func DefaultImportPS() *ps.PS {
+	pps := ps.NewPS("cmd-import")
+
+	_ = pps.
+		AddOK(launch.PNameEncoder, steps.PEncoder, nil).
+		AddOK(launch.PNameDesign, launch.PLoadDesign, nil, launch.PNameEncoder).
+		AddOK(launch.PNameTimeSyncer, launch.PStartTimeSyncer, launch.PCloseTimeSyncer, launch.PNameDesign).
+		AddOK(launch.PNameLocal, launch.PLocal, nil, launch.PNameDesign).
+		AddOK(launch.PNameBlockItemReaders, launch.PBlockItemReaders, nil, launch.PNameDesign).
+		AddOK(launch.PNameStorage, launch.PStorage, launch.PCloseStorage, launch.PNameLocal)
+
+	_ = pps.POK(launch.PNameEncoder).
+		PostAddOK(launch.PNameAddHinters, steps.PAddHinters)
+
+	_ = pps.POK(launch.PNameDesign).
+		PostAddOK(launch.PNameCheckDesign, launch.PCheckDesign).
+		PostAddOK(launch.PNameINITObjectCache, launch.PINITObjectCache)
+
+	_ = pps.POK(launch.PNameBlockItemReaders).
+		PreAddOK(launch.PNameBlockItemReadersDecompressFunc, launch.PBlockItemReadersDecompressFunc).
+		PostAddOK(launch.PNameRemotesBlockItemReaderFunc, launch.PRemotesBlockItemReaderFunc)
+
+	_ = pps.POK(launch.PNameStorage).
+		PreAddOK(launch.PNameCheckLocalFS, launch.PCheckAndCreateLocalFS).
+		PreAddOK(launch.PNameLoadDatabase, launch.PLoadDatabase).
+		PostAddOK(launch.PNameCheckLeveldbStorage, launch.PCheckLeveldbStorage).
+		PostAddOK(launch.PNameLoadFromDatabase, launch.PLoadFromDatabase).
+		PostAddOK(launch.PNameCheckBlocksOfStorage, launch.PCheckBlocksOfStorage).
+		PostAddOK(launch.PNamePatchBlockItemReaders, launch.PPatchBlockItemReaders)
+
+	return pps
+}

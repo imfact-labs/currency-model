@@ -1,9 +1,10 @@
-package cmds
+package steps
 
 import (
 	"context"
 	"time"
 
+	"github.com/hashicorp/memberlist"
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/isaac"
 	isaacdatabase "github.com/imfact-labs/mitum2/isaac/database"
@@ -18,7 +19,6 @@ import (
 	"github.com/imfact-labs/mitum2/util/encoder"
 	"github.com/imfact-labs/mitum2/util/logging"
 	"github.com/imfact-labs/mitum2/util/ps"
-	"github.com/hashicorp/memberlist"
 	"github.com/pkg/errors"
 )
 

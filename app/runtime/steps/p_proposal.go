@@ -1,10 +1,11 @@
-package cmds
+package steps
 
 import (
 	"context"
 	"math"
 	"time"
 
+	"github.com/imfact-labs/currency-model/app/runtime/contracts"
 	"github.com/imfact-labs/mitum2/launch"
 
 	"github.com/imfact-labs/mitum2/base"
@@ -17,10 +18,6 @@ import (
 	"github.com/imfact-labs/mitum2/util/hint"
 	"github.com/imfact-labs/mitum2/util/logging"
 	"github.com/pkg/errors"
-)
-
-var (
-	OperationProcessorsMapBContextKey = util.ContextKey("operation-processors-map-b")
 )
 
 func PProposalProcessors(pctx context.Context) (context.Context, error) {
@@ -56,7 +53,7 @@ func newProposalProcessorFunc(pctx context.Context) (
 	var isaacparams *isaac.Params
 	var db isaac.Database
 	var oprs *hint.CompatibleSet[isaac.NewOperationProcessorInternalFunc]
-	var oprsB *hint.CompatibleSet[NewOperationProcessorInternalWithProposalFunc]
+	var oprsB *hint.CompatibleSet[contracts.NewOperationProcessorInternalWithProposalFunc]
 
 	if err := util.LoadFromContextOK(pctx,
 		launch.EncodersContextKey, &encs,
@@ -65,7 +62,7 @@ func newProposalProcessorFunc(pctx context.Context) (
 		launch.ISAACParamsContextKey, &isaacparams,
 		launch.CenterDatabaseContextKey, &db,
 		launch.OperationProcessorsMapContextKey, &oprs,
-		OperationProcessorsMapBContextKey, &oprsB,
+		contracts.OperationProcessorsMapBContextKey, &oprsB,
 	); err != nil {
 		return nil, err
 	}

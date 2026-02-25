@@ -1,4 +1,4 @@
-package cmds
+package spec
 
 import (
 	"github.com/imfact-labs/currency-model/common"
@@ -17,7 +17,6 @@ import (
 	"github.com/imfact-labs/mitum2/launch"
 	"github.com/imfact-labs/mitum2/util/encoder"
 	"github.com/imfact-labs/mitum2/util/hint"
-	"github.com/pkg/errors"
 )
 
 var Hinters []encoder.DecodeDetail
@@ -138,22 +137,6 @@ func init() {
 
 	SupportedProposalOperationFactHinters = append(SupportedProposalOperationFactHinters, launch.SupportedProposalOperationFactHinters...)
 	SupportedProposalOperationFactHinters = append(SupportedProposalOperationFactHinters, AddedSupportedHinters...)
-}
-
-func LoadHinters(encs *encoder.Encoders) error {
-	for i := range Hinters {
-		if err := encs.AddDetail(Hinters[i]); err != nil {
-			return errors.Wrap(err, "add hinter to encoder")
-		}
-	}
-
-	for i := range SupportedProposalOperationFactHinters {
-		if err := encs.AddDetail(SupportedProposalOperationFactHinters[i]); err != nil {
-			return errors.Wrap(err, "add supported proposal operation fact hinter to encoder")
-		}
-	}
-
-	return nil
 }
 
 func ExcludeHint(hint hint.Hint, launchHinters []encoder.DecodeDetail) []encoder.DecodeDetail {

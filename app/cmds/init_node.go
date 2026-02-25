@@ -3,6 +3,7 @@ package cmds
 import (
 	"context"
 
+	"github.com/imfact-labs/currency-model/app/runtime/pipeline"
 	"github.com/imfact-labs/mitum2/launch"
 	"github.com/imfact-labs/mitum2/util"
 	"github.com/imfact-labs/mitum2/util/logging"
@@ -28,7 +29,7 @@ func (cmd *INITCommand) Run(pctx context.Context) error {
 		launch.PrivatekeyContextKey:        string(cmd.PrivatekeyFlags.Flag.Body()),
 	})
 
-	pps := DefaultINITPS()
+	pps := pipeline.DefaultINITPS()
 	_ = pps.SetLogging(log)
 
 	log.Log().Debug().Interface("process", pps.Verbose()).Msg("process ready")

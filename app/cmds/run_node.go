@@ -11,6 +11,8 @@ import (
 	"github.com/arl/statsviz"
 	"github.com/gorilla/mux"
 	"github.com/imfact-labs/currency-model/api"
+	"github.com/imfact-labs/currency-model/app/runtime/pipeline"
+	"github.com/imfact-labs/currency-model/app/runtime/steps"
 	"github.com/imfact-labs/currency-model/digest"
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/isaac"
@@ -80,7 +82,7 @@ func (cmd *RunCommand) Run(pctx context.Context) error {
 		launch.ACLFlagsContextKey:      cmd.ACLFlags,
 	})
 
-	pps := DefaultRunPS()
+	pps := pipeline.DefaultRunPS()
 
 	_ = pps.AddOK(digest.PNameDigester, digest.ProcessDigester, nil, digest.PNameDigesterDataBase).
 		AddOK(digest.PNameStartDigester, digest.ProcessStartDigester, nil, api.PNameStartAPI)
@@ -90,7 +92,7 @@ func (cmd *RunCommand) Run(pctx context.Context) error {
 		PreAddOK(ps.Name("when-new-block-confirmed-func"), cmd.PWhenNewBlockConfirmed).
 		PreAddOK(ps.Name("when-new-block-saved-in-syncing-state-func"), cmd.PWhenNewBlockSavedInSyncingStateFunc)
 	_ = pps.POK(launch.PNameEncoder).
-		PostAddOK(launch.PNameAddHinters, PAddHinters)
+		PostAddOK(launch.PNameAddHinters, steps.PAddHinters)
 	_ = pps.POK(api.PNameAPI).
 		PostAddOK(PNameDigestAPIHandlers, cmd.pDigestAPIHandlers)
 	_ = pps.POK(digest.PNameDigester).

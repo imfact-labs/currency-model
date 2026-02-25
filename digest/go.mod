@@ -7,7 +7,7 @@ toolchain go1.24.6
 require (
 	github.com/bluele/gcache v0.0.2
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
-	github.com/imfact-labs/currency-model v0.0.7
+	github.com/imfact-labs/currency-model v0.0.8
 	github.com/imfact-labs/mitum2 v0.0.0-20260219060841-f51dacce1321
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.34.0

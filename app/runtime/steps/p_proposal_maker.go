@@ -1,9 +1,10 @@
-package cmds
+package steps
 
 import (
 	"context"
 	"time"
 
+	"github.com/imfact-labs/currency-model/app/runtime/contracts"
 	"github.com/imfact-labs/mitum2/launch"
 	"github.com/pkg/errors"
 
@@ -62,7 +63,7 @@ func proposalMakderGetOperationsFunc(pctx context.Context) (
 	var params *launch.LocalParams
 	var db isaac.Database
 	var pool *isaacdatabase.TempPool
-	var f ProposalOperationFactHintFunc
+	var f contracts.ProposalOperationFactHintFunc
 
 	if err := util.LoadFromContextOK(pctx,
 		launch.LoggingContextKey, &log,
@@ -70,7 +71,7 @@ func proposalMakderGetOperationsFunc(pctx context.Context) (
 		launch.LocalParamsContextKey, &params,
 		launch.CenterDatabaseContextKey, &db,
 		launch.PoolDatabaseContextKey, &pool,
-		ProposalOperationFactHintContextKey, &f,
+		contracts.ProposalOperationFactHintContextKey, &f,
 	); err != nil {
 		return nil, err
 	}

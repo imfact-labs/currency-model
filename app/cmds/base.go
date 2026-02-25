@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/imfact-labs/currency-model/app/runtime/steps"
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/pkg/errors"
 
@@ -30,10 +31,10 @@ func (cmd *BaseCommand) prepare(pctx context.Context) (context.Context, error) {
 	pps := ps.NewPS("cmd")
 
 	_ = pps.
-		AddOK(launch.PNameEncoder, PEncoder, nil)
+		AddOK(launch.PNameEncoder, steps.PEncoder, nil)
 
 	_ = pps.POK(launch.PNameEncoder).
-		PostAddOK(launch.PNameAddHinters, PAddHinters)
+		PostAddOK(launch.PNameAddHinters, steps.PAddHinters)
 
 	var log *logging.Logging
 	if err := util.LoadFromContextOK(pctx, launch.LoggingContextKey, &log); err != nil {
@@ -59,24 +60,6 @@ func (cmd *BaseCommand) prepare(pctx context.Context) (context.Context, error) {
 func (cmd *BaseCommand) print(f string, a ...interface{}) {
 	_, _ = fmt.Fprintf(cmd.Out, f, a...)
 	_, _ = fmt.Fprintln(cmd.Out)
-}
-
-func PAddHinters(pctx context.Context) (context.Context, error) {
-	e := util.StringError("add hinters")
-
-	var encs *encoder.Encoders
-	var f ProposalOperationFactHintFunc = IsSupportedProposalOperationFactHintFunc
-
-	if err := util.LoadFromContextOK(pctx, launch.EncodersContextKey, &encs); err != nil {
-		return pctx, e.Wrap(err)
-	}
-	pctx = context.WithValue(pctx, ProposalOperationFactHintContextKey, f)
-
-	if err := LoadHinters(encs); err != nil {
-		return pctx, e.Wrap(err)
-	}
-
-	return pctx, nil
 }
 
 type OperationFlags struct {
