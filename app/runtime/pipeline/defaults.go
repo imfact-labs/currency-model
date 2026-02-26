@@ -89,9 +89,6 @@ func DefaultRunPS() *ps.PS {
 		PostAddOK(launch.PNameStatesNetworkHandlers, steps.PStatesNetworkHandlers).
 		PostAddOK(launch.PNameHandoverNetworkHandlers, launch.PHandoverNetworkHandlers)
 
-	_ = pps.POK(launch.PNameEncoder).
-		PostAddOK(launch.PNameAddHinters, steps.PAddHinters)
-
 	return pps
 }
 
