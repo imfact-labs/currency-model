@@ -2,6 +2,7 @@ package currency
 
 import (
 	"github.com/imfact-labs/currency-model/common"
+	"github.com/imfact-labs/currency-model/operation/extras"
 	"github.com/imfact-labs/currency-model/types"
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/util"
@@ -14,8 +15,6 @@ var (
 	MintFactHint = hint.MustNewHint("mitum-currency-mint-operation-fact-v0.0.1")
 	MintHint     = hint.MustNewHint("mitum-currency-mint-operation-v0.0.1")
 )
-
-var maxMintItem = 10
 
 type MintFact struct {
 	base.BaseFact
@@ -81,6 +80,13 @@ func (fact MintFact) Currency() types.CurrencyID {
 
 func (fact MintFact) Amount() types.Amount {
 	return fact.amount
+}
+
+func (fact MintFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+	r[extras.DuplicationKeyTypeCurrency] = []string{fact.amount.Currency().String()}
+
+	return r, nil
 }
 
 type Mint struct {

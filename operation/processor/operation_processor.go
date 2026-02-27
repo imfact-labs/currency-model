@@ -9,6 +9,7 @@ import (
 	"github.com/imfact-labs/currency-model/common"
 	"github.com/imfact-labs/currency-model/operation/currency"
 	"github.com/imfact-labs/currency-model/operation/extras"
+	isaacoperation "github.com/imfact-labs/currency-model/operation/isaac"
 	"github.com/imfact-labs/currency-model/state"
 	ccstate "github.com/imfact-labs/currency-model/state/currency"
 	"github.com/imfact-labs/currency-model/types"
@@ -42,7 +43,6 @@ type OperationProcessor struct {
 	processorHintSet             *hint.CompatibleSet[types.GetNewProcessor]
 	processorHintSetWithProposal *hint.CompatibleSet[types.GetNewProcessorWithProposal]
 	Duplicated                   map[string]struct{}
-	dupKeySet                    *DupKeySet
 	duplicatedNewAddress         map[string]struct{}
 	processorClosers             *sync.Map
 	proposal                     *base.ProposalSignFact
@@ -62,7 +62,6 @@ func NewOperationProcessor() *OperationProcessor {
 		processorHintSet:             hint.NewCompatibleSet[types.GetNewProcessor](1 << 9),
 		processorHintSetWithProposal: hint.NewCompatibleSet[types.GetNewProcessorWithProposal](1 << 9),
 		Duplicated:                   map[string]struct{}{},
-		dupKeySet:                    NewDupKeySet(),
 		duplicatedNewAddress:         map[string]struct{}{},
 		processorClosers:             &m,
 	}
@@ -86,10 +85,6 @@ func (opr *OperationProcessor) New(
 
 	if nopr.Duplicated == nil {
 		nopr.Duplicated = make(map[string]struct{})
-	}
-
-	if nopr.dupKeySet == nil {
-		nopr.dupKeySet = NewDupKeySet()
 	}
 
 	if nopr.proposal == nil && opr.proposal != nil {
@@ -502,7 +497,9 @@ func CheckDuplication(opr *OperationProcessor, op base.Operation) error {
 	opr.Lock()
 	defer opr.Unlock()
 
-	switch t := op.(type) {
+	dupKeySet := NewDupKeySet()
+
+	switch t := op.Fact().(type) {
 	case extras.DeDupeKeyer:
 		dkSet, err := t.DupKey()
 		if err != nil {
@@ -510,23 +507,40 @@ func CheckDuplication(opr *OperationProcessor, op base.Operation) error {
 		}
 		for k, v := range dkSet {
 			for _, dk := range v {
-				opr.dupKeySet.Add(k, dk)
+				dupKeySet.Add(k, dk)
 			}
 		}
+	case isaacoperation.NetworkPolicyFact, isaacoperation.GenesisNetworkPolicyFact,
+		isaacoperation.SuffrageCandidateFact, isaacoperation.SuffrageDisjoinFact,
+		isaacoperation.SuffrageGenesisJoinFact, isaacoperation.SuffrageJoinFact,
+		base.SuffrageExpelFact:
 	default:
+		return errors.Errorf(
+			"%T not implemented DeDupeKeyer", t,
+		)
 	}
 
-	for kType, kSet := range *opr.dupKeySet {
+	pending := make(map[string]struct{})
+	for kType, kSet := range *dupKeySet {
 		for _, dk := range kSet {
+			if _, found := pending[dk]; found {
+				return errors.Errorf(
+					"cannot use a duplicated %v for %v within one operation",
+					dk, kType,
+				)
+			}
 			if _, found := opr.Duplicated[dk]; found {
 				return errors.Errorf(
 					"cannot use a duplicated %v for %v within a proposal",
 					dk, kType,
 				)
 			}
-			opr.Duplicated[dk] = struct{}{}
+			pending[dk] = struct{}{}
 		}
+	}
 
+	for dk := range pending {
+		opr.Duplicated[dk] = struct{}{}
 	}
 
 	return nil
@@ -621,7 +635,6 @@ func (opr *OperationProcessor) close() {
 	//opr.pool = nil
 	opr.proposal = nil
 	opr.Duplicated = nil
-	opr.dupKeySet = nil
 	opr.duplicatedNewAddress = nil
 	opr.processorClosers = &sync.Map{}
 
