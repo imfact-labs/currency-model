@@ -95,6 +95,10 @@ func (opr *OperationProcessor) New(
 		nopr.duplicatedNewAddress = make(map[string]struct{})
 	}
 
+	if nopr.processorClosers == nil {
+		nopr.processorClosers = &sync.Map{}
+	}
+
 	if nopr.Logging == nil {
 		nopr.Logging = opr.Logging
 	}
@@ -180,10 +184,6 @@ func (opr *OperationProcessor) PreProcess(ctx context.Context, op base.Operation
 
 	if err := opr.CheckDuplicationFunc(opr, op); err != nil {
 		return ctx, base.NewBaseOperationProcessReasonError("duplication found; %w", err), nil
-	}
-
-	if opr.processorClosers == nil {
-		opr.processorClosers = &sync.Map{}
 	}
 
 	var opp base.OperationProcessor
@@ -621,16 +621,19 @@ func (opr *OperationProcessor) GetNewProcessorFromHintset(op base.Operation) (ba
 }
 
 func (opr *OperationProcessor) close() {
-	opr.processorClosers.Range(func(_, v interface{}) bool {
-		err := v.(io.Closer).Close()
-		if err != nil {
-			opr.Log().Error().Err(err).Str("op", fmt.Sprintf("%T", v)).Msg("close operation processor")
-		} else {
-			opr.Log().Debug().Str("processor", fmt.Sprintf("%T", v)).Msg("operation processor closed")
-		}
+	closers := opr.processorClosers
+	if closers != nil {
+		closers.Range(func(_, v interface{}) bool {
+			err := v.(io.Closer).Close()
+			if err != nil {
+				opr.Log().Error().Err(err).Str("op", fmt.Sprintf("%T", v)).Msg("close operation processor")
+			} else {
+				opr.Log().Debug().Str("processor", fmt.Sprintf("%T", v)).Msg("operation processor closed")
+			}
 
-		return true
-	})
+			return true
+		})
+	}
 
 	//opr.pool = nil
 	opr.proposal = nil
