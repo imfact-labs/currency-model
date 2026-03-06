@@ -4,7 +4,6 @@ import (
 	"github.com/imfact-labs/currency-model/common"
 	"github.com/imfact-labs/currency-model/utils/bsonenc"
 	"github.com/imfact-labs/mitum2/util/hint"
-	"github.com/imfact-labs/mitum2/util/valuehash"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -15,8 +14,8 @@ func (fact RegisterGenesisCurrencyFact) MarshalBSON() ([]byte, error) {
 			"genesis_node_key": fact.genesisNodeKey.String(),
 			"keys":             fact.keys,
 			"currencies":       fact.cs,
-			"hash":             fact.BaseFact.Hash().String(),
-			"token":            fact.BaseFact.Token(),
+			"hash":             fact.Hash(),
+			"token":            fact.Token(),
 		},
 	)
 }
@@ -36,10 +35,8 @@ func (fact *RegisterGenesisCurrencyFact) DecodeBSON(b []byte, enc *bsonenc.Encod
 		return common.DecorateError(err, common.ErrDecodeBson, *fact)
 	}
 
-	h := valuehash.NewBytesFromString(u.Hash)
-
-	fact.BaseFact.SetHash(h)
-	err = fact.BaseFact.SetToken(u.Token)
+	fact.SetHash(u.Hash)
+	err = fact.SetToken(u.Token)
 	if err != nil {
 		return common.DecorateError(err, common.ErrDecodeBson, *fact)
 	}
@@ -60,10 +57,6 @@ func (fact *RegisterGenesisCurrencyFact) DecodeBSON(b []byte, enc *bsonenc.Encod
 	}
 
 	return nil
-}
-
-func (op RegisterGenesisCurrency) MarshalBSON() ([]byte, error) {
-	return bsonenc.Marshal(op.BaseOperation)
 }
 
 func (op *RegisterGenesisCurrency) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {

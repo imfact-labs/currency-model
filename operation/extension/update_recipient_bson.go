@@ -3,11 +3,9 @@ package extension // nolint: dupl
 import (
 	"github.com/imfact-labs/currency-model/common"
 	"github.com/imfact-labs/currency-model/operation/extras"
-	"go.mongodb.org/mongo-driver/v2/bson"
-
 	"github.com/imfact-labs/currency-model/utils/bsonenc"
 	"github.com/imfact-labs/mitum2/util/hint"
-	"github.com/imfact-labs/mitum2/util/valuehash"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func (fact UpdateRecipientFact) MarshalBSON() ([]byte, error) {
@@ -18,8 +16,8 @@ func (fact UpdateRecipientFact) MarshalBSON() ([]byte, error) {
 			"contract":   fact.contract,
 			"recipients": fact.recipients,
 			"currency":   fact.currency,
-			"hash":       fact.BaseFact.Hash().String(),
-			"token":      fact.BaseFact.Token(),
+			"hash":       fact.Hash(),
+			"token":      fact.Token(),
 		},
 	)
 }
@@ -40,13 +38,8 @@ func (fact *UpdateRecipientFact) DecodeBSON(b []byte, enc *bsonenc.Encoder) erro
 		return common.DecorateError(err, common.ErrDecodeBson, *fact)
 	}
 
-	h := valuehash.NewBytesFromString(u.Hash)
-
-	fact.BaseFact.SetHash(h)
-	err = fact.BaseFact.SetToken(u.Token)
-	if err != nil {
-		return common.DecorateError(err, common.ErrDecodeBson, *fact)
-	}
+	fact.SetHash(u.Hash)
+	fact.SetToken(u.Token)
 
 	var uf UpdateRecipientsFactBSONUnmarshaler
 	if err := bson.Unmarshal(b, &uf); err != nil {
@@ -67,12 +60,17 @@ func (fact *UpdateRecipientFact) DecodeBSON(b []byte, enc *bsonenc.Encoder) erro
 }
 
 func (op UpdateRecipient) MarshalBSON() ([]byte, error) {
+	bm := bson.M{}
+	for k, v := range op.Extensions() {
+		bm[k] = v
+	}
 	return bsonenc.Marshal(
 		bson.M{
-			"_hint": op.Hint().String(),
-			"hash":  op.Hash(),
-			"fact":  op.Fact(),
-			"signs": op.Signs(),
+			"_hint":     op.Hint().String(),
+			"hash":      op.Hash(),
+			"fact":      op.Fact(),
+			"signs":     op.Signs(),
+			"extension": bm,
 		})
 }
 

@@ -8,10 +8,10 @@ import (
 	"net/textproto"
 	"time"
 
+	"github.com/bluele/gcache"
 	dutil "github.com/imfact-labs/currency-model/digest/util"
 	"github.com/imfact-labs/mitum2/util"
 	"github.com/imfact-labs/mitum2/util/valuehash"
-	"github.com/bluele/gcache"
 	"github.com/pkg/errors"
 	"github.com/rainycape/memcache"
 	"github.com/rs/zerolog"

@@ -6,7 +6,6 @@ import (
 
 	"github.com/imfact-labs/currency-model/utils/bsonenc"
 	"github.com/imfact-labs/mitum2/util/hint"
-	"github.com/imfact-labs/mitum2/util/valuehash"
 )
 
 func (fact UpdateCurrencyFact) MarshalBSON() ([]byte, error) {
@@ -15,8 +14,8 @@ func (fact UpdateCurrencyFact) MarshalBSON() ([]byte, error) {
 			"_hint":    fact.Hint().String(),
 			"currency": fact.currency,
 			"policy":   fact.policy,
-			"hash":     fact.BaseFact.Hash().String(),
-			"token":    fact.BaseFact.Token(),
+			"hash":     fact.Hash(),
+			"token":    fact.Token(),
 		},
 	)
 }
@@ -35,9 +34,7 @@ func (fact *UpdateCurrencyFact) DecodeBSON(b []byte, enc *bsonenc.Encoder) error
 		return common.DecorateError(err, common.ErrDecodeBson, *fact)
 	}
 
-	h := valuehash.NewBytesFromString(u.Hash)
-
-	fact.BaseFact.SetHash(h)
+	fact.BaseFact.SetHash(u.Hash)
 	err = fact.BaseFact.SetToken(u.Token)
 	if err != nil {
 		return common.DecorateError(err, common.ErrDecodeBson, *fact)
@@ -59,16 +56,6 @@ func (fact *UpdateCurrencyFact) DecodeBSON(b []byte, enc *bsonenc.Encoder) error
 	}
 
 	return nil
-}
-
-func (op UpdateCurrency) MarshalBSON() ([]byte, error) {
-	return bsonenc.Marshal(
-		bson.M{
-			"_hint": op.Hint().String(),
-			"hash":  op.Hash().String(),
-			"fact":  op.Fact(),
-			"signs": op.Signs(),
-		})
 }
 
 func (op *UpdateCurrency) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {

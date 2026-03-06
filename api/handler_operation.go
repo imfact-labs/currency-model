@@ -434,9 +434,12 @@ func buildOperationsByHashesFilter(hashes string) (bson.M, error) {
 
 	var hashArr []util.Hash
 	for i := range hashStrArr {
-		h := valuehash.NewBytesFromString(hashStrArr[i])
+		h, err := valuehash.NewBytesFromString(hashStrArr[i])
+		if err != nil {
+			return nil, err
+		}
 
-		err := h.IsValid(nil)
+		err = h.IsValid(nil)
 		if err != nil {
 			return nil, err
 		}

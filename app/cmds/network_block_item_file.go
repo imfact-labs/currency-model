@@ -8,13 +8,13 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/alecthomas/kong"
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/isaac"
 	isaacblock "github.com/imfact-labs/mitum2/isaac/block"
 	"github.com/imfact-labs/mitum2/launch"
 	"github.com/imfact-labs/mitum2/util"
 	"github.com/imfact-labs/mitum2/util/encoder"
-	"github.com/alecthomas/kong"
 	"github.com/pkg/errors"
 )
 

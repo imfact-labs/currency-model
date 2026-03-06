@@ -2,7 +2,7 @@ package steps
 
 import (
 	"context"
-	
+
 	"github.com/imfact-labs/currency-model/app/runtime/contracts"
 	"github.com/imfact-labs/currency-model/app/runtime/spec"
 	"github.com/imfact-labs/currency-model/utils/bsonenc"

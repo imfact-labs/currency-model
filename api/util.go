@@ -78,9 +78,12 @@ func parseHashFromPath(s string) (util.Hash, error) {
 		return nil, errors.Errorf("Empty hash")
 	}
 
-	h := valuehash.NewBytesFromString(s)
+	h, err := valuehash.NewBytesFromString(s)
+	if err != nil {
+		return nil, err
+	}
 
-	err := h.IsValid(nil)
+	err = h.IsValid(nil)
 	if err != nil {
 		return nil, err
 	}

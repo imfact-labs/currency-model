@@ -12,8 +12,8 @@ import (
 )
 
 type BaseFactBSONUnmarshaler struct {
-	Hash  string `bson:"hash"`
-	Token []byte `bson:"token"`
+	Hash  valuehash.Bytes `bson:"hash"`
+	Token []byte          `bson:"token"`
 }
 
 type BaseSignBSONUnmarshaler struct {
@@ -23,10 +23,10 @@ type BaseSignBSONUnmarshaler struct {
 }
 
 type BaseOperationBSONUnmarshaler struct {
-	Hint  string     `bson:"_hint"`
-	Hash  string     `bson:"hash"`
-	Fact  bson.Raw   `bson:"fact"`
-	Signs []bson.Raw `bson:"signs"`
+	Hint  string          `bson:"_hint"`
+	Hash  valuehash.Bytes `bson:"hash"`
+	Fact  bson.Raw        `bson:"fact"`
+	Signs []bson.Raw      `bson:"signs"`
 }
 
 func (op BaseOperation) MarshalBSON() ([]byte, error) {
@@ -43,7 +43,7 @@ func (op BaseOperation) MarshalBSON() ([]byte, error) {
 	return bsonenc.Marshal(
 		bson.M{
 			"_hint": op.Hint().String(),
-			"hash":  op.Hash().String(),
+			"hash":  op.Hash(),
 			"fact":  op.Fact(),
 			"signs": signs,
 		},
@@ -63,7 +63,7 @@ func (op *BaseOperation) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 	}
 
 	op.BaseHinter = hint.NewBaseHinter(ht)
-	op.h = valuehash.NewBytesFromString(u.Hash)
+	op.h = u.Hash
 
 	var fact base.Fact
 	if err := encoder.Decode(enc, u.Fact, &fact); err != nil {
@@ -107,7 +107,7 @@ func (op *BaseNodeOperation) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 	}
 
 	op.BaseOperation.BaseHinter = hint.NewBaseHinter(ht)
-	op.BaseOperation.h = valuehash.NewBytesFromString(u.Hash)
+	op.BaseOperation.h = u.Hash
 
 	var fact base.Fact
 	if err := encoder.Decode(enc, u.Fact, &fact); err != nil {

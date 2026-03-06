@@ -6,7 +6,6 @@ import (
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/util"
 	"github.com/imfact-labs/mitum2/util/hint"
-	"github.com/imfact-labs/mitum2/util/valuehash"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -16,8 +15,8 @@ func (fact SuffrageJoinFact) MarshalBSON() ([]byte, error) {
 			"_hint":     fact.Hint().String(),
 			"candidate": fact.candidate.String(),
 			"start":     fact.start,
-			"hash":      fact.BaseFact.Hash().String(),
-			"token":     fact.BaseFact.Token(),
+			"hash":      fact.Hash(),
+			"token":     fact.Token(),
 		},
 	)
 }
@@ -38,10 +37,8 @@ func (fact *SuffrageJoinFact) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 		return e.Wrap(err)
 	}
 
-	h := valuehash.NewBytesFromString(u.Hash)
-
-	fact.BaseFact.SetHash(h)
-	fact.BaseFact.SetToken(u.Token)
+	fact.SetHash(u.Hash)
+	fact.SetToken(u.Token)
 
 	var uf SuffrageJoinFactBSONUnMarshaler
 	if err := bson.Unmarshal(b, &uf); err != nil {
@@ -76,8 +73,8 @@ func (fact SuffrageGenesisJoinFact) MarshalBSON() ([]byte, error) {
 		bson.M{
 			"_hint": fact.Hint().String(),
 			"nodes": fact.nodes,
-			"hash":  fact.BaseFact.Hash().String(),
-			"token": fact.BaseFact.Token(),
+			"hash":  fact.Hash(),
+			"token": fact.Token(),
 		},
 	)
 }
@@ -97,10 +94,8 @@ func (fact *SuffrageGenesisJoinFact) DecodeBSON(b []byte, enc *bsonenc.Encoder) 
 		return e.Wrap(err)
 	}
 
-	h := valuehash.NewBytesFromString(u.Hash)
-
-	fact.BaseFact.SetHash(h)
-	fact.BaseFact.SetToken(u.Token)
+	fact.SetHash(u.Hash)
+	fact.SetToken(u.Token)
 
 	var uf SuffrageGenesisJoinFactBSONUnMarshaler
 	if err := bson.Unmarshal(b, &uf); err != nil {

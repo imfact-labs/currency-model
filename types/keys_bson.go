@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/imfact-labs/currency-model/common"
+	"github.com/imfact-labs/mitum2/util/valuehash"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
@@ -45,7 +45,7 @@ func (ks BaseAccountKeys) MarshalBSON() ([]byte, error) {
 	return bsonenc.Marshal(
 		bson.M{
 			"_hint":     ks.Hint().String(),
-			"hash":      ks.Hash().String(),
+			"hash":      ks.Hash(),
 			"keys":      ks.keys,
 			"threshold": ks.threshold,
 		},
@@ -56,7 +56,7 @@ func (ks NilAccountKeys) MarshalBSON() ([]byte, error) {
 	return bsonenc.Marshal(
 		bson.M{
 			"_hint":     ks.Hint().String(),
-			"hash":      ks.Hash().String(),
+			"hash":      ks.Hash(),
 			"threshold": ks.Threshold(),
 		},
 	)
@@ -66,7 +66,7 @@ func (ks ContractAccountKeys) MarshalBSON() ([]byte, error) {
 	return bsonenc.Marshal(
 		bson.M{
 			"_hint":     ks.Hint().String(),
-			"hash":      ks.Hash().String(),
+			"hash":      ks.Hash(),
 			"keys":      ks.keys,
 			"threshold": ks.threshold,
 		},
@@ -74,10 +74,10 @@ func (ks ContractAccountKeys) MarshalBSON() ([]byte, error) {
 }
 
 type KeysBSONUnmarshaler struct {
-	Hint      string   `bson:"_hint"`
-	Hash      string   `bson:"hash"`
-	Keys      bson.Raw `bson:"keys"`
-	Threshold uint     `bson:"threshold"`
+	Hint      string          `bson:"_hint"`
+	Hash      valuehash.Bytes `bson:"hash"`
+	Keys      bson.Raw        `bson:"keys"`
+	Threshold uint            `bson:"threshold"`
 }
 
 func (ks *BaseAccountKeys) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
@@ -112,7 +112,7 @@ func (ks *BaseAccountKeys) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 	ks.keys = keys
 	ks.threshold = uks.Threshold
 
-	ks.h = common.NewBytesFromString(uks.Hash)
+	ks.h = uks.Hash
 
 	return nil
 }
@@ -131,7 +131,7 @@ func (ks *NilAccountKeys) DecodeBSON(b []byte, _ *bsonenc.Encoder) error {
 	}
 
 	ks.BaseHinter = hint.NewBaseHinter(ht)
-	ks.h = common.NewBytesFromString(uks.Hash)
+	ks.h = uks.Hash
 	ks.threshold = uks.Threshold
 
 	return nil
@@ -169,7 +169,7 @@ func (ks *ContractAccountKeys) DecodeBSON(b []byte, enc *bsonenc.Encoder) error 
 	ks.keys = keys
 	ks.threshold = uks.Threshold
 
-	ks.h = common.NewBytesFromString(uks.Hash)
+	ks.h = uks.Hash
 
 	return nil
 }

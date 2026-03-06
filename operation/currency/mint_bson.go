@@ -6,7 +6,6 @@ import (
 
 	"github.com/imfact-labs/currency-model/utils/bsonenc"
 	"github.com/imfact-labs/mitum2/util/hint"
-	"github.com/imfact-labs/mitum2/util/valuehash"
 )
 
 func (fact MintFact) MarshalBSON() ([]byte, error) {
@@ -15,8 +14,8 @@ func (fact MintFact) MarshalBSON() ([]byte, error) {
 			"_hint":    fact.Hint().String(),
 			"receiver": fact.receiver,
 			"amount":   fact.amount,
-			"hash":     fact.BaseFact.Hash().String(),
-			"token":    fact.BaseFact.Token(),
+			"hash":     fact.Hash(),
+			"token":    fact.Token(),
 		},
 	)
 }
@@ -35,10 +34,8 @@ func (fact *MintFact) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 		return common.DecorateError(err, common.ErrDecodeBson, *fact)
 	}
 
-	h := valuehash.NewBytesFromString(u.Hash)
-
-	fact.BaseFact.SetHash(h)
-	err = fact.BaseFact.SetToken(u.Token)
+	fact.SetHash(u.Hash)
+	err = fact.SetToken(u.Token)
 	if err != nil {
 		return common.DecorateError(err, common.ErrDecodeBson, *fact)
 	}

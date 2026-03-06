@@ -5,7 +5,6 @@ import (
 	"github.com/imfact-labs/currency-model/operation/extras"
 	"github.com/imfact-labs/currency-model/utils/bsonenc"
 	"github.com/imfact-labs/mitum2/util/hint"
-	"github.com/imfact-labs/mitum2/util/valuehash"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -13,8 +12,8 @@ func (fact CreateDIDFact) MarshalBSON() ([]byte, error) {
 	return bsonenc.Marshal(
 		bson.M{
 			"_hint":    fact.Hint().String(),
-			"hash":     fact.BaseFact.Hash().String(),
-			"token":    fact.BaseFact.Token(),
+			"hash":     fact.Hash(),
+			"token":    fact.Token(),
 			"sender":   fact.sender,
 			"contract": fact.contract,
 			"currency": fact.currency,
@@ -37,8 +36,8 @@ func (fact *CreateDIDFact) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 		return common.DecorateError(err, common.ErrDecodeBson, *fact)
 	}
 
-	fact.BaseFact.SetHash(valuehash.NewBytesFromString(u.Hash))
-	fact.BaseFact.SetToken(u.Token)
+	fact.SetHash(u.Hash)
+	fact.SetToken(u.Token)
 
 	var uf CreateDIDFactBSONUnmarshaler
 	if err := bson.Unmarshal(b, &uf); err != nil {
@@ -59,12 +58,17 @@ func (fact *CreateDIDFact) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 }
 
 func (op CreateDID) MarshalBSON() ([]byte, error) {
+	bm := bson.M{}
+	for k, v := range op.Extensions() {
+		bm[k] = v
+	}
 	return bsonenc.Marshal(
 		bson.M{
-			"_hint": op.Hint().String(),
-			"hash":  op.Hash().String(),
-			"fact":  op.Fact(),
-			"signs": op.Signs(),
+			"_hint":     op.Hint().String(),
+			"hash":      op.Hash(),
+			"fact":      op.Fact(),
+			"signs":     op.Signs(),
+			"extension": bm,
 		})
 }
 

@@ -5,7 +5,6 @@ import (
 	"github.com/imfact-labs/currency-model/operation/extras"
 	"github.com/imfact-labs/currency-model/utils/bsonenc"
 	"github.com/imfact-labs/mitum2/util/hint"
-	"github.com/imfact-labs/mitum2/util/valuehash"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -15,8 +14,8 @@ func (fact CreateContractAccountFact) MarshalBSON() ([]byte, error) {
 			"_hint":  fact.Hint().String(),
 			"sender": fact.sender,
 			"items":  fact.items,
-			"hash":   fact.BaseFact.Hash().String(),
-			"token":  fact.BaseFact.Token(),
+			"hash":   fact.Hash(),
+			"token":  fact.Token(),
 		},
 	)
 }
@@ -34,13 +33,8 @@ func (fact *CreateContractAccountFact) DecodeBSON(b []byte, enc *bsonenc.Encoder
 		return common.DecorateError(err, common.ErrDecodeBson, *fact)
 	}
 
-	h := valuehash.NewBytesFromString(ubf.Hash)
-
-	fact.BaseFact.SetHash(h)
-	err := fact.BaseFact.SetToken(ubf.Token)
-	if err != nil {
-		return common.DecorateError(err, common.ErrDecodeBson, *fact)
-	}
+	fact.SetHash(ubf.Hash)
+	fact.SetToken(ubf.Token)
 
 	var uf CreateContractAccountFactBSONUnmarshaler
 	if err := bson.Unmarshal(b, &uf); err != nil {
@@ -61,12 +55,17 @@ func (fact *CreateContractAccountFact) DecodeBSON(b []byte, enc *bsonenc.Encoder
 }
 
 func (op CreateContractAccount) MarshalBSON() ([]byte, error) {
+	bm := bson.M{}
+	for k, v := range op.Extensions() {
+		bm[k] = v
+	}
 	return bsonenc.Marshal(
 		bson.M{
-			"_hint": op.Hint().String(),
-			"hash":  op.Hash().String(),
-			"fact":  op.Fact(),
-			"signs": op.Signs(),
+			"_hint":     op.Hint().String(),
+			"hash":      op.Hash(),
+			"fact":      op.Fact(),
+			"signs":     op.Signs(),
+			"extension": bm,
 		})
 }
 

@@ -42,7 +42,7 @@ func (ac *Account) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 		return e.Wrap(err)
 	}
 
-	ac.h = valuehash.NewHashFromBytes(uac.Hash)
+	ac.h = uac.Hash
 
 	ac.BaseHinter = hint.NewBaseHinter(ht)
 	switch ad, err := base.DecodeAddress(uac.Address, enc); {

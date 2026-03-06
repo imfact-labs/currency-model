@@ -6,7 +6,6 @@ import (
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/util"
 	"github.com/imfact-labs/mitum2/util/hint"
-	"github.com/imfact-labs/mitum2/util/valuehash"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -16,8 +15,8 @@ func (fact SuffrageDisjoinFact) MarshalBSON() ([]byte, error) {
 			"_hint": fact.Hint().String(),
 			"node":  fact.node.String(),
 			"start": fact.start,
-			"hash":  fact.BaseFact.Hash().String(),
-			"token": fact.BaseFact.Token(),
+			"hash":  fact.Hash(),
+			"token": fact.Token(),
 		},
 	)
 }
@@ -38,13 +37,8 @@ func (fact *SuffrageDisjoinFact) DecodeBSON(b []byte, enc *bsonenc.Encoder) erro
 		return e.Wrap(err)
 	}
 
-	h := valuehash.NewBytesFromString(u.Hash)
-
-	fact.BaseFact.SetHash(h)
-	err = fact.BaseFact.SetToken(u.Token)
-	if err != nil {
-		return e.Wrap(err)
-	}
+	fact.SetHash(u.Hash)
+	fact.SetToken(u.Token)
 
 	var uf SuffrageDisjoinFactBSONUnMarshaler
 	if err := bson.Unmarshal(b, &uf); err != nil {

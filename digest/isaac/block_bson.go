@@ -12,49 +12,31 @@ import (
 )
 
 func (m Manifest) MarshalBSON() ([]byte, error) {
-	var previous string
-	if m.previous != nil {
-		previous = m.previous.String()
-	} else {
-		previous = ""
-	}
-	var statesTree string
-	if m.statesTree != nil {
-		statesTree = m.statesTree.String()
-	} else {
-		statesTree = ""
-	}
-	var operationsTree string
-	if m.operationsTree != nil {
-		statesTree = m.operationsTree.String()
-	} else {
-		operationsTree = ""
-	}
 	return bsonenc.Marshal(
 		bson.M{
 			"_hint":           m.Hint().String(),
 			"proposed_at":     m.proposedAt,
-			"states_tree":     statesTree,
-			"hash":            m.h.String(),
-			"previous":        previous,
-			"proposal":        m.proposal.String(),
-			"operations_tree": operationsTree,
-			"suffrage":        m.suffrage.String(),
+			"states_tree":     m.statesTree,
+			"hash":            m.h,
+			"previous":        m.previous,
+			"proposal":        m.proposal,
+			"operations_tree": m.operationsTree,
+			"suffrage":        m.suffrage,
 			"height":          m.height,
 		},
 	)
 }
 
 type ManifestBSONUnmarshaler struct {
-	Hint           string      `bson:"_hint"`
-	ProposedAt     time.Time   `bson:"proposed_at"`
-	StatesTree     string      `bson:"states_tree"`
-	Hash           string      `bson:"hash"`
-	Previous       string      `bson:"previous"`
-	Proposal       string      `bson:"proposal"`
-	OperationsTree string      `bson:"operations_tree"`
-	Suffrage       string      `bson:"suffrage"`
-	Height         base.Height `bson:"height"`
+	Hint           string          `bson:"_hint"`
+	ProposedAt     time.Time       `bson:"proposed_at"`
+	StatesTree     valuehash.Bytes `bson:"states_tree"`
+	Hash           valuehash.Bytes `bson:"hash"`
+	Previous       valuehash.Bytes `bson:"previous"`
+	Proposal       valuehash.Bytes `bson:"proposal"`
+	OperationsTree valuehash.Bytes `bson:"operations_tree"`
+	Suffrage       valuehash.Bytes `bson:"suffrage"`
+	Height         base.Height     `bson:"height"`
 }
 
 func (m *Manifest) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
@@ -71,13 +53,13 @@ func (m *Manifest) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 	}
 
 	m.BaseHinter = hint.NewBaseHinter(ht)
-	m.h = valuehash.NewBytesFromString(u.Hash)
+	m.h = u.Hash
 	m.height = u.Height
-	m.previous = valuehash.NewBytesFromString(u.Previous)
-	m.proposal = valuehash.NewBytesFromString(u.Proposal)
-	m.operationsTree = valuehash.NewBytesFromString(u.OperationsTree)
-	m.statesTree = valuehash.NewBytesFromString(u.StatesTree)
-	m.suffrage = valuehash.NewBytesFromString(u.Suffrage)
+	m.previous = u.Previous
+	m.proposal = u.Proposal
+	m.operationsTree = u.OperationsTree
+	m.statesTree = u.StatesTree
+	m.suffrage = u.Suffrage
 	m.proposedAt = u.ProposedAt
 
 	return nil

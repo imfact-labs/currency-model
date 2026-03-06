@@ -1,14 +1,14 @@
 package digest
 
 import (
+	"time"
+
 	"github.com/imfact-labs/currency-model/common"
 	"github.com/imfact-labs/currency-model/operation/extras"
+	"github.com/imfact-labs/currency-model/utils/bsonenc"
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/util"
 	"github.com/imfact-labs/mitum2/util/hint"
-	"time"
-
-	"github.com/imfact-labs/currency-model/utils/bsonenc"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -26,7 +26,7 @@ func (va OperationValue) MarshalBSON() ([]byte, error) {
 	var op = make(map[string]interface{})
 	op = map[string]interface{}{
 		"_hint": va.op.Hint().String(),
-		"hash":  va.op.Hash().String(),
+		"hash":  va.op.Hash(),
 		"fact":  va.op.Fact(),
 		"signs": signs,
 	}
