@@ -3,7 +3,6 @@ package extras
 import (
 	"encoding/json"
 
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/imfact-labs/currency-model/common"
 	"github.com/imfact-labs/currency-model/state"
 	didstate "github.com/imfact-labs/currency-model/state/did-registry"
@@ -177,7 +176,10 @@ func (ba BaseAuthentication) Verify(op base.Operation, getStateFunc base.GetStat
 			return common.ErrValueInvalid.Errorf("missing public key in EcdsaSecp256k1VerificationKey2019 type")
 		}
 		pubKey := vrfMethod.PublicKey()
-		signature := base58.Decode(ba.ProofData())
+		signature, err := util.DecodeHash(ba.ProofData())
+		if err != nil {
+			return common.ErrUserSignInvalid.Wrap(err)
+		}
 		err = pubKey.Verify(op.Fact().Hash().Bytes(), signature)
 		if err != nil {
 			return common.ErrUserSignInvalid.Wrap(err)
@@ -255,7 +257,10 @@ func (ba BaseAuthentication) Verify(op base.Operation, getStateFunc base.GetStat
 				return common.ErrValueInvalid.Errorf("missing public key in EcdsaSecp256k1VerificationKey2019 type")
 			}
 			pubKey := vrfMethod.PublicKey()
-			signature := base58.Decode(ba.ProofData())
+			signature, err := util.DecodeHash(ba.ProofData())
+			if err != nil {
+				return common.ErrUserSignInvalid.Wrap(err)
+			}
 			err = pubKey.Verify(op.Fact().Hash().Bytes(), signature)
 			if err != nil {
 				return common.ErrUserSignInvalid.Wrap(err)
