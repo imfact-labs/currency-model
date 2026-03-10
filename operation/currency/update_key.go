@@ -66,6 +66,10 @@ func (fact UpdateKeyFact) IsValid(b []byte) error {
 		return common.ErrFactInvalid.Wrap(err)
 	}
 
+	if _, ok := fact.keys.(types.BaseAccountKeys); !ok {
+		return common.ErrFactInvalid.Wrap(common.ErrValueInvalid.Errorf("expected BaseAccountKeys but %T", fact.keys))
+	}
+
 	if err := common.IsValidOperationFact(fact, b); err != nil {
 		return common.ErrFactInvalid.Wrap(err)
 	}
