@@ -34,32 +34,6 @@ func (fl *CurrencyFixedFeeerFlags) IsValid([]byte) error {
 	return fl.feeer.IsValid(nil)
 }
 
-type CurrencyRatioFeeerFlags struct {
-	Receiver AddressFlag `name:"receiver" help:"fee receiver account address"`
-	Ratio    float64     `name:"ratio" help:"fee ratio, multifly by operation amount"`
-	Min      BigFlag     `name:"min" help:"minimum fee"`
-	Max      BigFlag     `name:"max" help:"maximum fee"`
-	feeer    types.Feeer
-}
-
-func (fl *CurrencyRatioFeeerFlags) IsValid([]byte) error {
-	if len(fl.Receiver.String()) < 1 {
-		return nil
-	}
-
-	var receiver base.Address
-	if a, err := fl.Receiver.Encode(enc); err != nil {
-		return util.ErrInvalid.Errorf("Invalid receiver format, %v: %v", fl.Receiver.String(), err)
-	} else if err := a.IsValid(nil); err != nil {
-		return util.ErrInvalid.Errorf("Invalid receiver address, %v: %v", fl.Receiver.String(), err)
-	} else {
-		receiver = a
-	}
-
-	fl.feeer = types.NewRatioFeeer(receiver, fl.Ratio, fl.Min.Big, fl.Max.Big)
-	return fl.feeer.IsValid(nil)
-}
-
 type CurrencyPolicyFlags struct {
 	NewAccountMinBalance BigFlag `name:"new-account-min-balance" help:"minimum balance for new account"` // nolint lll
 }
@@ -74,9 +48,8 @@ type CurrencyDesignFlags struct {
 	Decimal                 BigFlag        `arg:"" name:"decimal" help:"decimal" required:"true"`
 	GenesisAccount          AddressFlag    `arg:"" name:"genesis-account" help:"genesis-account address for genesis balance" required:"true"` // nolint lll
 	CurrencyPolicyFlags     `prefix:"policy-" help:"currency policy" required:"true"`
-	FeeerString             string `name:"feeer" help:"feeer type, {nil, fixed, ratio}" required:"true"`
+	FeeerString             string `name:"feeer" help:"feeer type, {nil, fixed}" required:"true"`
 	CurrencyFixedFeeerFlags `prefix:"feeer-fixed-" help:"fixed feeer"`
-	CurrencyRatioFeeerFlags `prefix:"feeer-ratio-" help:"ratio feeer"`
 	currencyDesign          types.CurrencyDesign
 }
 
@@ -84,8 +57,6 @@ func (fl *CurrencyDesignFlags) IsValid([]byte) error {
 	if err := fl.CurrencyPolicyFlags.IsValid(nil); err != nil {
 		return err
 	} else if err := fl.CurrencyFixedFeeerFlags.IsValid(nil); err != nil {
-		return err
-	} else if err := fl.CurrencyRatioFeeerFlags.IsValid(nil); err != nil {
 		return err
 	}
 
@@ -95,8 +66,6 @@ func (fl *CurrencyDesignFlags) IsValid([]byte) error {
 		feeer = types.NewNilFeeer()
 	case types.FeeerFixed:
 		feeer = fl.CurrencyFixedFeeerFlags.feeer
-	case types.FeeerRatio:
-		feeer = fl.CurrencyRatioFeeerFlags.feeer
 	default:
 		return util.ErrInvalid.Errorf("Unknown feeer type, %v", t)
 	}

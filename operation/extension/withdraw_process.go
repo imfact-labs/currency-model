@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/imfact-labs/currency-model/common"
-	"github.com/imfact-labs/currency-model/operation/extras"
+	"github.com/imfact-labs/currency-model/operation/currency"
 	cstate "github.com/imfact-labs/currency-model/state"
 	ccstate "github.com/imfact-labs/currency-model/state/currency"
 	cestate "github.com/imfact-labs/currency-model/state/extension"
@@ -198,11 +198,18 @@ func (opp *WithdrawProcessor) Process( // nolint:dupl
 		stateMergeValues = append(stateMergeValues, s...)
 	}
 
-	var required map[types.CurrencyID][]common.Big
-	switch i := op.Fact().(type) {
-	case extras.FeeAble:
-		required = i.FeeBase()
-	default:
+	items := make([]currency.AmountsItem, len(fact.items))
+	for i := range fact.items {
+		items[i] = fact.items[i]
+	}
+
+	required := make(map[types.CurrencyID][]common.Big)
+	for i := range items {
+		amounts := items[i].Amounts()
+		for j := range amounts {
+			am := amounts[j]
+			required[am.Currency()] = append(required[am.Currency()], am.Big())
+		}
 	}
 
 	totalAmounts := map[string]types.Amount{}

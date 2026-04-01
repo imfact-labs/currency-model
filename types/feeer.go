@@ -1,9 +1,6 @@
 package types
 
 import (
-	"bytes"
-	"encoding/binary"
-
 	"github.com/imfact-labs/currency-model/common"
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/util"
@@ -33,12 +30,12 @@ type Feeer interface {
 	Bytes() []byte
 	Receiver() base.Address
 	Min() common.Big
-	Fee(common.Big) (common.Big, error)
+	Fee() (common.Big, error)
 }
 
 type ItemFeeer interface {
 	Feeer
-	ItemFee(common.Big) (common.Big, error)
+	ItemFee() (common.Big, error)
 }
 
 type NilFeeer struct {
@@ -65,7 +62,7 @@ func (NilFeeer) Min() common.Big {
 	return common.ZeroBig
 }
 
-func (NilFeeer) Fee(common.Big) (common.Big, error) {
+func (NilFeeer) Fee() (common.Big, error) {
 	return common.ZeroBig, nil
 }
 
@@ -103,7 +100,7 @@ func (fa FixedFeeer) Min() common.Big {
 	return fa.amount
 }
 
-func (fa FixedFeeer) Fee(common.Big) (common.Big, error) {
+func (fa FixedFeeer) Fee() (common.Big, error) {
 	if fa.isZero() {
 		return common.ZeroBig, nil
 	}
@@ -163,7 +160,7 @@ func (fa FixedItemFeeer) Min() common.Big {
 	return fa.amount
 }
 
-func (fa FixedItemFeeer) Fee(common.Big) (common.Big, error) {
+func (fa FixedItemFeeer) Fee() (common.Big, error) {
 	if fa.isZero(fa.amount) {
 		return common.ZeroBig, nil
 	}
@@ -171,7 +168,7 @@ func (fa FixedItemFeeer) Fee(common.Big) (common.Big, error) {
 	return fa.amount, nil
 }
 
-func (fa FixedItemFeeer) ItemFee(common.Big) (common.Big, error) {
+func (fa FixedItemFeeer) ItemFee() (common.Big, error) {
 	if fa.isZero(fa.itemFeeAmount) {
 		return common.ZeroBig, nil
 	}
@@ -197,98 +194,4 @@ func (fa FixedItemFeeer) IsValid([]byte) error {
 
 func (fa FixedItemFeeer) isZero(am common.Big) bool {
 	return am.IsZero()
-}
-
-type RatioFeeer struct {
-	hint.BaseHinter
-	receiver base.Address
-	ratio    float64 // 0 >=, or <= 1.0
-	min      common.Big
-	max      common.Big
-}
-
-func NewRatioFeeer(receiver base.Address, ratio float64, min, max common.Big) RatioFeeer {
-	return RatioFeeer{
-		BaseHinter: hint.NewBaseHinter(RatioFeeerHint),
-		receiver:   receiver,
-		ratio:      ratio,
-		min:        min,
-		max:        max,
-	}
-}
-
-func (RatioFeeer) Type() string {
-	return FeeerRatio
-}
-
-func (fa RatioFeeer) Bytes() []byte {
-	var rb bytes.Buffer
-	_ = binary.Write(&rb, binary.BigEndian, fa.ratio)
-
-	return util.ConcatBytesSlice(fa.receiver.Bytes(), rb.Bytes(), fa.min.Bytes(), fa.max.Bytes())
-}
-
-func (fa RatioFeeer) Receiver() base.Address {
-	return fa.receiver
-}
-
-func (fa RatioFeeer) Min() common.Big {
-	return fa.min
-}
-
-func (fa RatioFeeer) Fee(a common.Big) (common.Big, error) {
-	if fa.isZero() {
-		return common.ZeroBig, nil
-	} else if a.IsZero() {
-		return fa.min, nil
-	}
-
-	if fa.isOne() {
-		return a, nil
-	} else if f := a.MulFloat64(fa.ratio); f.Compare(fa.min) < 0 {
-		return fa.min, nil
-	} else {
-		if !fa.isUnlimited() && f.Compare(fa.max) > 0 {
-			return fa.max, nil
-		}
-		return f, nil
-	}
-}
-
-func (fa RatioFeeer) IsValid([]byte) error {
-	if err := fa.BaseHinter.IsValid(nil); err != nil {
-		return err
-	}
-
-	if err := util.CheckIsValiders(nil, false, fa.receiver); err != nil {
-		return util.ErrInvalid.Errorf("Invalid receiver for ratio feeer: %v", err)
-	}
-
-	if fa.ratio < 0 || fa.ratio > 1 {
-		return util.ErrInvalid.Errorf("Invalid ratio, %v; it should be 0 >=, <= 1", fa.ratio)
-	}
-
-	if !fa.min.OverNil() {
-		return util.ErrInvalid.Errorf("Ratio feeer min amount under zero")
-	} else if !fa.max.Equal(UnlimitedMaxFeeAmount) {
-		if !fa.max.OverNil() {
-			return util.ErrInvalid.Errorf("Ratio feeer max amount under zero")
-		} else if fa.min.Compare(fa.max) > 0 {
-			return util.ErrInvalid.Errorf("ratio feeer min should over max")
-		}
-	}
-
-	return nil
-}
-
-func (fa RatioFeeer) isUnlimited() bool {
-	return fa.max.Equal(UnlimitedMaxFeeAmount)
-}
-
-func (fa RatioFeeer) isZero() bool {
-	return fa.ratio == 0
-}
-
-func (fa RatioFeeer) isOne() bool {
-	return fa.ratio == 1
 }

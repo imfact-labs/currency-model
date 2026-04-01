@@ -154,32 +154,8 @@ func (fact TransferFact) Addresses() ([]base.Address, error) {
 	return as, nil
 }
 
-func (fact TransferFact) FeeBase() map[types.CurrencyID][]common.Big {
-	required := make(map[types.CurrencyID][]common.Big)
-	items := make([]AmountsItem, len(fact.items))
-	for i := range fact.items {
-		items[i] = fact.items[i]
-	}
-
-	for i := range items {
-		it := items[i]
-		amounts := it.Amounts()
-		for j := range amounts {
-			am := amounts[j]
-			cid := am.Currency()
-			big := am.Big()
-			var amsTemp []common.Big
-			if ams, found := required[cid]; found {
-				ams = append(ams, big)
-				required[cid] = ams
-			} else {
-				amsTemp = append(amsTemp, big)
-				required[cid] = amsTemp
-			}
-		}
-	}
-
-	return required
+func (fact TransferFact) FeeBase() (types.CurrencyID, uint64) {
+	return fact.Currency(), uint64(len(fact.items))
 }
 
 func (fact TransferFact) FeePayer() base.Address {

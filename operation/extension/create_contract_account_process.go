@@ -6,7 +6,6 @@ import (
 
 	"github.com/imfact-labs/currency-model/common"
 	"github.com/imfact-labs/currency-model/operation/currency"
-	"github.com/imfact-labs/currency-model/operation/extras"
 	"github.com/imfact-labs/currency-model/state"
 	ccstate "github.com/imfact-labs/currency-model/state/currency"
 	"github.com/imfact-labs/currency-model/state/extension"
@@ -318,14 +317,12 @@ func (opp *CreateContractAccountProcessor) Process( // nolint:dupl
 		}
 	}
 
-	var required map[types.CurrencyID][]common.Big
-	switch i := op.Fact().(type) {
-	case extras.FeeAble:
-		required = i.FeeBase()
-	default:
+	items := make([]currency.AmountsItem, len(fact.items))
+	for i := range fact.items {
+		items[i] = fact.items[i]
 	}
 
-	totalAmounts, err := currency.PrepareSenderTotalAmounts(fact.Sender(), required, getStateFunc)
+	totalAmounts, err := currency.PrepareSenderTotalAmounts(fact.Sender(), items, getStateFunc)
 	if err != nil {
 		return nil, base.NewBaseOperationProcessReasonError("process CreateAccount; %w", err), nil
 	}

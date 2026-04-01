@@ -308,7 +308,7 @@ func (opr *OperationProcessor) Process(
 	var payer base.Address
 	switch i := op.Fact().(type) {
 	case extras.FeeAble:
-		feeBase := i.FeeBase()
+		cid, items := i.FeeBase()
 		payer = i.FeePayer()
 		switch k := op.(type) {
 		case extras.OperationExtensions:
@@ -345,124 +345,95 @@ func (opr *OperationProcessor) Process(
 		default:
 		}
 
-		feeReceiveSts := map[types.CurrencyID]base.State{}
-		var feeRequired = make(map[types.CurrencyID]common.Big)
-		var policy *types.CurrencyPolicy
-		var err error
-
-		for cid, amounts := range feeBase {
-			policy, err = state.ExistsCurrencyPolicy(cid, getStateFunc)
-			if err != nil {
-				return nil, base.NewBaseOperationProcessReasonError(
-					common.ErrMPreProcess.
-						Errorf("%v", err)), nil
-			}
-			receiver := policy.Feeer().Receiver()
-			if receiver == nil {
-				continue
-			}
-
-			if err := state.CheckExistsState(ccstate.AccountStateKey(receiver), getStateFunc); err != nil {
-				return nil, base.NewBaseOperationProcessReasonError(
-						common.ErrMAccountNF.Errorf("Feeer receiver, %v", receiver)),
-					nil
-			} else if st, found, err := getStateFunc(ccstate.BalanceStateKey(receiver, cid)); err != nil {
-				return nil, base.NewBaseOperationProcessReasonError(
-						common.ErrMStateNF.Errorf("Feeer receiver, %v BalanceState: %v", receiver, err)),
-					nil
-			} else if !found {
-				return nil, base.NewBaseOperationProcessReasonError(
-						common.ErrMStateNF.Errorf("Feeer receiver, %v BalanceState", receiver)),
-					nil
-			} else {
-				feeReceiveSts[cid] = st
-			}
-
-			rq := common.ZeroBig
-			total := common.ZeroBig
-			for _, big := range amounts {
-				total = total.Add(big)
-				f, ok := policy.Feeer().(types.ItemFeeer)
-				if ok {
-					itmFee, _ := f.ItemFee(big)
-					rq = rq.Add(itmFee)
-				} else {
-					switch bsFee, err := policy.Feeer().Fee(big); {
-					case err != nil:
-						return nil,
-							base.NewBaseOperationProcessReasonError("check fee of currency %v; %w", cid, err),
-							nil
-					default:
-						rq = rq.Add(bsFee)
-					}
-				}
-			}
-			_, ok := policy.Feeer().(types.ItemFeeer)
-			if ok {
-				switch bsFee, err := policy.Feeer().Fee(total); {
-				case err != nil:
-					return nil,
-						base.NewBaseOperationProcessReasonError("check fee of currency %v; %w", cid, err),
-						nil
-				default:
-					rq = rq.Add(bsFee)
-				}
-			}
-			if v, found := feeRequired[cid]; !found {
-				feeRequired[cid] = rq
-			} else {
-				feeRequired[cid] = v.Add(rq)
-			}
+		policy, err := state.ExistsCurrencyPolicy(cid, getStateFunc)
+		if err != nil {
+			return nil, base.NewBaseOperationProcessReasonError(
+				common.ErrMPreProcess.
+					Errorf("%v", err)), nil
 		}
 
-		for cid, rq := range feeRequired {
-			payerSt, err := state.ExistsState(ccstate.BalanceStateKey(payer, cid), fmt.Sprintf("balance of fee payer, %v", payer), getStateFunc)
+		receiver := policy.Feeer().Receiver()
+		if receiver == nil {
+			break
+		}
+
+		if err := state.CheckExistsState(ccstate.AccountStateKey(receiver), getStateFunc); err != nil {
+			return nil, base.NewBaseOperationProcessReasonError(
+					common.ErrMAccountNF.Errorf("Feeer receiver, %v", receiver)),
+				nil
+		}
+
+		feeReceiveSt, found, err := getStateFunc(ccstate.BalanceStateKey(receiver, cid))
+		if err != nil {
+			return nil, base.NewBaseOperationProcessReasonError(
+					common.ErrMStateNF.Errorf("Feeer receiver, %v BalanceState: %v", receiver, err)),
+				nil
+		} else if !found {
+			return nil, base.NewBaseOperationProcessReasonError(
+					common.ErrMStateNF.Errorf("Feeer receiver, %v BalanceState", receiver)),
+				nil
+		}
+
+		feeRequired, err := policy.Feeer().Fee()
+		if err != nil {
+			return nil,
+				base.NewBaseOperationProcessReasonError("check fee of currency %v; %w", cid, err),
+				nil
+		}
+
+		if f, ok := policy.Feeer().(types.ItemFeeer); ok {
+			itmFee, err := f.ItemFee()
 			if err != nil {
-				return nil, base.NewBaseOperationProcessReasonError(
-						common.ErrMStateNF.Errorf("fee payer, %v BalanceState: %v", payer, err)),
+				return nil,
+					base.NewBaseOperationProcessReasonError("check item fee of currency %v; %w", cid, err),
 					nil
 			}
+			feeRequired = feeRequired.Add(itmFee.MulInt64(int64(items)))
+		}
 
-			payerBalValue, ok := payerSt.Value().(ccstate.BalanceStateValue)
+		payerSt, err := state.ExistsState(ccstate.BalanceStateKey(payer, cid), fmt.Sprintf("balance of fee payer, %v", payer), getStateFunc)
+		if err != nil {
+			return nil, base.NewBaseOperationProcessReasonError(
+					common.ErrMStateNF.Errorf("fee payer, %v BalanceState: %v", payer, err)),
+				nil
+		}
+
+		payerBalValue, ok := payerSt.Value().(ccstate.BalanceStateValue)
+		if !ok {
+			return nil, base.NewBaseOperationProcessReasonError(
+					common.ErrMPreProcess.Wrap(common.ErrMTypeMismatch).
+						Errorf("expected %T, not %T",
+							ccstate.BalanceStateValue{},
+							payerSt.Value())),
+				nil
+		}
+
+		if payerSt.Key() != feeReceiveSt.Key() {
+			stateMergeValues = append(stateMergeValues, common.NewBaseStateMergeValue(
+				payerSt.Key(),
+				ccstate.NewDeductBalanceStateValue(payerBalValue.Amount.WithBig(feeRequired)),
+				func(height base.Height, st base.State) base.StateValueMerger {
+					return ccstate.NewBalanceStateValueMerger(height, st.Key(), cid, st)
+				},
+			))
+			r, ok := feeReceiveSt.Value().(ccstate.BalanceStateValue)
 			if !ok {
 				return nil, base.NewBaseOperationProcessReasonError(
-						common.ErrMPreProcess.Wrap(common.ErrMTypeMismatch).
-							Errorf("expected %T, not %T",
-								ccstate.BalanceStateValue{},
-								payerSt.Value())),
+						"expected %T, not %T",
+						ccstate.BalanceStateValue{},
+						feeReceiveSt.Value()),
 					nil
 			}
-
-			feeReceiverSt, feeReceiverFound := feeReceiveSts[cid]
-			if feeReceiverFound {
-				if payerSt.Key() != feeReceiverSt.Key() {
-					stateMergeValues = append(stateMergeValues, common.NewBaseStateMergeValue(
-						payerSt.Key(),
-						ccstate.NewDeductBalanceStateValue(payerBalValue.Amount.WithBig(rq)),
-						func(height base.Height, st base.State) base.StateValueMerger {
-							return ccstate.NewBalanceStateValueMerger(height, st.Key(), cid, st)
-						},
-					))
-					r, ok := feeReceiveSts[cid].Value().(ccstate.BalanceStateValue)
-					if !ok {
-						return nil, base.NewBaseOperationProcessReasonError(
-								"expected %T, not %T",
-								ccstate.BalanceStateValue{},
-								feeReceiveSts[cid].Value()),
-							nil
-					}
-					stateMergeValues = append(
-						stateMergeValues,
-						common.NewBaseStateMergeValue(
-							feeReceiveSts[cid].Key(),
-							ccstate.NewAddBalanceStateValue(r.Amount.WithBig(rq)),
-							func(height base.Height, st base.State) base.StateValueMerger {
-								return ccstate.NewBalanceStateValueMerger(height, feeReceiveSts[cid].Key(), cid, st)
-							},
-						),
-					)
-				}
-			}
+			stateMergeValues = append(
+				stateMergeValues,
+				common.NewBaseStateMergeValue(
+					feeReceiveSt.Key(),
+					ccstate.NewAddBalanceStateValue(r.Amount.WithBig(feeRequired)),
+					func(height base.Height, st base.State) base.StateValueMerger {
+						return ccstate.NewBalanceStateValueMerger(height, feeReceiveSt.Key(), cid, st)
+					},
+				),
+			)
 		}
 	default:
 	}

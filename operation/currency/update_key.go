@@ -108,11 +108,8 @@ func (fact UpdateKeyFact) Rebuild() UpdateKeyFact {
 	return fact
 }
 
-func (fact UpdateKeyFact) FeeBase() map[types.CurrencyID][]common.Big {
-	required := make(map[types.CurrencyID][]common.Big)
-	required[fact.Currency()] = []common.Big{common.ZeroBig}
-
-	return required
+func (fact UpdateKeyFact) FeeBase() (types.CurrencyID, uint64) {
+	return fact.Currency(), extras.NoItemFeeBaseItemCount
 }
 
 func (fact UpdateKeyFact) FeePayer() base.Address {

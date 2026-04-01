@@ -136,11 +136,8 @@ func (fact UpdateHandlerFact) Addresses() ([]base.Address, error) {
 	return as, nil
 }
 
-func (fact UpdateHandlerFact) FeeBase() map[types.CurrencyID][]common.Big {
-	required := make(map[types.CurrencyID][]common.Big)
-	required[fact.Currency()] = []common.Big{common.ZeroBig}
-
-	return required
+func (fact UpdateHandlerFact) FeeBase() (types.CurrencyID, uint64) {
+	return fact.Currency(), extras.NoItemFeeBaseItemCount
 }
 
 func (fact UpdateHandlerFact) FeePayer() base.Address {

@@ -2,15 +2,15 @@ package currency
 
 import (
 	"context"
+	"sync"
+
 	"github.com/imfact-labs/currency-model/common"
-	"github.com/imfact-labs/currency-model/operation/extras"
 	"github.com/imfact-labs/currency-model/state"
 	"github.com/imfact-labs/currency-model/state/currency"
 	"github.com/imfact-labs/currency-model/types"
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/util"
 	"github.com/pkg/errors"
-	"sync"
 )
 
 var transferItemProcessorPool = sync.Pool{
@@ -256,14 +256,12 @@ func (opp *TransferProcessor) Process( // nolint:dupl
 		}
 	}
 
-	var required map[types.CurrencyID][]common.Big
-	switch i := op.Fact().(type) {
-	case extras.FeeAble:
-		required = i.FeeBase()
-	default:
+	items := make([]AmountsItem, len(fact.items))
+	for i := range fact.items {
+		items[i] = fact.items[i]
 	}
-
-	totalAmounts, err := PrepareSenderTotalAmounts(fact.Sender(), required, getStateFunc)
+	
+	totalAmounts, err := PrepareSenderTotalAmounts(fact.Sender(), items, getStateFunc)
 	if err != nil {
 		return nil, base.NewBaseOperationProcessReasonError("%w", err), nil
 	}

@@ -155,33 +155,8 @@ func (fact CreateContractAccountFact) Addresses() ([]base.Address, error) {
 	return as, nil
 }
 
-func (fact CreateContractAccountFact) FeeBase() map[types.CurrencyID][]common.Big {
-	required := make(map[types.CurrencyID][]common.Big)
-	items := make([]currency.AmountsItem, len(fact.items))
-	for i := range fact.items {
-		items[i] = fact.items[i]
-	}
-
-	for i := range items {
-		it := items[i]
-		amounts := it.Amounts()
-		for j := range amounts {
-			am := amounts[j]
-			cid := am.Currency()
-			big := am.Big()
-			var k []common.Big
-			if arr, found := required[cid]; found {
-				arr = append(arr, big)
-				k = append(k, arr...)
-			} else {
-				k = append(k, big)
-			}
-
-			required[cid] = k
-		}
-	}
-
-	return required
+func (fact CreateContractAccountFact) FeeBase() (types.CurrencyID, uint64) {
+	return fact.Currency(), uint64(len(fact.items))
 }
 
 func (fact CreateContractAccountFact) FeePayer() base.Address {

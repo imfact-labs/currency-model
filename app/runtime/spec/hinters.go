@@ -43,7 +43,6 @@ var AddedHinters = []encoder.DecodeDetail{
 	{Hint: types.MEPrivatekeyHint, Instance: types.MEPrivatekey{}},
 	{Hint: types.MEPublickeyHint, Instance: types.MEPublickey{}},
 	{Hint: types.NilFeeerHint, Instance: types.NilFeeer{}},
-	{Hint: types.RatioFeeerHint, Instance: types.RatioFeeer{}},
 
 	{Hint: currency.CreateAccountHint, Instance: currency.CreateAccount{}},
 	{Hint: currency.CreateAccountItemMultiAmountsHint, Instance: currency.CreateAccountItemMultiAmounts{}},

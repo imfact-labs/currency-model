@@ -48,35 +48,3 @@ func (fa *FixedItemFeeer) unpack(enc encoder.Encoder, ht hint.Hint, rc string, a
 
 	return nil
 }
-
-func (fa *RatioFeeer) unpack(
-	enc encoder.Encoder,
-	ht hint.Hint,
-	rc string,
-	ratio float64,
-	min, max string,
-) error {
-	switch ad, err := base.DecodeAddress(rc, enc); {
-	case err != nil:
-		return err
-	default:
-		fa.receiver = ad
-	}
-
-	fa.ratio = ratio
-
-	if min, err := common.NewBigFromString(min); err != nil {
-		return err
-	} else {
-		fa.min = min
-	}
-
-	if max, err := common.NewBigFromString(max); err != nil {
-		return err
-	} else {
-		fa.max = max
-	}
-	fa.BaseHinter = hint.NewBaseHinter(ht)
-
-	return nil
-}

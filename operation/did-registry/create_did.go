@@ -105,11 +105,8 @@ func (fact CreateDIDFact) Addresses() ([]base.Address, error) {
 	return as, nil
 }
 
-func (fact CreateDIDFact) FeeBase() map[types.CurrencyID][]common.Big {
-	required := make(map[types.CurrencyID][]common.Big)
-	required[fact.Currency()] = []common.Big{common.ZeroBig}
-
-	return required
+func (fact CreateDIDFact) FeeBase() (types.CurrencyID, uint64) {
+	return fact.Currency(), extras.NoItemFeeBaseItemCount
 }
 
 func (fact CreateDIDFact) FeePayer() base.Address {

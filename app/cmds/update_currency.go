@@ -14,9 +14,8 @@ type UpdateCurrencyCommand struct {
 	OperationFlags
 	Currency                CurrencyIDFlag `arg:"" name:"currency-id" help:"currency id" required:"true"`
 	CurrencyPolicyFlags     `prefix:"policy-" help:"currency policy" required:"true"`
-	FeeerString             string `name:"feeer" help:"feeer type, {nil, fixed, ratio}" required:"true"`
+	FeeerString             string `name:"feeer" help:"feeer type, {nil, fixed}" required:"true"`
 	CurrencyFixedFeeerFlags `prefix:"feeer-fixed-" help:"fixed feeer"`
-	CurrencyRatioFeeerFlags `prefix:"feeer-ratio-" help:"ratio feeer"`
 	Node                    AddressFlag `arg:"" name:"node" help:"node address" required:"true"`
 	node                    base.Address
 	po                      types.CurrencyPolicy
@@ -59,8 +58,6 @@ func (cmd *UpdateCurrencyCommand) parseFlags() error {
 
 	if err := cmd.CurrencyFixedFeeerFlags.IsValid(nil); err != nil {
 		return err
-	} else if err := cmd.CurrencyRatioFeeerFlags.IsValid(nil); err != nil {
-		return err
 	}
 
 	a, err := cmd.Node.Encode(enc)
@@ -75,8 +72,6 @@ func (cmd *UpdateCurrencyCommand) parseFlags() error {
 		feeer = types.NewNilFeeer()
 	case types.FeeerFixed:
 		feeer = cmd.CurrencyFixedFeeerFlags.feeer
-	case types.FeeerRatio:
-		feeer = cmd.CurrencyRatioFeeerFlags.feeer
 	default:
 		return errors.Errorf("Unknown feeer type, %q", t)
 	}
