@@ -17,6 +17,7 @@ type TransferCommand struct {
 	OperationFlags
 	Sender         AddressFlag               `arg:"" name:"sender" help:"sender address" required:"true"`
 	ReceiverAmount AddressCurrencyAmountFlag `arg:"" name:"receiver-currency-amount" help:"receiver amount (ex: \"<address>,<currency>,<amount>\") separator @" required:"true"`
+	Currency       CurrencyIDFlag            `name:"currency-id" help:"fee currency id; defaults to the first item currency"`
 	OperationExtensionFlags
 	sender base.Address
 }
@@ -72,7 +73,12 @@ func (cmd *TransferCommand) createOperation() (base.Operation, error) { // nolin
 		items = append(items, item)
 	}
 
-	fact := currency.NewTransferFact([]byte(cmd.Token), cmd.sender, items)
+	feeCurrency := cmd.Currency.CID
+	if feeCurrency == "" && len(cmd.ReceiverAmount.Amount()) > 0 {
+		feeCurrency = cmd.ReceiverAmount.Amount()[0].Currency()
+	}
+
+	fact := currency.NewTransferFact([]byte(cmd.Token), cmd.sender, items, feeCurrency)
 
 	op, err := currency.NewTransfer(fact)
 	if err != nil {

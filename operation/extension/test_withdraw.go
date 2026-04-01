@@ -79,7 +79,12 @@ func (t *TestWithdrawProcessor) MakeItem(
 func (t *TestWithdrawProcessor) MakeOperation(
 	sender base.Address, privatekey base.Privatekey, items []WithdrawItem,
 ) *TestWithdrawProcessor {
-	op, _ := NewWithdraw(NewWithdrawFact([]byte("token"), sender, items))
+	var feeCurrency types.CurrencyID
+	if len(items) > 0 && len(items[0].Amounts()) > 0 {
+		feeCurrency = items[0].Amounts()[0].Currency()
+	}
+
+	op, _ := NewWithdraw(NewWithdrawFact([]byte("token"), sender, items, feeCurrency))
 	_ = op.Sign(privatekey, t.NetworkID)
 	t.Op = op
 

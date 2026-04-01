@@ -42,20 +42,23 @@ type CreateAccountItem interface {
 
 type CreateAccountFact struct {
 	base.BaseFact
-	sender base.Address
-	items  []CreateAccountItem
+	sender   base.Address
+	items    []CreateAccountItem
+	currency types.CurrencyID
 }
 
 func NewCreateAccountFact(
 	token []byte,
 	sender base.Address,
 	items []CreateAccountItem,
+	currency types.CurrencyID,
 ) CreateAccountFact {
 	bf := base.NewBaseFact(CreateAccountFactHint, token)
 	fact := CreateAccountFact{
 		BaseFact: bf,
 		sender:   sender,
 		items:    items,
+		currency: currency,
 	}
 	fact.SetHash(fact.GenerateHash())
 
@@ -79,6 +82,7 @@ func (fact CreateAccountFact) Bytes() []byte {
 	return util.ConcatBytesSlice(
 		fact.Token(),
 		fact.sender.Bytes(),
+		fact.currency.Bytes(),
 		util.ConcatBytesSlice(is...),
 	)
 }
@@ -94,7 +98,7 @@ func (fact CreateAccountFact) IsValid(b []byte) error {
 		return common.ErrFactInvalid.Wrap(common.ErrArrayLen.Wrap(errors.Errorf("Items, %d over max, %d", n, MaxCreateAccountItems)))
 	}
 
-	if err := util.CheckIsValiders(nil, false, fact.sender); err != nil {
+	if err := util.CheckIsValiders(nil, false, fact.sender, fact.currency); err != nil {
 		return common.ErrFactInvalid.Wrap(err)
 	}
 
@@ -145,6 +149,10 @@ func (fact CreateAccountFact) Items() []CreateAccountItem {
 
 func (fact CreateAccountFact) ItemsLen() int {
 	return len(fact.items)
+}
+
+func (fact CreateAccountFact) Currency() types.CurrencyID {
+	return fact.currency
 }
 
 func (fact CreateAccountFact) Targets() ([]base.Address, error) {

@@ -2,12 +2,13 @@ package extension
 
 import (
 	"github.com/imfact-labs/currency-model/common"
+	"github.com/imfact-labs/currency-model/types"
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/util/encoder"
 	"github.com/pkg/errors"
 )
 
-func (fact *CreateContractAccountFact) unpack(enc encoder.Encoder, ow string, bit []byte) error {
+func (fact *CreateContractAccountFact) unpack(enc encoder.Encoder, ow string, bit []byte, cid string) error {
 	switch a, err := base.DecodeAddress(ow, enc); {
 	case err != nil:
 		return err
@@ -30,6 +31,7 @@ func (fact *CreateContractAccountFact) unpack(enc encoder.Encoder, ow string, bi
 		items[i] = j
 	}
 	fact.items = items
+	fact.currency = types.CurrencyID(cid)
 
 	return nil
 }

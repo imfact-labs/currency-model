@@ -29,20 +29,23 @@ type TransferItem interface {
 
 type TransferFact struct {
 	base.BaseFact
-	sender base.Address
-	items  []TransferItem
+	sender   base.Address
+	items    []TransferItem
+	currency types.CurrencyID
 }
 
 func NewTransferFact(
 	token []byte,
 	sender base.Address,
 	items []TransferItem,
+	currency types.CurrencyID,
 ) TransferFact {
 	bf := base.NewBaseFact(TransferFactHint, token)
 	fact := TransferFact{
 		BaseFact: bf,
 		sender:   sender,
 		items:    items,
+		currency: currency,
 	}
 	fact.SetHash(fact.GenerateHash())
 
@@ -66,6 +69,7 @@ func (fact TransferFact) Bytes() []byte {
 	return util.ConcatBytesSlice(
 		fact.Token(),
 		fact.sender.Bytes(),
+		fact.currency.Bytes(),
 		util.ConcatBytesSlice(its...),
 	)
 }
@@ -81,7 +85,7 @@ func (fact TransferFact) IsValid(b []byte) error {
 		return common.ErrFactInvalid.Wrap(common.ErrArrayLen.Wrap(errors.Errorf("items, %d over max, %d", n, MaxTransferItems)))
 	}
 
-	if err := util.CheckIsValiders(nil, false, fact.sender); err != nil {
+	if err := util.CheckIsValiders(nil, false, fact.sender, fact.currency); err != nil {
 		return common.ErrFactInvalid.Wrap(err)
 	}
 
@@ -128,6 +132,10 @@ func (fact TransferFact) Items() []TransferItem {
 
 func (fact TransferFact) ItemsLen() int {
 	return len(fact.items)
+}
+
+func (fact TransferFact) Currency() types.CurrencyID {
+	return fact.currency
 }
 
 func (fact TransferFact) Rebuild() TransferFact {

@@ -31,16 +31,23 @@ type CreateContractAccountItem interface {
 
 type CreateContractAccountFact struct {
 	base.BaseFact
-	sender base.Address
-	items  []CreateContractAccountItem
+	sender   base.Address
+	items    []CreateContractAccountItem
+	currency types.CurrencyID
 }
 
-func NewCreateContractAccountFact(token []byte, sender base.Address, items []CreateContractAccountItem) CreateContractAccountFact {
+func NewCreateContractAccountFact(
+	token []byte,
+	sender base.Address,
+	items []CreateContractAccountItem,
+	currency types.CurrencyID,
+) CreateContractAccountFact {
 	bf := base.NewBaseFact(CreateContractAccountFactHint, token)
 	fact := CreateContractAccountFact{
 		BaseFact: bf,
 		sender:   sender,
 		items:    items,
+		currency: currency,
 	}
 	fact.SetHash(fact.GenerateHash())
 
@@ -64,6 +71,7 @@ func (fact CreateContractAccountFact) Bytes() []byte {
 	return util.ConcatBytesSlice(
 		fact.Token(),
 		fact.sender.Bytes(),
+		fact.currency.Bytes(),
 		util.ConcatBytesSlice(is...),
 	)
 }
@@ -79,7 +87,7 @@ func (fact CreateContractAccountFact) IsValid(b []byte) error {
 		return common.ErrFactInvalid.Wrap(common.ErrArrayLen.Wrap(errors.Errorf("items, %d over max, %d", n, MaxCreateContractAccountItems)))
 	}
 
-	if err := util.CheckIsValiders(nil, false, fact.sender); err != nil {
+	if err := util.CheckIsValiders(nil, false, fact.sender, fact.currency); err != nil {
 		return common.ErrFactInvalid.Wrap(err)
 	}
 
@@ -126,6 +134,10 @@ func (fact CreateContractAccountFact) Signer() base.Address {
 
 func (fact CreateContractAccountFact) Items() []CreateContractAccountItem {
 	return fact.items
+}
+
+func (fact CreateContractAccountFact) Currency() types.CurrencyID {
+	return fact.currency
 }
 
 func (fact CreateContractAccountFact) Targets() ([]base.Address, error) {

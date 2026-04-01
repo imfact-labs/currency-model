@@ -18,6 +18,7 @@ type CreateAccountCommand struct {
 	Threshold uint               `help:"threshold for keys (default: ${create_account_threshold})" default:"${create_account_threshold}"` // nolint
 	Key       KeyFlag            `name:"key" help:"key for new account (ex: \"<public key>,<weight>\") separator @"`
 	Amount    CurrencyAmountFlag `arg:"" name:"currency-amount" help:"amount (ex: \"<currency>,<amount>\")"`
+	Currency  CurrencyIDFlag     `name:"currency-id" help:"fee currency id; defaults to the item currency"`
 	OperationExtensionFlags
 	sender base.Address
 	keys   types.AccountKeys
@@ -112,7 +113,12 @@ func (cmd *CreateAccountCommand) createOperation() (base.Operation, error) { // 
 	}
 	items = append(items, item)
 
-	fact := currency.NewCreateAccountFact([]byte(cmd.Token), cmd.sender, items)
+	feeCurrency := cmd.Currency.CID
+	if feeCurrency == "" {
+		feeCurrency = cmd.Amount.CID
+	}
+
+	fact := currency.NewCreateAccountFact([]byte(cmd.Token), cmd.sender, items, feeCurrency)
 
 	op, err := currency.NewCreateAccount(fact)
 	if err != nil {

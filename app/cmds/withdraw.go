@@ -15,9 +15,10 @@ import (
 type WithdrawCommand struct {
 	BaseCommand
 	OperationFlags
-	Sender AddressFlag        `arg:"" name:"sender" help:"sender address" required:"true"`
-	Target AddressFlag        `arg:"" name:"target" help:"target contract account address" required:"true"`
-	Amount CurrencyAmountFlag `arg:"" name:"currency-amount" help:"amount (ex: \"<currency>,<amount>\")"`
+	Sender   AddressFlag        `arg:"" name:"sender" help:"sender address" required:"true"`
+	Target   AddressFlag        `arg:"" name:"target" help:"target contract account address" required:"true"`
+	Amount   CurrencyAmountFlag `arg:"" name:"currency-amount" help:"amount (ex: \"<currency>,<amount>\")"`
+	Currency CurrencyIDFlag     `name:"currency-id" help:"fee currency id; defaults to the item currency"`
 	OperationExtensionFlags
 	sender      base.Address
 	target      base.Address
@@ -84,7 +85,12 @@ func (cmd *WithdrawCommand) createOperation() (base.Operation, error) { // nolin
 	}
 	items = append(items, item)
 
-	fact := extension.NewWithdrawFact([]byte(cmd.Token), cmd.sender, items)
+	feeCurrency := cmd.Currency.CID
+	if feeCurrency == "" {
+		feeCurrency = cmd.Amount.CID
+	}
+
+	fact := extension.NewWithdrawFact([]byte(cmd.Token), cmd.sender, items, feeCurrency)
 
 	op, err := extension.NewWithdraw(fact)
 	if err != nil {

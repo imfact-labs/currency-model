@@ -30,16 +30,23 @@ type WithdrawItem interface {
 
 type WithdrawFact struct {
 	base.BaseFact
-	sender base.Address
-	items  []WithdrawItem
+	sender   base.Address
+	items    []WithdrawItem
+	currency types.CurrencyID
 }
 
-func NewWithdrawFact(token []byte, sender base.Address, items []WithdrawItem) WithdrawFact {
+func NewWithdrawFact(
+	token []byte,
+	sender base.Address,
+	items []WithdrawItem,
+	currency types.CurrencyID,
+) WithdrawFact {
 	bf := base.NewBaseFact(WithdrawFactHint, token)
 	fact := WithdrawFact{
 		BaseFact: bf,
 		sender:   sender,
 		items:    items,
+		currency: currency,
 	}
 	fact.SetHash(fact.GenerateHash())
 
@@ -67,6 +74,7 @@ func (fact WithdrawFact) Bytes() []byte {
 	return util.ConcatBytesSlice(
 		fact.Token(),
 		fact.sender.Bytes(),
+		fact.currency.Bytes(),
 		util.ConcatBytesSlice(its...),
 	)
 }
@@ -82,7 +90,7 @@ func (fact WithdrawFact) IsValid(b []byte) error {
 		return common.ErrFactInvalid.Wrap(common.ErrArrayLen.Wrap(errors.Errorf("items, %d over max, %d", n, MaxWithdrawItems)))
 	}
 
-	if err := util.CheckIsValiders(nil, false, fact.sender); err != nil {
+	if err := util.CheckIsValiders(nil, false, fact.sender, fact.currency); err != nil {
 		return common.ErrFactInvalid.Wrap(err)
 	}
 
@@ -121,6 +129,10 @@ func (fact WithdrawFact) Signer() base.Address {
 
 func (fact WithdrawFact) Items() []WithdrawItem {
 	return fact.items
+}
+
+func (fact WithdrawFact) Currency() types.CurrencyID {
+	return fact.currency
 }
 
 func (fact WithdrawFact) Rebuild() WithdrawFact {

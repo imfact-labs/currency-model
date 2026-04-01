@@ -2,12 +2,13 @@ package currency
 
 import (
 	"github.com/imfact-labs/currency-model/common"
+	"github.com/imfact-labs/currency-model/types"
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/util/encoder"
 	"github.com/pkg/errors"
 )
 
-func (fact *CreateAccountFact) unpack(enc encoder.Encoder, sd string, bit []byte) error {
+func (fact *CreateAccountFact) unpack(enc encoder.Encoder, sd string, bit []byte, cid string) error {
 	switch ad, err := base.DecodeAddress(sd, enc); {
 	case err != nil:
 		return err
@@ -30,6 +31,7 @@ func (fact *CreateAccountFact) unpack(enc encoder.Encoder, sd string, bit []byte
 		items[i] = j
 	}
 	fact.items = items
+	fact.currency = types.CurrencyID(cid)
 
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/imfact-labs/currency-model/common"
 	"github.com/imfact-labs/currency-model/operation/extras"
+	"github.com/imfact-labs/currency-model/types"
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/util"
 	"github.com/imfact-labs/mitum2/util/encoder"
@@ -11,8 +12,9 @@ import (
 
 type CreateContractAccountFactJSONMarshaler struct {
 	base.BaseFactJSONMarshaler
-	Owner base.Address                `json:"sender"`
-	Items []CreateContractAccountItem `json:"items"`
+	Owner    base.Address                `json:"sender"`
+	Items    []CreateContractAccountItem `json:"items"`
+	Currency types.CurrencyID            `json:"currency"`
 }
 
 func (fact CreateContractAccountFact) MarshalJSON() ([]byte, error) {
@@ -20,13 +22,15 @@ func (fact CreateContractAccountFact) MarshalJSON() ([]byte, error) {
 		BaseFactJSONMarshaler: fact.BaseFact.JSONMarshaler(),
 		Owner:                 fact.sender,
 		Items:                 fact.items,
+		Currency:              fact.currency,
 	})
 }
 
 type CreateContractAccountFactJSONUnMarshaler struct {
 	base.BaseFactJSONUnmarshaler
-	Owner string          `json:"sender"`
-	Items json.RawMessage `json:"items"`
+	Owner    string          `json:"sender"`
+	Items    json.RawMessage `json:"items"`
+	Currency string          `json:"currency"`
 }
 
 func (fact *CreateContractAccountFact) DecodeJSON(b []byte, enc encoder.Encoder) error {
@@ -37,7 +41,7 @@ func (fact *CreateContractAccountFact) DecodeJSON(b []byte, enc encoder.Encoder)
 
 	fact.BaseFact.SetJSONUnmarshaler(uf.BaseFactJSONUnmarshaler)
 
-	if err := fact.unpack(enc, uf.Owner, uf.Items); err != nil {
+	if err := fact.unpack(enc, uf.Owner, uf.Items, uf.Currency); err != nil {
 		return common.DecorateError(err, common.ErrDecodeJson, *fact)
 	}
 
