@@ -41,7 +41,7 @@ func (v *VerificationMethod) unpack(
 			if pubKey == "" {
 				return errors.New("invalid EcdsaSecp256k1VerificationKey2019 type")
 			} else {
-				err := v.SetPublicKeyMultibase(v.publicKey)
+				err := v.SetPublicKeyMultibaseFromPublicKey(v.publicKey)
 				if err != nil {
 					return err
 				}

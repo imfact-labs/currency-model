@@ -46,7 +46,6 @@ func (k VerificationMethodType) String() string {
 }
 
 const (
-	AuthTypeED25519   = VerificationMethodType("Ed25519VerificationKey2020")
 	AuthTypeECDSASECP = VerificationMethodType("EcdsaSecp256k1VerificationKey2019")
 	AuthTypeImFact    = VerificationMethodType("EcdsaSecp256k1VerificationKeyImFact2025")
 	AuthTypeLinked    = VerificationMethodType("LinkedVerificationMethod")
@@ -238,10 +237,7 @@ func (v VerificationMethod) PublicKeyJwk() *JWK {
 	return v.publicKeyJwk
 }
 
-func (v *VerificationMethod) SetPublicKeyMultibase(publicKey base.Publickey) error {
-	if v.Type() == AuthTypeECDSASECP && v.publicKey != nil {
-
-	}
+func (v *VerificationMethod) SetPublicKeyMultibaseFromPublicKey(publicKey base.Publickey) error {
 	if publicKey == nil {
 		return fmt.Errorf("publicKey is nil")
 	}
