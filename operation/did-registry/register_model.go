@@ -111,8 +111,8 @@ func (fact RegisterModelFact) Currency() types.CurrencyID {
 	return fact.currency
 }
 
-func (fact RegisterModelFact) FeeBase() (types.CurrencyID, uint64) {
-	return fact.Currency(), extras.NoItemFeeBaseItemCount
+func (fact RegisterModelFact) FeeBase() (types.CurrencyID, int, int, bool) {
+	return fact.Currency(), extras.NoItemFeeBaseItemCount, len(fact.Bytes()), extras.HasNoItem
 }
 
 func (fact RegisterModelFact) FeePayer() base.Address {
@@ -121,10 +121,6 @@ func (fact RegisterModelFact) FeePayer() base.Address {
 
 func (fact RegisterModelFact) FactUser() base.Address {
 	return fact.sender
-}
-
-func (fact RegisterModelFact) FeeItemCount() (uint, bool) {
-	return extras.ZeroItem, extras.HasNoItem
 }
 
 func (fact RegisterModelFact) InActiveContractOwnerHandlerOnly() [][2]base.Address {

@@ -39,7 +39,7 @@ var AddedHinters = []encoder.DecodeDetail{
 	{Hint: types.CurrencyDesignHint, Instance: types.CurrencyDesign{}},
 	{Hint: types.CurrencyPolicyHint, Instance: types.CurrencyPolicy{}},
 	{Hint: types.FixedFeeerHint, Instance: types.FixedFeeer{}},
-	{Hint: types.FixedItemFeeerHint, Instance: types.FixedItemFeeer{}},
+	{Hint: types.FixedItemDataSizeExecutionFeeerHint, Instance: types.FixedItemDataSizeExecutionFeeer{}},
 	{Hint: types.MEPrivatekeyHint, Instance: types.MEPrivatekey{}},
 	{Hint: types.MEPublickeyHint, Instance: types.MEPublickey{}},
 	{Hint: types.NilFeeerHint, Instance: types.NilFeeer{}},

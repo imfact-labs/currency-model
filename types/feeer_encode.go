@@ -25,7 +25,9 @@ func (fa *FixedFeeer) unpack(enc encoder.Encoder, ht hint.Hint, rc string, am st
 	return nil
 }
 
-func (fa *FixedItemFeeer) unpack(enc encoder.Encoder, ht hint.Hint, rc string, am, ita string) error {
+func (fa *FixedItemDataSizeExecutionFeeer) unpack(
+	enc encoder.Encoder, ht hint.Hint, rc string, am, ita, dsa string, dsu int64, ea string,
+) error {
 	switch ad, err := base.DecodeAddress(rc, enc); {
 	case err != nil:
 		return err
@@ -45,6 +47,20 @@ func (fa *FixedItemFeeer) unpack(enc encoder.Encoder, ht hint.Hint, rc string, a
 		fa.itemFeeAmount = big
 	}
 	fa.BaseHinter = hint.NewBaseHinter(ht)
+
+	if big, err := common.NewBigFromString(dsa); err != nil {
+		return err
+	} else {
+		fa.dataSizeFeeAmount = big
+	}
+
+	fa.dataSizeUnit = dsu
+
+	if big, err := common.NewBigFromString(ea); err != nil {
+		return err
+	} else {
+		fa.executionFeeAmount = big
+	}
 
 	return nil
 }

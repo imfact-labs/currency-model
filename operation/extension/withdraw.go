@@ -159,16 +159,12 @@ func (fact WithdrawFact) Addresses() ([]base.Address, error) {
 	return as, nil
 }
 
-func (fact WithdrawFact) FeeBase() (types.CurrencyID, uint64) {
-	return fact.Currency(), uint64(len(fact.items))
+func (fact WithdrawFact) FeeBase() (types.CurrencyID, int, int, bool) {
+	return fact.Currency(), len(fact.items), len(fact.Bytes()), extras.HasItem
 }
 
 func (fact WithdrawFact) FeePayer() base.Address {
 	return fact.sender
-}
-
-func (fact WithdrawFact) FeeItemCount() (uint, bool) {
-	return uint(len(fact.items)), extras.HasItem
 }
 
 func (fact WithdrawFact) FactUser() base.Address {

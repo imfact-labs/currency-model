@@ -17,7 +17,7 @@ type CreateContractAccountCommand struct {
 	Threshold uint               `help:"threshold for keys (default: ${create_contract_account_threshold})" default:"${create_contract_account_threshold}"` // nolint
 	Key       KeyFlag            `name:"key" help:"key for new account (ex: \"<public key>,<weight>\") separator @"`
 	Amount    CurrencyAmountFlag `arg:"" name:"currency-amount" help:"amount (ex: \"<currency>,<amount>\")"`
-	Currency  CurrencyIDFlag     `name:"currency-id" help:"fee currency id; defaults to the item currency"`
+	Currency  CurrencyIDFlag     `arg:"" name:"currency-id" help:"fee currency id" required:"true"`
 	OperationExtensionFlags
 	sender base.Address
 	keys   types.AccountKeys

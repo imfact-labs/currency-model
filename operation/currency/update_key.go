@@ -108,16 +108,12 @@ func (fact UpdateKeyFact) Rebuild() UpdateKeyFact {
 	return fact
 }
 
-func (fact UpdateKeyFact) FeeBase() (types.CurrencyID, uint64) {
-	return fact.Currency(), extras.NoItemFeeBaseItemCount
+func (fact UpdateKeyFact) FeeBase() (types.CurrencyID, int, int, bool) {
+	return fact.Currency(), extras.NoItemFeeBaseItemCount, len(fact.Bytes()), extras.HasNoItem
 }
 
 func (fact UpdateKeyFact) FeePayer() base.Address {
 	return fact.sender
-}
-
-func (fact UpdateKeyFact) FeeItemCount() (uint, bool) {
-	return extras.ZeroItem, extras.HasNoItem
 }
 
 func (fact UpdateKeyFact) FactUser() base.Address {

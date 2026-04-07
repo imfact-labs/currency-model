@@ -308,7 +308,7 @@ func (opr *OperationProcessor) Process(
 	var payer base.Address
 	switch i := op.Fact().(type) {
 	case extras.FeeAble:
-		cid, items := i.FeeBase()
+		cid, items, dSize, _ := i.FeeBase()
 		payer = i.FeePayer()
 		switch k := op.(type) {
 		case extras.OperationExtensions:
@@ -374,21 +374,13 @@ func (opr *OperationProcessor) Process(
 				nil
 		}
 
-		feeRequired, err := policy.Feeer().Fee()
-		if err != nil {
-			return nil,
-				base.NewBaseOperationProcessReasonError("check fee of currency %v; %w", cid, err),
-				nil
-		}
+		feeRequired := policy.Feeer().Fee()
 
-		if f, ok := policy.Feeer().(types.ItemFeeer); ok {
-			itmFee, err := f.ItemFee()
-			if err != nil {
-				return nil,
-					base.NewBaseOperationProcessReasonError("check item fee of currency %v; %w", cid, err),
-					nil
-			}
-			feeRequired = feeRequired.Add(itmFee.MulInt64(int64(items)))
+		if f, ok := policy.Feeer().(types.ExtFeeer); ok {
+			itmFee := f.ItemFee(items)
+			dsFee := f.DataSizeFee(dSize)
+			feeRequired = feeRequired.Add(itmFee)
+			feeRequired = feeRequired.Add(dsFee)
 		}
 
 		payerSt, err := state.ExistsState(ccstate.BalanceStateKey(payer, cid), fmt.Sprintf("balance of fee payer, %v", payer), getStateFunc)
@@ -435,7 +427,15 @@ func (opr *OperationProcessor) Process(
 				),
 			)
 		}
+	case currency.RegisterCurrencyFact, currency.UpdateCurrencyFact, currency.MintFact,
+		isaacoperation.NetworkPolicyFact, isaacoperation.GenesisNetworkPolicyFact,
+		isaacoperation.SuffrageCandidateFact, isaacoperation.SuffrageDisjoinFact,
+		isaacoperation.SuffrageGenesisJoinFact, isaacoperation.SuffrageJoinFact,
+		base.SuffrageExpelFact:
 	default:
+		return nil, nil, e.Wrap(errors.Errorf(
+			"%T not implemented Feeable", i,
+		))
 	}
 
 	reasonErr, err = CheckBalanceStateMergeValue(stateMergeValues, getStateFunc)
@@ -446,7 +446,7 @@ func (opr *OperationProcessor) Process(
 		return nil, nil, e.Wrap(err)
 	}
 
-	return stateMergeValues, reasonErr, err
+	return stateMergeValues, reasonErr, e.Wrap(err)
 }
 
 type DupKeySet map[types.DuplicationKeyType][]string

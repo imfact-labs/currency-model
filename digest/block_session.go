@@ -197,7 +197,7 @@ func (bs *BlockSession) prepareBlock() error {
 	for _, op := range bs.ops {
 		feeable, ok := op.Fact().(extras.FeeAble)
 		if ok {
-			items, hasItem := feeable.FeeItemCount()
+			_, items, _, hasItem := feeable.FeeBase()
 			if hasItem {
 				ItemOperations++
 				Items += uint(items)

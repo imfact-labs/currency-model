@@ -12,13 +12,14 @@ import (
 type UpdateCurrencyCommand struct {
 	BaseCommand
 	OperationFlags
-	Currency                CurrencyIDFlag `arg:"" name:"currency-id" help:"currency id" required:"true"`
-	CurrencyPolicyFlags     `prefix:"policy-" help:"currency policy" required:"true"`
-	FeeerString             string `name:"feeer" help:"feeer type, {nil, fixed}" required:"true"`
-	CurrencyFixedFeeerFlags `prefix:"feeer-fixed-" help:"fixed feeer"`
-	Node                    AddressFlag `arg:"" name:"node" help:"node address" required:"true"`
-	node                    base.Address
-	po                      types.CurrencyPolicy
+	Currency                                     CurrencyIDFlag `arg:"" name:"currency-id" help:"currency id" required:"true"`
+	CurrencyPolicyFlags                          `prefix:"policy-" help:"currency policy" required:"true"`
+	FeeerString                                  string `name:"feeer" help:"feeer type, {nil, fixed}" required:"true"`
+	CurrencyFixedFeeerFlags                      `prefix:"feeer-fixed-" help:"fixed feeer"`
+	CurrencyFixedItemDataSizeExecutionFeeerFlags `prefix:"feeer-fixed-item-data-size-execution" help:"fixed item data size execution feeer"`
+	Node                                         AddressFlag `arg:"" name:"node" help:"node address" required:"true"`
+	node                                         base.Address
+	po                                           types.CurrencyPolicy
 }
 
 func (cmd *UpdateCurrencyCommand) Run(pctx context.Context) error { // nolint:dupl

@@ -162,16 +162,12 @@ func (fact TransferFact) Addresses() ([]base.Address, error) {
 	return as, nil
 }
 
-func (fact TransferFact) FeeBase() (types.CurrencyID, uint64) {
-	return fact.Currency(), uint64(len(fact.items))
+func (fact TransferFact) FeeBase() (types.CurrencyID, int, int, bool) {
+	return fact.Currency(), len(fact.items), len(fact.Bytes()), extras.HasItem
 }
 
 func (fact TransferFact) FeePayer() base.Address {
 	return fact.sender
-}
-
-func (fact TransferFact) FeeItemCount() (uint, bool) {
-	return uint(len(fact.items)), extras.HasItem
 }
 
 func (fact TransferFact) FactUser() base.Address {
