@@ -136,16 +136,12 @@ func (fact UpdateHandlerFact) Addresses() ([]base.Address, error) {
 	return as, nil
 }
 
-func (fact UpdateHandlerFact) FeeBase() (types.CurrencyID, uint64) {
-	return fact.Currency(), extras.NoItemFeeBaseItemCount
+func (fact UpdateHandlerFact) FeeBase() (types.CurrencyID, int, int, bool) {
+	return fact.Currency(), extras.NoItemFeeBaseItemCount, len(fact.Bytes()), extras.HasNoItem
 }
 
 func (fact UpdateHandlerFact) FeePayer() base.Address {
 	return fact.sender
-}
-
-func (fact UpdateHandlerFact) FeeItemCount() (uint, bool) {
-	return extras.ZeroItem, extras.HasNoItem
 }
 
 func (fact UpdateHandlerFact) FactUser() base.Address {

@@ -34,6 +34,35 @@ func (fl *CurrencyFixedFeeerFlags) IsValid([]byte) error {
 	return fl.feeer.IsValid(nil)
 }
 
+type CurrencyFixedItemDataSizeExecutionFeeerFlags struct {
+	Receiver        AddressFlag `name:"receiver" help:"fee receiver account address"`
+	BaseAmount      BigFlag     `name:"base-amount" help:"fee amount"`
+	ItemAmount      BigFlag     `name:"item-amount" help:"item fee amount"`
+	DataSizeAmount  BigFlag     `name:"data-size-amount" help:"data size fee amount"`
+	DataSizeUnit    int64       `name:"data-size-unit" help:"data size unit"`
+	executionAmount BigFlag     `name:"execution-amount" help:"execution fee amount"`
+	feeer           types.Feeer
+}
+
+func (fl *CurrencyFixedItemDataSizeExecutionFeeerFlags) IsValid([]byte) error {
+	if len(fl.Receiver.String()) < 1 {
+		return nil
+	}
+
+	var receiver base.Address
+	if a, err := fl.Receiver.Encode(enc); err != nil {
+		return util.ErrInvalid.Errorf("Invalid receiver format, %v: %v", fl.Receiver.String(), err)
+	} else if err := a.IsValid(nil); err != nil {
+		return util.ErrInvalid.Errorf("Invalid receiver address, %v: %v", fl.Receiver.String(), err)
+	} else {
+		receiver = a
+	}
+
+	fl.feeer = types.NewFixedItemDataSizeExecutionFeeer(
+		receiver, fl.BaseAmount.Big, fl.ItemAmount.Big, fl.DataSizeAmount.Big, fl.DataSizeUnit, fl.executionAmount.Big)
+	return fl.feeer.IsValid(nil)
+}
+
 type CurrencyPolicyFlags struct {
 	NewAccountMinBalance BigFlag `name:"new-account-min-balance" help:"minimum balance for new account"` // nolint lll
 }

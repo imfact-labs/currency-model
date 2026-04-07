@@ -8,17 +8,15 @@ import (
 )
 
 const (
-	FeeerNil       = "nil"
-	FeeerFixed     = "fixed"
-	ItemFeeerFixed = "fixed-item"
-	FeeerRatio     = "ratio"
+	FeeerNil                        = "nil"
+	FeeerFixed                      = "fixed"
+	FeeerFixedItemDataSizeExecution = "fixed-item-data-size-execution"
 )
 
 var (
-	NilFeeerHint       = hint.MustNewHint("mitum-currency-nil-feeer-v0.0.1")
-	FixedFeeerHint     = hint.MustNewHint("mitum-currency-fixed-feeer-v0.0.1")
-	FixedItemFeeerHint = hint.MustNewHint("mitum-currency-fixed-item-feeer-v0.0.1")
-	RatioFeeerHint     = hint.MustNewHint("mitum-currency-ratio-feeer-v0.0.1")
+	NilFeeerHint                        = hint.MustNewHint("mitum-currency-nil-feeer-v0.0.1")
+	FixedFeeerHint                      = hint.MustNewHint("mitum-currency-fixed-feeer-v0.0.1")
+	FixedItemDataSizeExecutionFeeerHint = hint.MustNewHint("mitum-currency-fixed-item-data-size-execution-feeer-v0.0.1")
 )
 
 var UnlimitedMaxFeeAmount = common.NewBig(-1)
@@ -30,12 +28,27 @@ type Feeer interface {
 	Bytes() []byte
 	Receiver() base.Address
 	Min() common.Big
-	Fee() (common.Big, error)
+	Fee() common.Big
 }
 
 type ItemFeeer interface {
+	ItemFee(int) common.Big
+}
+
+type DataSizeFeeer interface {
+	DataSizeFee(int) common.Big
+	DataSizeUnit() int64
+}
+
+type ExecutionFeeer interface {
+	ExecutionFee() common.Big
+}
+
+type ExtFeeer interface {
 	Feeer
-	ItemFee() (common.Big, error)
+	ItemFeeer
+	DataSizeFeeer
+	ExecutionFeeer
 }
 
 type NilFeeer struct {
@@ -62,8 +75,8 @@ func (NilFeeer) Min() common.Big {
 	return common.ZeroBig
 }
 
-func (NilFeeer) Fee() (common.Big, error) {
-	return common.ZeroBig, nil
+func (NilFeeer) Fee() common.Big {
+	return common.ZeroBig
 }
 
 func (fa NilFeeer) IsValid([]byte) error {
@@ -100,12 +113,12 @@ func (fa FixedFeeer) Min() common.Big {
 	return fa.amount
 }
 
-func (fa FixedFeeer) Fee() (common.Big, error) {
+func (fa FixedFeeer) Fee() common.Big {
 	if fa.isZero() {
-		return common.ZeroBig, nil
+		return common.ZeroBig
 	}
 
-	return fa.amount, nil
+	return fa.amount
 }
 
 func (fa FixedFeeer) IsValid([]byte) error {
@@ -128,55 +141,83 @@ func (fa FixedFeeer) isZero() bool {
 	return fa.amount.IsZero()
 }
 
-type FixedItemFeeer struct {
+type FixedItemDataSizeExecutionFeeer struct {
 	hint.BaseHinter
-	receiver      base.Address
-	amount        common.Big
-	itemFeeAmount common.Big
+	receiver           base.Address
+	amount             common.Big
+	itemFeeAmount      common.Big
+	dataSizeFeeAmount  common.Big
+	dataSizeUnit       int64
+	executionFeeAmount common.Big
 }
 
-func NewFixedItemFeeer(receiver base.Address, amount, itemFeeAmount common.Big) FixedItemFeeer {
-	return FixedItemFeeer{
-		BaseHinter:    hint.NewBaseHinter(FixedItemFeeerHint),
-		receiver:      receiver,
-		amount:        amount,
-		itemFeeAmount: itemFeeAmount,
+func NewFixedItemDataSizeExecutionFeeer(
+	receiver base.Address, amount, itemFeeAmount, dataSizeFeeAmount common.Big,
+	dataSizeUnit int64, executionFeeAmount common.Big,
+) FixedItemDataSizeExecutionFeeer {
+	return FixedItemDataSizeExecutionFeeer{
+		BaseHinter:         hint.NewBaseHinter(FixedItemDataSizeExecutionFeeerHint),
+		receiver:           receiver,
+		amount:             amount,
+		itemFeeAmount:      itemFeeAmount,
+		dataSizeFeeAmount:  dataSizeFeeAmount,
+		dataSizeUnit:       dataSizeUnit,
+		executionFeeAmount: executionFeeAmount,
 	}
 }
 
-func (FixedItemFeeer) Type() string {
-	return ItemFeeerFixed
+func (FixedItemDataSizeExecutionFeeer) Type() string {
+	return FeeerFixedItemDataSizeExecution
 }
 
-func (fa FixedItemFeeer) Bytes() []byte {
+func (fa FixedItemDataSizeExecutionFeeer) Bytes() []byte {
 	return util.ConcatBytesSlice(fa.receiver.Bytes(), fa.amount.Bytes())
 }
 
-func (fa FixedItemFeeer) Receiver() base.Address {
+func (fa FixedItemDataSizeExecutionFeeer) Receiver() base.Address {
 	return fa.receiver
 }
 
-func (fa FixedItemFeeer) Min() common.Big {
+func (fa FixedItemDataSizeExecutionFeeer) Min() common.Big {
 	return fa.amount
 }
 
-func (fa FixedItemFeeer) Fee() (common.Big, error) {
+func (fa FixedItemDataSizeExecutionFeeer) Fee() common.Big {
 	if fa.isZero(fa.amount) {
-		return common.ZeroBig, nil
+		return common.ZeroBig
 	}
 
-	return fa.amount, nil
+	return fa.amount
 }
 
-func (fa FixedItemFeeer) ItemFee() (common.Big, error) {
+func (fa FixedItemDataSizeExecutionFeeer) ItemFee(items int) common.Big {
 	if fa.isZero(fa.itemFeeAmount) {
-		return common.ZeroBig, nil
+		return common.ZeroBig
 	}
 
-	return fa.itemFeeAmount, nil
+	return fa.itemFeeAmount.MulInt64(int64(items))
 }
 
-func (fa FixedItemFeeer) IsValid([]byte) error {
+func (fa FixedItemDataSizeExecutionFeeer) DataSizeFee(size int) common.Big {
+	if fa.isZero(fa.dataSizeFeeAmount) {
+		return common.ZeroBig
+	}
+
+	unit := fa.dataSizeUnit
+	bucket := (int64(size) + unit - 1) / unit
+
+	return fa.dataSizeFeeAmount.MulInt64(bucket)
+}
+
+func (fa FixedItemDataSizeExecutionFeeer) DataSizeUnit() int64 {
+	if fa.dataSizeUnit < 1 {
+		return 0
+	}
+
+	return fa.dataSizeUnit
+}
+
+func (fa FixedItemDataSizeExecutionFeeer) IsValid([]byte) error {
 	if err := fa.BaseHinter.IsValid(nil); err != nil {
 		return err
 	}
@@ -192,6 +233,6 @@ func (fa FixedItemFeeer) IsValid([]byte) error {
 	return nil
 }
 
-func (fa FixedItemFeeer) isZero(am common.Big) bool {
+func (fa FixedItemDataSizeExecutionFeeer) isZero(am common.Big) bool {
 	return am.IsZero()
 }

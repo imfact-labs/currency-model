@@ -167,16 +167,12 @@ func (fact CreateContractAccountFact) Addresses() ([]base.Address, error) {
 	return as, nil
 }
 
-func (fact CreateContractAccountFact) FeeBase() (types.CurrencyID, uint64) {
-	return fact.Currency(), uint64(len(fact.items))
+func (fact CreateContractAccountFact) FeeBase() (types.CurrencyID, int, int, bool) {
+	return fact.Currency(), len(fact.items), len(fact.Bytes()), extras.HasItem
 }
 
 func (fact CreateContractAccountFact) FeePayer() base.Address {
 	return fact.sender
-}
-
-func (fact CreateContractAccountFact) FeeItemCount() (uint, bool) {
-	return uint(len(fact.items)), extras.HasItem
 }
 
 func (fact CreateContractAccountFact) FactUser() base.Address {

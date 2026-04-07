@@ -130,8 +130,8 @@ func (fact UpdateDIDDocumentFact) Addresses() ([]base.Address, error) {
 	return as, nil
 }
 
-func (fact UpdateDIDDocumentFact) FeeBase() (types.CurrencyID, uint64) {
-	return fact.Currency(), extras.NoItemFeeBaseItemCount
+func (fact UpdateDIDDocumentFact) FeeBase() (types.CurrencyID, int, int) {
+	return fact.Currency(), extras.NoItemFeeBaseItemCount, len(fact.Bytes())
 }
 
 func (fact UpdateDIDDocumentFact) FeePayer() base.Address {
@@ -140,10 +140,6 @@ func (fact UpdateDIDDocumentFact) FeePayer() base.Address {
 
 func (fact UpdateDIDDocumentFact) FactUser() base.Address {
 	return fact.sender
-}
-
-func (fact UpdateDIDDocumentFact) FeeItemCount() (uint, bool) {
-	return extras.ZeroItem, extras.HasNoItem
 }
 
 func (fact UpdateDIDDocumentFact) ActiveContract() []base.Address {

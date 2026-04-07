@@ -593,26 +593,31 @@ type DeDupeKeyer interface {
 
 // FeeAble is an interface type for fee calculation. Operations than requires fee must implement this interface.
 type FeeAble interface {
-	FeeBase() (types.CurrencyID, uint64)
-	FeeItemCount() (uint, bool)
+	FeeBase() (types.CurrencyID, int, int, bool)
 	FeePayer() base.Address
 }
 
 const (
 	ZeroItem = 0
 	// NoItemFeeBaseItemCount is the synthetic item count used for fee calculation when an operation has no explicit items.
-	NoItemFeeBaseItemCount uint64 = 1
-	HasItem                       = true
-	HasNoItem                     = false
+	NoItemFeeBaseItemCount = 1
+	HasItem                = true
+	HasNoItem              = false
 )
 
 // VerifyFeeAble function checks existence of currency id
 func VerifyFeeAble(fact FeeAble, getStateFunc base.GetStateFunc) base.OperationProcessReasonError {
-	cid, items := fact.FeeBase()
+	cid, items, dSize, _ := fact.FeeBase()
 	if items < 1 {
 		return base.NewBaseOperationProcessReasonError(
 			common.ErrMPreProcess.
-				Errorf("fail to get Fee Base, empty Fee Base "))
+				Errorf("fail to get Fee Base, empty items value"))
+	}
+
+	if dSize < 1 {
+		return base.NewBaseOperationProcessReasonError(
+			common.ErrMPreProcess.
+				Errorf("fail to get Fee Base, empty dataSize"))
 	}
 
 	_, err := state.ExistsCurrencyPolicy(cid, getStateFunc)

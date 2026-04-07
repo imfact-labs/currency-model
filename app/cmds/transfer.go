@@ -17,7 +17,7 @@ type TransferCommand struct {
 	OperationFlags
 	Sender         AddressFlag               `arg:"" name:"sender" help:"sender address" required:"true"`
 	ReceiverAmount AddressCurrencyAmountFlag `arg:"" name:"receiver-currency-amount" help:"receiver amount (ex: \"<address>,<currency>,<amount>\") separator @" required:"true"`
-	Currency       CurrencyIDFlag            `name:"currency-id" help:"fee currency id; defaults to the first item currency"`
+	Currency       CurrencyIDFlag            `arg:"" name:"currency-id" help:"fee currency id" required:"true"`
 	OperationExtensionFlags
 	sender base.Address
 }

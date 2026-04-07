@@ -57,36 +57,48 @@ func (fa *FixedFeeer) DecodeJSON(b []byte, enc encoder.Encoder) error {
 	return fa.unpack(enc, ufa.Hint, ufa.Receiver, ufa.Amount)
 }
 
-type FixedItemFeeerJSONMarshaler struct {
+type FixedItemDataSizeExecutionFeeerJSONMarshaler struct {
 	hint.BaseHinter
-	Receiver      base.Address `json:"receiver"`
-	Amount        string       `json:"amount"`
-	ItemFeeAmount string       `json:"item_fee_amount"`
+	Receiver           base.Address `json:"receiver"`
+	Amount             string       `json:"amount"`
+	ItemFeeAmount      string       `json:"item_fee_amount"`
+	DataSizeFeeAmount  string       `json:"data_size_fee_amount"`
+	DataSizeUnit       int64        `json:"data_size_unit"`
+	ExecutionFeeAmount string       `json:"execution_fee_amount"`
 }
 
-func (fa FixedItemFeeer) MarshalJSON() ([]byte, error) {
-	return util.MarshalJSON(FixedItemFeeerJSONMarshaler{
-		BaseHinter:    fa.BaseHinter,
-		Receiver:      fa.receiver,
-		Amount:        fa.amount.String(),
-		ItemFeeAmount: fa.itemFeeAmount.String(),
+func (fa FixedItemDataSizeExecutionFeeer) MarshalJSON() ([]byte, error) {
+	return util.MarshalJSON(FixedItemDataSizeExecutionFeeerJSONMarshaler{
+		BaseHinter:         fa.BaseHinter,
+		Receiver:           fa.receiver,
+		Amount:             fa.amount.String(),
+		ItemFeeAmount:      fa.itemFeeAmount.String(),
+		DataSizeFeeAmount:  fa.dataSizeFeeAmount.String(),
+		DataSizeUnit:       fa.dataSizeUnit,
+		ExecutionFeeAmount: fa.executionFeeAmount.String(),
 	})
 }
 
-type FixedItemFeeerJSONUnmarshaler struct {
-	Hint          hint.Hint `json:"_hint"`
-	Receiver      string    `json:"receiver"`
-	Amount        string    `json:"amount"`
-	ItemFeeAmount string    `json:"item_fee_amount"`
+type FixedItemDataSizeExecutionFeeerJSONUnmarshaler struct {
+	Hint               hint.Hint `json:"_hint"`
+	Receiver           string    `json:"receiver"`
+	Amount             string    `json:"amount"`
+	ItemFeeAmount      string    `json:"item_fee_amount"`
+	DataSizeFeeAmount  string    `json:"data_size_fee_amount"`
+	DataSizeUnit       int64     `json:"data_size_unit"`
+	ExecutionFeeAmount string    `json:"execution_fee_amount"`
 }
 
-func (fa *FixedItemFeeer) DecodeJSON(b []byte, enc encoder.Encoder) error {
-	e := util.StringError("Decode json of FixedItemFeeer")
+func (fa *FixedItemDataSizeExecutionFeeer) DecodeJSON(b []byte, enc encoder.Encoder) error {
+	e := util.StringError("Decode json of FixedItemDataSizeFeeer")
 
-	var ufa FixedItemFeeerJSONUnmarshaler
+	var ufa FixedItemDataSizeExecutionFeeerJSONUnmarshaler
 	if err := enc.Unmarshal(b, &ufa); err != nil {
 		return e.Wrap(err)
 	}
 
-	return fa.unpack(enc, ufa.Hint, ufa.Receiver, ufa.Amount, ufa.ItemFeeAmount)
+	return fa.unpack(
+		enc, ufa.Hint, ufa.Receiver, ufa.Amount, ufa.ItemFeeAmount,
+		ufa.DataSizeFeeAmount, ufa.DataSizeUnit, ufa.ExecutionFeeAmount,
+	)
 }

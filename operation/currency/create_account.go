@@ -195,16 +195,12 @@ func (fact CreateAccountFact) Rebuild() CreateAccountFact {
 	return fact
 }
 
-func (fact CreateAccountFact) FeeBase() (types.CurrencyID, uint64) {
-	return fact.Currency(), uint64(len(fact.items))
+func (fact CreateAccountFact) FeeBase() (types.CurrencyID, int, int, bool) {
+	return fact.Currency(), len(fact.items), len(fact.Bytes()), extras.HasItem
 }
 
 func (fact CreateAccountFact) FeePayer() base.Address {
 	return fact.sender
-}
-
-func (fact CreateAccountFact) FeeItemCount() (uint, bool) {
-	return uint(len(fact.items)), extras.HasItem
 }
 
 func (fact CreateAccountFact) FactUser() base.Address {
