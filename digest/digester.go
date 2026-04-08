@@ -175,11 +175,20 @@ func (di *Digester) DigestBlockMap(ctx context.Context, blk base.Height) error {
 		return e.Wrap(err)
 	}
 
+	var receipts []base.OperationReceiptRecord
+	switch i, found, err := isaacblock.LoadOperationReceiptsFromReader(bm, di.sourceReaders.Item, blk); {
+	case err != nil:
+		return e.Wrap(err)
+	case !found:
+	default:
+		receipts = i
+	}
+
 	if m, _, _, _, _, _ := di.database.ManifestByHeight(blk); m != nil {
 		return nil
 	}
 
-	bs, err := NewBlockSession(di.database, bm, ops, opsTree, sts, pr, di.buildInfo)
+	bs, err := NewBlockSession(di.database, bm, ops, opsTree, sts, receipts, pr, di.buildInfo)
 	if err != nil {
 		return err
 	}

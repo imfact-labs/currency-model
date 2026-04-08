@@ -4,6 +4,8 @@ go 1.24.0
 
 toolchain go1.24.6
 
+replace github.com/imfact-labs/mitum2 => ../mitum2
+
 require (
 	github.com/alecthomas/kong v1.12.1
 	github.com/arl/statsviz v0.7.1
@@ -106,3 +108,5 @@ require (
 )
 
 replace github.com/hashicorp/memberlist => github.com/spikeekips/memberlist v0.0.0-20230626195851-39f17fa10d23 // latest fix-data-race branch
+
+replace github.com/imfact-labs/mitum2 => ../mitum2

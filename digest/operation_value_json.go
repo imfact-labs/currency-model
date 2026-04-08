@@ -23,6 +23,7 @@ type ExpendedOperationValueJSONMarshaler struct {
 	Reason      string                     `json:"reason"`
 	InState     bool                       `json:"in_state"`
 	Index       uint64                     `json:"index"`
+	Receipt     base.OperationReceipt      `json:"receipt,omitempty"`
 }
 
 type OperationValueJSONMarshaler struct {
@@ -34,6 +35,7 @@ type OperationValueJSONMarshaler struct {
 	Reason      string                            `json:"reason"`
 	InState     bool                              `json:"in_state"`
 	Index       uint64                            `json:"index"`
+	Receipt     base.OperationReceipt             `json:"receipt,omitempty"`
 }
 
 func (va OperationValue) MarshalJSON() ([]byte, error) {
@@ -59,6 +61,7 @@ func (va OperationValue) MarshalJSON() ([]byte, error) {
 			Reason:      va.reason,
 			InState:     va.inState,
 			Index:       va.index,
+			Receipt:     va.receipt,
 		})
 	} else {
 		return util.MarshalJSON(OperationValueJSONMarshaler{
@@ -75,6 +78,7 @@ func (va OperationValue) MarshalJSON() ([]byte, error) {
 			Reason:      va.reason,
 			InState:     va.inState,
 			Index:       va.index,
+			Receipt:     va.receipt,
 		})
 	}
 

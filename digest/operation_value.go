@@ -20,6 +20,7 @@ type OperationValue struct {
 	inState     bool
 	reason      string
 	index       uint64
+	receipt     base.OperationReceipt
 }
 
 func NewOperationValue(
@@ -29,6 +30,7 @@ func NewOperationValue(
 	inState bool,
 	reason string,
 	index uint64,
+	receipt base.OperationReceipt,
 ) OperationValue {
 	return OperationValue{
 		BaseHinter:  hint.NewBaseHinter(OperationValueHint),
@@ -38,6 +40,7 @@ func NewOperationValue(
 		inState:     inState,
 		reason:      reason,
 		index:       index,
+		receipt:     receipt,
 	}
 }
 
@@ -63,6 +66,10 @@ func (va OperationValue) InState() bool {
 
 func (va OperationValue) Reason() string {
 	return va.reason
+}
+
+func (va OperationValue) Receipt() base.OperationReceipt {
+	return va.receipt
 }
 
 // Index indicates the index number of Operation in OperationTree of block.
