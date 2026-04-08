@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/imfact-labs/currency-model/utils/bsonenc"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -49,18 +50,20 @@ func (va OperationValue) MarshalBSON() ([]byte, error) {
 			"in_state":     va.inState,
 			"reason":       va.reason,
 			"index":        va.index,
+			"receipt":      va.receipt,
 		},
 	)
 }
 
 type OperationValueBSONUnmarshaler struct {
-	Hint        string      `bson:"_hint"`
-	OP          bson.Raw    `bson:"op"`
-	Height      base.Height `bson:"height"`
-	ConfirmedAt time.Time   `bson:"confirmed_at"`
-	InState     bool        `bson:"in_state"`
-	RS          string      `bson:"reason"`
-	Index       uint64      `bson:"index"`
+	Hint        string        `bson:"_hint"`
+	OP          bson.Raw      `bson:"op"`
+	Height      base.Height   `bson:"height"`
+	ConfirmedAt time.Time     `bson:"confirmed_at"`
+	InState     bool          `bson:"in_state"`
+	RS          string        `bson:"reason"`
+	Index       uint64        `bson:"index"`
+	Receipt     bson.RawValue `bson:"receipt"`
 }
 
 func (va *OperationValue) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
@@ -102,5 +105,26 @@ func (va *OperationValue) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 	va.inState = uva.InState
 	va.index = uva.Index
 	va.reason = uva.RS
+
+	switch {
+	case len(uva.Receipt.Value) < 1:
+		va.receipt = nil
+	case uva.Receipt.Type == bson.TypeNull:
+		va.receipt = nil
+	default:
+		i, err := enc.Decode(uva.Receipt.Value)
+		if err != nil {
+			return e.Wrap(err)
+		}
+
+		if i == nil {
+			va.receipt = nil
+		} else if receipt, ok := i.(base.OperationReceipt); !ok {
+			return e.Wrap(errors.Errorf("invalid operation receipt, %T", i))
+		} else {
+			va.receipt = receipt
+		}
+	}
+
 	return nil
 }

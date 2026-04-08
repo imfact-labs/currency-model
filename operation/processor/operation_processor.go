@@ -50,6 +50,7 @@ type OperationProcessor struct {
 	CollectFee                   func(*OperationProcessor, types.AddFee) error
 	CheckDuplicationFunc         func(*OperationProcessor, base.Operation) error
 	GetNewProcessorFunc          func(*OperationProcessor, base.Operation) (base.OperationProcessor, bool, error)
+	receipt                      base.OperationReceipt
 }
 
 func NewOperationProcessor() *OperationProcessor {
@@ -113,7 +114,23 @@ func (opr *OperationProcessor) New(
 	nopr.GetStateFunc = getStateFunc
 	nopr.CheckDuplicationFunc = opr.CheckDuplicationFunc
 	nopr.GetNewProcessorFunc = opr.GetNewProcessorFunc
+	nopr.receipt = nil
+
 	return nopr, nil
+}
+
+func (opr *OperationProcessor) OperationReceipt() base.OperationReceipt {
+	opr.RLock()
+	defer opr.RUnlock()
+
+	return opr.receipt
+}
+
+func (opr *OperationProcessor) setOperationReceipt(receipt base.OperationReceipt) {
+	opr.Lock()
+	defer opr.Unlock()
+
+	opr.receipt = receipt
 }
 
 func (opr *OperationProcessor) SetProcessor(
@@ -280,6 +297,8 @@ func (opr *OperationProcessor) Process(
 ) ([]base.StateMergeValue, base.OperationProcessReasonError, error) {
 	e := util.StringError("process for OperationProcessor")
 
+	opr.setOperationReceipt(nil)
+
 	var sp base.OperationProcessor
 	if opr.GetNewProcessorFunc == nil {
 		return nil, base.NewBaseOperationProcessReasonError(
@@ -303,6 +322,11 @@ func (opr *OperationProcessor) Process(
 	}
 	if err != nil {
 		return nil, nil, e.Wrap(err)
+	}
+
+	var receipt base.OperationReceipt
+	if i, ok := sp.(base.OperationReceiptProvider); ok {
+		receipt = i.OperationReceipt()
 	}
 
 	var payer base.Address
@@ -383,6 +407,11 @@ func (opr *OperationProcessor) Process(
 			feeRequired = feeRequired.Add(dsFee)
 		}
 
+		receipt = mergeOperationReceipt(receipt, &types.FeeReceipt{
+			CurrencyID: cid,
+			Amount:     feeRequired.String(),
+		})
+
 		payerSt, err := state.ExistsState(ccstate.BalanceStateKey(payer, cid), fmt.Sprintf("balance of fee payer, %v", payer), getStateFunc)
 		if err != nil {
 			return nil, base.NewBaseOperationProcessReasonError(
@@ -446,7 +475,38 @@ func (opr *OperationProcessor) Process(
 		return nil, nil, e.Wrap(err)
 	}
 
+	opr.setOperationReceipt(receipt)
+
 	return stateMergeValues, reasonErr, e.Wrap(err)
+}
+
+func mergeOperationReceipt(
+	receipt base.OperationReceipt,
+	fee *types.FeeReceipt,
+) base.OperationReceipt {
+	if fee == nil {
+		return receipt
+	}
+
+	switch t := receipt.(type) {
+	case nil:
+		return types.NewCurrencyOperationReceipt(fee, nil)
+	case types.CurrencyOperationReceipt:
+		t.Fee = fee
+
+		return t
+	case *types.CurrencyOperationReceipt:
+		if t == nil {
+			return types.NewCurrencyOperationReceipt(fee, nil)
+		}
+
+		nt := *t
+		nt.Fee = fee
+
+		return nt
+	default:
+		return types.NewCurrencyOperationReceipt(fee, nil)
+	}
 }
 
 type DupKeySet map[types.DuplicationKeyType][]string
@@ -611,6 +671,7 @@ func (opr *OperationProcessor) close() {
 	opr.Duplicated = nil
 	opr.duplicatedNewAddress = nil
 	opr.processorClosers = &sync.Map{}
+	opr.receipt = nil
 
 	operationProcessorPool.Put(opr)
 

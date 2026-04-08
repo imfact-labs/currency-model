@@ -29,6 +29,7 @@ func NewOperationDoc(
 	inState bool,
 	reason string,
 	index uint64,
+	receipt base.OperationReceipt,
 ) (OperationDoc, error) {
 	var addresses []string
 	if ads, ok := op.Fact().(types.Addresses); ok {
@@ -65,7 +66,7 @@ func NewOperationDoc(
 		}
 	}
 
-	va := NewOperationValue(op, height, confirmedAt, inState, reason, index)
+	va := NewOperationValue(op, height, confirmedAt, inState, reason, index, receipt)
 	b, err := mongodbst.NewBaseDoc(nil, va, enc)
 	if err != nil {
 		return OperationDoc{}, err
