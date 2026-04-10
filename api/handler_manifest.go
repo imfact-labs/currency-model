@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/imfact-labs/currency-model/digest/mongodb"
+	"github.com/imfact-labs/currency-model/types"
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/util"
 	dutil "github.com/imfact-labs/mitum2/util"
@@ -41,12 +42,12 @@ func HandleManifestByHeight(hd *Handlers, w http.ResponseWriter, r *http.Request
 
 func handleManifestByHeightInGroup(hd *Handlers, height base.Height,
 ) ([]byte, error) {
-	m, ops, confirmed, proposer, round, err := hd.database.ManifestByHeight(height)
+	m, ops, fee, confirmed, proposer, round, err := hd.database.ManifestByHeight(height)
 	if err != nil {
 		return nil, err
 	}
 
-	hal, err := buildManifestHal(hd, m, *ops, confirmed, proposer, round)
+	hal, err := buildManifestHal(hd, m, *ops, fee, confirmed, proposer, round)
 	if err != nil {
 		return nil, err
 	}
@@ -78,12 +79,12 @@ func HandleManifestByHash(hd *Handlers, w http.ResponseWriter, r *http.Request) 
 
 func handleManifestByHashInGroup(hd *Handlers, hash util.Hash,
 ) ([]byte, error) {
-	m, ops, confirmed, proposer, round, err := hd.database.ManifestByHash(hash)
+	m, ops, fee, confirmed, proposer, round, err := hd.database.ManifestByHash(hash)
 	if err != nil {
 		return nil, err
 	}
 
-	hal, err := buildManifestHal(hd, m, *ops, confirmed, proposer, round)
+	hal, err := buildManifestHal(hd, m, *ops, fee, confirmed, proposer, round)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +92,10 @@ func handleManifestByHashInGroup(hd *Handlers, hash util.Hash,
 	return b, err
 }
 
-func buildManifestHal(hd *Handlers, manifest base.Manifest, ops mongodbstorage.OperationItemInfo, confirmed, proposer string, round uint64) (Hal, error) {
+func buildManifestHal(
+	hd *Handlers, manifest base.Manifest, ops mongodbstorage.OperationItemInfo, fee []types.Amount,
+	confirmed, proposer string, round uint64,
+) (Hal, error) {
 	height := manifest.Height()
 
 	var hal Hal
@@ -103,6 +107,7 @@ func buildManifestHal(hd *Handlers, manifest base.Manifest, ops mongodbstorage.O
 	var m struct {
 		base.Manifest
 		Operations  mongodbstorage.OperationItemInfo `json:"operations"`
+		Fee         []types.Amount                   `json:"fee"`
 		ConfirmedAt string                           `json:"confirmed_at"`
 		Proposer    string                           `json:"proposer"`
 		Round       uint64                           `json:"round"`
@@ -110,6 +115,7 @@ func buildManifestHal(hd *Handlers, manifest base.Manifest, ops mongodbstorage.O
 
 	m.Manifest = manifest
 	m.Operations = ops
+	m.Fee = fee
 	m.ConfirmedAt = confirmed
 	m.Proposer = proposer
 	m.Round = round
@@ -208,12 +214,12 @@ func handleManifestsInGroup(
 	var vas []Hal
 	if err := hd.database.Manifests(
 		true, reverse, height, limit,
-		func(height base.Height, va base.Manifest, ops *mongodbstorage.OperationItemInfo, confirmed, proposer string, round uint64) (bool, error) {
+		func(height base.Height, va base.Manifest, ops *mongodbstorage.OperationItemInfo, fee []types.Amount, confirmed, proposer string, round uint64) (bool, error) {
 			if height <= base.GenesisHeight {
 				return !reverse, nil
 			}
 
-			hal, err := buildManifestHal(hd, va, *ops, confirmed, proposer, round)
+			hal, err := buildManifestHal(hd, va, *ops, fee, confirmed, proposer, round)
 			if err != nil {
 				return false, err
 			}

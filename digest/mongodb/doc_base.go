@@ -1,6 +1,7 @@
 package mongodbstorage
 
 import (
+	"github.com/imfact-labs/currency-model/types"
 	"github.com/imfact-labs/currency-model/utils/bsonenc"
 	"github.com/imfact-labs/mitum2/util"
 	"github.com/imfact-labs/mitum2/util/encoder"
@@ -97,48 +98,83 @@ type BaseManifestDocBSONUnMarshaler struct {
 	D bson.RawValue     `bson:"d"`
 	H bool              `bson:"_hinted"`
 	O OperationItemInfo `bson:"operations"`
+	F bson.Raw          `bson:"fee"`
 	T string            `bson:"confirmed_at"`
 	P string            `bson:"proposer"`
 	R uint64            `bson:"round"`
 }
 
 func LoadManifestDataFromDoc(b []byte, encs *encoder.Encoders) (
-	bson.Raw /* id */, interface{} /* data */, *OperationItemInfo,
+	bson.Raw /* id */, interface{} /* data */, *OperationItemInfo, []types.Amount,
 	string /* confirmed_at */, string /* proposer */, uint64 /* round */, error,
 ) {
 
 	var bd BaseManifestDocBSONUnMarshaler
 	if err := bsonenc.Unmarshal(b, &bd); err != nil {
-		return nil, nil, nil, "", "", 0, err
+		return nil, nil, nil, nil, "", "", 0, err
 	}
 
 	ht, err := hint.ParseHint(bd.E)
 	if err != nil {
-		return nil, nil, nil, "", "", 0, err
+		return nil, nil, nil, nil, "", "", 0, err
 	}
 
 	enc, found := encs.Find(ht)
 	if !found {
-		return nil, nil, nil, "", "", 0, util.ErrNotFound.Errorf("Encoder not found for %q", ht)
+		return nil, nil, nil, nil, "", "", 0, util.ErrNotFound.Errorf("Encoder not found for %q", ht)
 	}
 
 	if !bd.H {
-		return bd.I, bd.D, nil, "", "", 0, nil
+		return bd.I, bd.D, nil, nil, "", "", 0, nil
 	}
 
 	doc, ok := bd.D.DocumentOK()
 	if !ok {
-		return nil, nil, nil, "", "", 0, errors.Errorf("Hinted should be mongodb Document")
+		return nil, nil, nil, nil, "", "", 0, errors.Errorf("Hinted should be mongodb Document")
 	}
 
 	var data interface{}
 	if i, err := enc.Decode([]byte(doc)); err != nil {
-		return nil, nil, nil, "", "", 0, err
+		return nil, nil, nil, nil, "", "", 0, err
 	} else {
 		data = i
 	}
 
-	return bd.I, data, &bd.O, bd.T, bd.P, bd.R, nil
+	fee, err := decodeManifestFee(bd.F, enc)
+	if err != nil {
+		return nil, nil, nil, nil, "", "", 0, err
+	}
+
+	return bd.I, data, &bd.O, fee, bd.T, bd.P, bd.R, nil
+}
+
+func decodeManifestFee(b []byte, enc encoder.Encoder) ([]types.Amount, error) {
+	if len(b) < 1 {
+		return nil, nil
+	}
+
+	decoded, err := enc.DecodeSlice(b)
+	if err != nil {
+		return nil, err
+	}
+
+	fee := make([]types.Amount, len(decoded))
+	for i := range decoded {
+		switch am := decoded[i].(type) {
+		case types.Amount:
+			fee[i] = am
+		case *types.Amount:
+			if am == nil {
+				return nil, errors.Errorf("nil fee amount at %d", i)
+			}
+
+			fee[i] = *am
+		default:
+			return nil, errors.Errorf("expected types.Amount, not %T", decoded[i])
+		}
+	}
+
+	return fee, nil
 }
 
 type OperationItemInfo struct {

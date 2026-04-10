@@ -398,19 +398,8 @@ func (opr *OperationProcessor) Process(
 				nil
 		}
 
-		feeRequired := policy.Feeer().Fee()
-
-		if f, ok := policy.Feeer().(types.ExtFeeer); ok {
-			itmFee := f.ItemFee(items)
-			dsFee := f.DataSizeFee(dSize)
-			feeRequired = feeRequired.Add(itmFee)
-			feeRequired = feeRequired.Add(dsFee)
-		}
-
-		receipt = mergeOperationReceipt(receipt, &types.FeeReceipt{
-			CurrencyID: cid,
-			Amount:     feeRequired.String(),
-		})
+		feeReceipt, feeRequired := types.NewFeeReceiptFromFeeer(cid, policy.Feeer(), items, dSize)
+		receipt = mergeOperationReceipt(receipt, feeReceipt)
 
 		payerSt, err := state.ExistsState(ccstate.BalanceStateKey(payer, cid), fmt.Sprintf("balance of fee payer, %v", payer), getStateFunc)
 		if err != nil {
@@ -482,7 +471,7 @@ func (opr *OperationProcessor) Process(
 
 func mergeOperationReceipt(
 	receipt base.OperationReceipt,
-	fee *types.FeeReceipt,
+	fee types.FeeReceipt,
 ) base.OperationReceipt {
 	if fee == nil {
 		return receipt

@@ -6,6 +6,7 @@ import (
 
 	"github.com/imfact-labs/currency-model/common"
 	"github.com/imfact-labs/currency-model/operation/currency"
+	"github.com/imfact-labs/currency-model/operation/extras"
 	"github.com/imfact-labs/currency-model/operation/processor"
 	operationtest "github.com/imfact-labs/currency-model/operation/test"
 	ccstate "github.com/imfact-labs/currency-model/state/currency"
@@ -51,6 +52,10 @@ func setFixedFeeer(tp *operationtest.TestProcessor, cid types.CurrencyID, receiv
 		receiver,
 		types.NewCurrencyPolicy(common.ZeroBig, types.NewFixedFeeer(receiver, common.NewBig(fee))),
 	)
+	setCurrencyDesign(tp, cid, design)
+}
+
+func setCurrencyDesign(tp *operationtest.TestProcessor, cid types.CurrencyID, design types.CurrencyDesign) {
 
 	st := common.NewBaseState(
 		base.Height(1),
@@ -130,8 +135,13 @@ func TestOperationProcessorSetsAndResetsReceipt(t *testing.T) {
 	}
 
 	receipt := receiptAsCurrency(t, opr.OperationReceipt())
-	if receipt.Fee == nil || receipt.Fee.CurrencyID != tp.GenesisCurrency || receipt.Fee.Amount != "10" {
-		t.Fatalf("unexpected fee receipt: %+v", receipt.Fee)
+	fee, ok := receipt.Fee.(types.FixedFeeReceipt)
+	if !ok {
+		t.Fatalf("unexpected fee receipt type: %T", receipt.Fee)
+	}
+
+	if fee.CurrencyID != tp.GenesisCurrency || fee.Amount != "10" || fee.BaseAmount != "10" {
+		t.Fatalf("unexpected fee receipt: %+v", fee)
 	}
 
 	if receipt.GasUsed != nil {
@@ -166,5 +176,102 @@ func TestOperationProcessorSetsAndResetsReceipt(t *testing.T) {
 
 	if opr.OperationReceipt() != nil {
 		t.Fatalf("expected receipt reset after non-fee operation, got %T", opr.OperationReceipt())
+	}
+}
+
+func TestOperationProcessorSetsDetailedFeeReceiptForFixedItemDataSizeExecutionFeeer(t *testing.T) {
+	getter := operationtest.NewMockStateGetter()
+	var tp operationtest.TestProcessor
+	tp.Setup(getter)
+
+	senderPrivSeed := tp.NewPrivateKey("sender-detailed")
+	sender, _, senderPriv := tp.NewTestAccountState(senderPrivSeed, true)
+	tp.NewTestBalanceState(sender, tp.GenesisCurrency, 1000, true)
+
+	receiverPrivSeed := tp.NewPrivateKey("receiver-detailed")
+	receiver, _, _ := tp.NewTestAccountState(receiverPrivSeed, true)
+
+	feeer := types.NewFixedItemDataSizeExecutionFeeer(
+		tp.GenesisAddr,
+		common.NewBig(10),
+		common.NewBig(2),
+		common.NewBig(3),
+		100000,
+		common.NewBig(5),
+	)
+	design := types.NewCurrencyDesign(
+		common.ZeroBig,
+		tp.GenesisCurrency,
+		common.NewBig(9),
+		tp.GenesisAddr,
+		types.NewCurrencyPolicy(common.ZeroBig, feeer),
+	)
+	setCurrencyDesign(&tp, tp.GenesisCurrency, design)
+
+	opr := newWrappedProcessor(t, tp.GetStateFunc)
+
+	item := currency.NewTransferItemMultiAmounts(receiver, []types.Amount{
+		types.NewAmount(common.NewBig(100), tp.GenesisCurrency),
+	})
+
+	transferOp, err := currency.NewTransfer(currency.NewTransferFact(
+		[]byte("transfer-detailed"),
+		sender,
+		[]currency.TransferItem{item},
+		tp.GenesisCurrency,
+	))
+	if err != nil {
+		t.Fatalf("new transfer: %v", err)
+	}
+
+	if err := transferOp.Sign(senderPriv, tp.NetworkID); err != nil {
+		t.Fatalf("sign transfer: %v", err)
+	}
+
+	states, reason, err := opr.Process(context.Background(), transferOp, tp.GetStateFunc)
+	if err != nil {
+		t.Fatalf("process transfer: %v", err)
+	}
+
+	if reason != nil {
+		t.Fatalf("unexpected transfer reason: %v", reason)
+	}
+
+	if len(states) == 0 {
+		t.Fatal("expected transfer state merge values")
+	}
+
+	feeable, ok := transferOp.Fact().(extras.FeeAble)
+	if !ok {
+		t.Fatalf("transfer fact is not feeable: %T", transferOp.Fact())
+	}
+
+	_, itemCount, dataSize, _ := feeable.FeeBase()
+	expectedItemFee := feeer.ItemFee(itemCount)
+	expectedDataSizeFee := feeer.DataSizeFee(dataSize)
+	expectedExecutionFee := feeer.ExecutionFee()
+	expectedTotal := feeer.Fee().Add(expectedItemFee).Add(expectedDataSizeFee).Add(expectedExecutionFee)
+
+	receipt := receiptAsCurrency(t, opr.OperationReceipt())
+	fee, ok := receipt.Fee.(types.FixedItemDataSizeExecutionFeeReceipt)
+	if !ok {
+		t.Fatalf("unexpected fee receipt type: %T", receipt.Fee)
+	}
+
+	if fee.CurrencyID != tp.GenesisCurrency || fee.TotalAmount != expectedTotal.String() || fee.BaseAmount != feeer.Fee().String() {
+		t.Fatalf("unexpected total/base fee receipt: %+v", fee)
+	}
+
+	if fee.ItemCount != itemCount || fee.ItemFeeAmount != common.NewBig(2).String() || fee.ItemFee != expectedItemFee.String() {
+		t.Fatalf("unexpected item fee receipt: %+v", fee)
+	}
+
+	if fee.DataSize != dataSize || fee.DataSizeUnit != feeer.DataSizeUnit() ||
+		fee.DataSizeFeeAmount != common.NewBig(3).String() || fee.DataSizeFee != expectedDataSizeFee.String() {
+		t.Fatalf("unexpected data size fee receipt: %+v", fee)
+	}
+
+	if fee.ExecutionFeeAmount != common.NewBig(5).String() || fee.ExecutionFee != expectedExecutionFee.String() {
+		t.Fatalf("unexpected execution fee receipt: %+v", fee)
 	}
 }

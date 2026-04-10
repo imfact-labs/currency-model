@@ -204,6 +204,10 @@ func (fa FixedItemDataSizeExecutionFeeer) DataSizeFee(size int) common.Big {
 	}
 
 	unit := fa.dataSizeUnit
+	if unit < 1 {
+		return common.ZeroBig
+	}
+
 	bucket := (int64(size) + unit - 1) / unit
 
 	return fa.dataSizeFeeAmount.MulInt64(bucket)
@@ -217,6 +221,14 @@ func (fa FixedItemDataSizeExecutionFeeer) DataSizeUnit() int64 {
 	return fa.dataSizeUnit
 }
 
+func (fa FixedItemDataSizeExecutionFeeer) ExecutionFee() common.Big {
+	if fa.isZero(fa.executionFeeAmount) {
+		return common.ZeroBig
+	}
+
+	return fa.executionFeeAmount
+}
+
 func (fa FixedItemDataSizeExecutionFeeer) IsValid([]byte) error {
 	if err := fa.BaseHinter.IsValid(nil); err != nil {
 		return err
@@ -228,6 +240,22 @@ func (fa FixedItemDataSizeExecutionFeeer) IsValid([]byte) error {
 
 	if !fa.amount.OverNil() {
 		return util.ErrInvalid.Errorf("fixed item feeer amount under zero")
+	}
+
+	if !fa.itemFeeAmount.OverNil() {
+		return util.ErrInvalid.Errorf("fixed item feeer item amount under zero")
+	}
+
+	if !fa.dataSizeFeeAmount.OverNil() {
+		return util.ErrInvalid.Errorf("fixed item feeer data size amount under zero")
+	}
+
+	if fa.dataSizeFeeAmount.OverZero() && fa.dataSizeUnit < 1 {
+		return util.ErrInvalid.Errorf("fixed item feeer data size unit under one")
+	}
+
+	if !fa.executionFeeAmount.OverNil() {
+		return util.ErrInvalid.Errorf("fixed item feeer execution amount under zero")
 	}
 
 	return nil

@@ -270,7 +270,7 @@ func (db *Database) Manifests(
 	reverse bool,
 	offset base.Height,
 	limit int64,
-	callback func(base.Height, base.Manifest, *digestmongo.OperationItemInfo, string, string, uint64) (bool, error),
+	callback func(base.Height, base.Manifest, *digestmongo.OperationItemInfo, []types.Amount, string, string, uint64) (bool, error),
 ) error {
 	var filter bson.M
 	if offset > base.NilHeight {
@@ -303,11 +303,11 @@ func (db *Database) Manifests(
 		DefaultColNameBlock,
 		filter,
 		func(cursor *mongo.Cursor) (bool, error) {
-			va, ops, confirmed, proposer, round, err := LoadManifest(cursor.Decode, db.digestDB.Encoders())
+			va, ops, fee, confirmed, proposer, round, err := LoadManifest(cursor.Decode, db.digestDB.Encoders())
 			if err != nil {
 				return false, err
 			}
-			return callback(va.Height(), va, ops, confirmed, proposer, round)
+			return callback(va.Height(), va, ops, fee, confirmed, proposer, round)
 		},
 		opt,
 	)
@@ -770,72 +770,77 @@ func (db *Database) Currencies() ([]string, error) {
 }
 
 func (db *Database) ManifestByHeight(height base.Height) (
-	base.Manifest, *digestmongo.OperationItemInfo, string, string, uint64, error,
+	base.Manifest, *digestmongo.OperationItemInfo, []types.Amount, string, string, uint64, error,
 ) {
 	q := dutil.NewBSONFilter("height", height).D()
 
 	var m base.Manifest
 	var operations *digestmongo.OperationItemInfo
+	var fee []types.Amount
 	var round uint64
 	var confirmed, proposer string
 	if err := db.digestDB.Client().GetByFilter(
 		DefaultColNameBlock,
 		q,
 		func(res *mongo.SingleResult) error {
-			v, ops, cfrm, prps, rnd, err := LoadManifest(res.Decode, db.digestDB.Encoders())
+			v, ops, f, cfrm, prps, rnd, err := LoadManifest(res.Decode, db.digestDB.Encoders())
 			if err != nil {
 				return err
 			}
 			m = v
 			operations = ops
+			fee = f
 			confirmed = cfrm
 			proposer = prps
 			round = rnd
 			return nil
 		},
 	); err != nil {
-		return nil, nil, "", "", 0, util.ErrNotFound.WithMessage(err, "block manifest")
+		return nil, nil, nil, "", "", 0, util.ErrNotFound.WithMessage(err, "block manifest")
 	}
 
 	if m != nil {
-		return m, operations, confirmed, proposer, round, nil
+		return m, operations, fee, confirmed, proposer, round, nil
 	} else {
-		return nil, nil, "", "", 0, util.ErrNotFound.Wrap(errors.Errorf("Block manifest"))
+		return nil, nil, nil, "", "", 0, util.ErrNotFound.Wrap(errors.Errorf("Block manifest"))
 	}
 }
 
 func (db *Database) ManifestByHash(hash util.Hash) (
-	base.Manifest, *digestmongo.OperationItemInfo, string /* confirmed */, string /* proposer */, uint64 /* round */, error,
+	base.Manifest, *digestmongo.OperationItemInfo, []types.Amount,
+	string /* confirmed */, string /* proposer */, uint64 /* round */, error,
 ) {
 	q := dutil.NewBSONFilter("block", hash).D()
 
 	var m base.Manifest
 	var operations *digestmongo.OperationItemInfo
+	var fee []types.Amount
 	var round uint64
 	var confirmed, proposer string
 	if err := db.digestDB.Client().GetByFilter(
 		DefaultColNameBlock,
 		q,
 		func(res *mongo.SingleResult) error {
-			v, ops, cfrm, prps, rnd, err := LoadManifest(res.Decode, db.digestDB.Encoders())
+			v, ops, f, cfrm, prps, rnd, err := LoadManifest(res.Decode, db.digestDB.Encoders())
 			if err != nil {
 				return err
 			}
 			m = v
 			operations = ops
+			fee = f
 			confirmed = cfrm
 			proposer = prps
 			round = rnd
 			return nil
 		},
 	); err != nil {
-		return nil, nil, "", "", 0, util.ErrNotFound.WithMessage(err, "block manifest")
+		return nil, nil, nil, "", "", 0, util.ErrNotFound.WithMessage(err, "block manifest")
 	}
 
 	if m != nil {
-		return m, operations, confirmed, proposer, round, nil
+		return m, operations, fee, confirmed, proposer, round, nil
 	} else {
-		return nil, nil, "", "", 0, util.ErrNotFound.Errorf("Block manifest")
+		return nil, nil, nil, "", "", 0, util.ErrNotFound.Errorf("Block manifest")
 	}
 }
 
