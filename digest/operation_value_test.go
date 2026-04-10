@@ -54,10 +54,10 @@ func TestOperationValueBSONRoundTripWithReceipt(t *testing.T) {
 		t.Fatalf("sign mint operation: %v", err)
 	}
 
-	receipt := types.NewCurrencyOperationReceipt(&types.FeeReceipt{
-		CurrencyID: tp.GenesisCurrency,
-		Amount:     "10",
-	}, nil)
+	receipt := types.NewCurrencyOperationReceipt(
+		types.NewFixedFeeReceipt(tp.GenesisCurrency, common.NewBig(10)),
+		nil,
+	)
 
 	value := digest.NewOperationValue(
 		op,
@@ -97,7 +97,21 @@ func TestOperationValueBSONRoundTripWithReceipt(t *testing.T) {
 		t.Fatalf("decoded receipt type = %T", got.Receipt())
 	}
 
-	if decodedReceipt.Fee == nil || decodedReceipt.Fee.CurrencyID != tp.GenesisCurrency || decodedReceipt.Fee.Amount != "10" {
-		t.Fatalf("unexpected decoded fee receipt: %+v", decodedReceipt.Fee)
+	var fee types.FixedFeeReceipt
+	switch r := decodedReceipt.Fee.(type) {
+	case types.FixedFeeReceipt:
+		fee = r
+	case *types.FixedFeeReceipt:
+		if r == nil {
+			t.Fatal("nil decoded fee receipt")
+		}
+
+		fee = *r
+	default:
+		t.Fatalf("unexpected decoded fee receipt type: %T", decodedReceipt.Fee)
+	}
+
+	if fee.CurrencyID != tp.GenesisCurrency || fee.Amount != "10" || fee.BaseAmount != "10" {
+		t.Fatalf("unexpected decoded fee receipt: %+v", fee)
 	}
 }

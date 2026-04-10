@@ -4,6 +4,7 @@ import (
 	"time"
 
 	mongodbst "github.com/imfact-labs/currency-model/digest/mongodb"
+	"github.com/imfact-labs/currency-model/types"
 	"github.com/imfact-labs/currency-model/utils/bsonenc"
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/util/encoder"
@@ -13,6 +14,7 @@ type ManifestDoc struct {
 	mongodbst.BaseDoc
 	va          base.Manifest
 	operations  mongodbst.OperationItemInfo
+	feeAmount   []types.Amount
 	height      base.Height
 	confirmedAt time.Time
 	proposer    base.Address
@@ -25,6 +27,7 @@ func NewManifestDoc(
 	enc encoder.Encoder,
 	height base.Height,
 	operations mongodbst.OperationItemInfo,
+	feeAmount []types.Amount,
 	confirmedAt time.Time,
 	proposer base.Address,
 	round base.Round,
@@ -39,6 +42,7 @@ func NewManifestDoc(
 		BaseDoc:     b,
 		va:          manifest,
 		operations:  operations,
+		feeAmount:   feeAmount,
 		height:      height,
 		confirmedAt: confirmedAt,
 		proposer:    proposer,
@@ -55,6 +59,7 @@ func (doc ManifestDoc) MarshalBSON() ([]byte, error) {
 
 	m["block"] = doc.va.Hash()
 	m["operations"] = doc.operations
+	m["fee"] = doc.feeAmount
 	m["height"] = doc.height
 	m["confirmed_at"] = doc.confirmedAt.String()
 	m["proposer"] = doc.proposer.String()

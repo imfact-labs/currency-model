@@ -4,8 +4,6 @@ go 1.24.0
 
 toolchain go1.24.6
 
-replace github.com/imfact-labs/mitum2 => ../mitum2
-
 require (
 	github.com/alecthomas/kong v1.12.1
 	github.com/arl/statsviz v0.7.1
@@ -17,7 +15,7 @@ require (
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/memberlist v0.5.1
-	github.com/imfact-labs/mitum2 v0.0.0-20260219060841-f51dacce1321
+	github.com/imfact-labs/mitum2 v0.0.0-20260410075537-0fc3877ecf42
 	github.com/json-iterator/go v1.1.12
 	github.com/justinas/alice v1.2.0
 	github.com/multiformats/go-multibase v0.2.0
@@ -108,5 +106,3 @@ require (
 )
 
 replace github.com/hashicorp/memberlist => github.com/spikeekips/memberlist v0.0.0-20230626195851-39f17fa10d23 // latest fix-data-race branch
-
-replace github.com/imfact-labs/mitum2 => ../mitum2

@@ -184,7 +184,7 @@ func (di *Digester) DigestBlockMap(ctx context.Context, blk base.Height) error {
 		receipts = i
 	}
 
-	if m, _, _, _, _, _ := di.database.ManifestByHeight(blk); m != nil {
+	if m, _, _, _, _, _, _ := di.database.ManifestByHeight(blk); m != nil {
 		return nil
 	}
 

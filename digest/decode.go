@@ -2,6 +2,7 @@ package digest
 
 import (
 	mongodbst "github.com/imfact-labs/currency-model/digest/mongodb"
+	"github.com/imfact-labs/currency-model/types"
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/util"
 	"github.com/imfact-labs/mitum2/util/encoder"
@@ -103,20 +104,20 @@ func LoadContractAccountStatus(decoder func(interface{}) error, encs *encoder.En
 }
 
 func LoadManifest(decoder func(interface{}) error, encs *encoder.Encoders) (
-	base.Manifest, *mongodbst.OperationItemInfo, string, string, uint64, error,
+	base.Manifest, *mongodbst.OperationItemInfo, []types.Amount, string, string, uint64, error,
 ) {
 	var b bson.Raw
 
 	if err := decoder(&b); err != nil {
-		return nil, nil, "", "", 0, err
+		return nil, nil, nil, "", "", 0, err
 	}
 
-	if _, hinter, operations, confirmedAt, proposer, round, err := mongodbst.LoadManifestDataFromDoc(b, encs); err != nil {
-		return nil, nil, "", "", 0, err
+	if _, hinter, operations, fee, confirmedAt, proposer, round, err := mongodbst.LoadManifestDataFromDoc(b, encs); err != nil {
+		return nil, nil, nil, "", "", 0, err
 	} else if m, ok := hinter.(base.Manifest); !ok {
-		return nil, nil, "", "", 0, errors.Errorf("Not base.Manifest: %T", hinter)
+		return nil, nil, nil, "", "", 0, errors.Errorf("Not base.Manifest: %T", hinter)
 	} else {
-		return m, operations, confirmedAt, proposer, round, nil
+		return m, operations, fee, confirmedAt, proposer, round, nil
 	}
 }
 

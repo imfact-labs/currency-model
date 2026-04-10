@@ -6,11 +6,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/imfact-labs/currency-model/common"
 	"github.com/imfact-labs/currency-model/digest/isaac"
 	"github.com/imfact-labs/currency-model/digest/mongodb"
 	"github.com/imfact-labs/currency-model/operation/extras"
 	ccstate "github.com/imfact-labs/currency-model/state/currency"
 	cestate "github.com/imfact-labs/currency-model/state/extension"
+	"github.com/imfact-labs/currency-model/types"
 	"github.com/imfact-labs/mitum2/base"
 	"github.com/imfact-labs/mitum2/util"
 	"github.com/imfact-labs/mitum2/util/fixedtree"
@@ -208,6 +210,38 @@ func (bs *BlockSession) prepareBlock() error {
 			}
 		}
 	}
+
+	var FeeAmounts []types.Amount
+	FeeAmountSet := make(map[string]common.Big)
+	for _, receipt := range bs.receipts {
+		t, found := feeReceiptFromOperationReceipt(receipt.Receipt())
+		if !found {
+			continue
+		}
+
+		b, err := common.NewBigFromString(t.FeeAmount())
+		if err != nil {
+			return err
+		}
+
+		currency := t.Currency().String()
+		if existing, found := FeeAmountSet[currency]; found {
+			FeeAmountSet[currency] = existing.Add(b)
+		} else {
+			FeeAmountSet[currency] = b
+		}
+	}
+
+	for c, am := range FeeAmountSet {
+		cid := types.CurrencyID(c)
+		if err := cid.IsValid(nil); err != nil {
+			return err
+		}
+
+		amount := types.NewAmount(am, cid)
+		FeeAmounts = append(FeeAmounts, amount)
+	}
+
 	opInfo.NoItemOperations = NoItemOperations
 	opInfo.ItemOperations = ItemOperations
 	opInfo.Items = Items
@@ -224,7 +258,10 @@ func (bs *BlockSession) prepareBlock() error {
 		bs.block.Manifest().ProposedAt(),
 	)
 
-	doc, err := NewManifestDoc(manifest, bs.st.digestDB.Encoder(), bs.block.Manifest().Height(), opInfo, bs.block.SignedAt(), bs.proposal.ProposalFact().Proposer(), bs.proposal.ProposalFact().Point().Round(), bs.buildInfo)
+	doc, err := NewManifestDoc(
+		manifest, bs.st.digestDB.Encoder(), bs.block.Manifest().Height(), opInfo, FeeAmounts, bs.block.SignedAt(),
+		bs.proposal.ProposalFact().Proposer(), bs.proposal.ProposalFact().Point().Round(), bs.buildInfo,
+	)
 	if err != nil {
 		return err
 	}
@@ -307,6 +344,28 @@ func (bs *BlockSession) prepareOperations() error {
 	}
 
 	return nil
+}
+
+func feeReceiptFromOperationReceipt(receipt base.OperationReceipt) (types.FeeReceipt, bool) {
+	switch t := receipt.(type) {
+	case nil:
+		return nil, false
+	case types.CurrencyOperationReceipt:
+		if t.Fee == nil {
+			return nil, false
+		}
+
+		return t.Fee, true
+	case *types.CurrencyOperationReceipt:
+		if t == nil || t.Fee == nil {
+			return nil, false
+		}
+
+		return t.Fee, true
+	default:
+		// Manifest fee is derived metadata, so unknown receipt variants are ignored.
+		return nil, false
+	}
 }
 
 func PrepareAccounts(bs *BlockSession, st base.State) (string, []mongo.WriteModel, error) {
