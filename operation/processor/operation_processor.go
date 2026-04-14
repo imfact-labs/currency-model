@@ -376,7 +376,11 @@ func (opr *OperationProcessor) Process(
 					Errorf("%v", err)), nil
 		}
 
-		receiver := policy.Feeer().Receiver()
+		policyFeeer := policy.Feeer()
+		receiver := policyFeeer.Receiver()
+		feeReceipt, feeRequired := types.NewFeeReceiptFromFeeer(cid, policyFeeer, items, dSize)
+		receipt = mergeOperationReceipt(receipt, policyFeeer.Hint().String(), feeReceipt)
+
 		if receiver == nil {
 			break
 		}
@@ -397,9 +401,6 @@ func (opr *OperationProcessor) Process(
 					common.ErrMStateNF.Errorf("Feeer receiver, %v BalanceState", receiver)),
 				nil
 		}
-
-		feeReceipt, feeRequired := types.NewFeeReceiptFromFeeer(cid, policy.Feeer(), items, dSize)
-		receipt = mergeOperationReceipt(receipt, feeReceipt)
 
 		payerSt, err := state.ExistsState(ccstate.BalanceStateKey(payer, cid), fmt.Sprintf("balance of fee payer, %v", payer), getStateFunc)
 		if err != nil {
@@ -471,6 +472,7 @@ func (opr *OperationProcessor) Process(
 
 func mergeOperationReceipt(
 	receipt base.OperationReceipt,
+	feeer string,
 	fee types.FeeReceipt,
 ) base.OperationReceipt {
 	if fee == nil {
@@ -479,22 +481,17 @@ func mergeOperationReceipt(
 
 	switch t := receipt.(type) {
 	case nil:
-		return types.NewCurrencyOperationReceipt(fee, nil)
+		return types.NewCurrencyOperationReceipt(feeer, fee, nil)
 	case types.CurrencyOperationReceipt:
-		t.Fee = fee
-
-		return t
+		return types.NewCurrencyOperationReceipt(feeer, fee, t.GasUsed)
 	case *types.CurrencyOperationReceipt:
 		if t == nil {
-			return types.NewCurrencyOperationReceipt(fee, nil)
+			return types.NewCurrencyOperationReceipt(feeer, fee, nil)
 		}
 
-		nt := *t
-		nt.Fee = fee
-
-		return nt
+		return types.NewCurrencyOperationReceipt(feeer, fee, t.GasUsed)
 	default:
-		return types.NewCurrencyOperationReceipt(fee, nil)
+		return types.NewCurrencyOperationReceipt(feeer, fee, nil)
 	}
 }
 

@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	"github.com/imfact-labs/currency-model/common"
 	"github.com/imfact-labs/mitum2/util"
 	"github.com/imfact-labs/mitum2/util/hint"
@@ -27,24 +25,24 @@ type FeeReceipt interface {
 
 type BaseFeeReceipt struct {
 	hint.BaseHinter
-	CurrencyID CurrencyID `json:"currency_id" bson:"currency_id"`
-	Amount     string     `json:"amount" bson:"amount"`
+	currencyID CurrencyID
+	totalFee   string
 }
 
 func NewBaseFeeReceipt(currencyID CurrencyID, amount common.Big) BaseFeeReceipt {
 	return BaseFeeReceipt{
 		BaseHinter: hint.NewBaseHinter(BaseFeeReceiptHint),
-		CurrencyID: currencyID,
-		Amount:     amount.String(),
+		currencyID: currencyID,
+		totalFee:   amount.String(),
 	}
 }
 
 func (r BaseFeeReceipt) Currency() CurrencyID {
-	return r.CurrencyID
+	return r.currencyID
 }
 
 func (r BaseFeeReceipt) FeeAmount() string {
-	return r.Amount
+	return r.totalFee
 }
 
 func (r BaseFeeReceipt) IsValid([]byte) error {
@@ -52,31 +50,39 @@ func (r BaseFeeReceipt) IsValid([]byte) error {
 		return err
 	}
 
-	return validateReceiptAmounts(r.CurrencyID, r.Amount)
+	if err := r.currencyID.IsValid(nil); err != nil {
+		return err
+	}
+
+	_, err := parseReceiptAmount("total_fee", r.totalFee)
+
+	return err
 }
 
 type FixedFeeReceipt struct {
 	hint.BaseHinter
-	CurrencyID CurrencyID `json:"currency_id" bson:"currency_id"`
-	Amount     string     `json:"amount" bson:"amount"`
-	BaseAmount string     `json:"base_amount" bson:"base_amount"`
+	currencyID CurrencyID
+	totalFee   string
+	baseFee    string
 }
 
 func NewFixedFeeReceipt(currencyID CurrencyID, amount common.Big) FixedFeeReceipt {
 	return FixedFeeReceipt{
 		BaseHinter: hint.NewBaseHinter(FixedFeeReceiptHint),
-		CurrencyID: currencyID,
-		Amount:     amount.String(),
-		BaseAmount: amount.String(),
+		currencyID: currencyID,
+		totalFee:   amount.String(),
+		baseFee:    amount.String(),
 	}
 }
 
 func (r FixedFeeReceipt) Currency() CurrencyID {
-	return r.CurrencyID
+	return r.currencyID
 }
 
+func (r FixedFeeReceipt) BaseFee() string { return r.baseFee }
+
 func (r FixedFeeReceipt) FeeAmount() string {
-	return r.Amount
+	return r.totalFee
 }
 
 func (r FixedFeeReceipt) IsValid([]byte) error {
@@ -84,19 +90,22 @@ func (r FixedFeeReceipt) IsValid([]byte) error {
 		return err
 	}
 
-	amounts, err := receiptAmountsByField(
-		r.CurrencyID,
-		map[string]string{
-			"amount":      r.Amount,
-			"base_amount": r.BaseAmount,
-		},
-	)
+	if err := r.currencyID.IsValid(nil); err != nil {
+		return err
+	}
+
+	totalFee, err := parseReceiptAmount("total_fee", r.totalFee)
 	if err != nil {
 		return err
 	}
 
-	if !amounts["amount"].Equal(amounts["base_amount"]) {
-		return util.ErrInvalid.Errorf("amount and base_amount do not match")
+	baseFee, err := parseReceiptAmount("base_fee", r.baseFee)
+	if err != nil {
+		return err
+	}
+
+	if !totalFee.Equal(baseFee) {
+		return util.ErrInvalid.Errorf("total_fee and base_fee do not match")
 	}
 
 	return nil
@@ -104,57 +113,112 @@ func (r FixedFeeReceipt) IsValid([]byte) error {
 
 type FixedItemDataSizeExecutionFeeReceipt struct {
 	hint.BaseHinter
-	CurrencyID         CurrencyID `json:"currency_id" bson:"currency_id"`
-	TotalAmount        string     `json:"total_amount" bson:"total_amount"`
-	BaseAmount         string     `json:"base_amount" bson:"base_amount"`
-	ItemCount          int        `json:"item_count" bson:"item_count"`
-	ItemFeeAmount      string     `json:"item_fee_amount" bson:"item_fee_amount"`
-	ItemFee            string     `json:"item_fee" bson:"item_fee"`
-	DataSize           int        `json:"data_size" bson:"data_size"`
-	DataSizeUnit       int64      `json:"data_size_unit" bson:"data_size_unit"`
-	DataSizeFeeAmount  string     `json:"data_size_fee_amount" bson:"data_size_fee_amount"`
-	DataSizeFee        string     `json:"data_size_fee" bson:"data_size_fee"`
-	ExecutionFeeAmount string     `json:"execution_fee_amount" bson:"execution_fee_amount"`
-	ExecutionFee       string     `json:"execution_fee" bson:"execution_fee"`
+	currencyID       CurrencyID
+	totalFee         string
+	baseFee          string
+	itemUnitFee      string
+	itemCount        int
+	itemFee          string
+	dataSizeUnitFee  string
+	dataSizeUnit     int64
+	dataSize         int
+	dataSizeFee      string
+	executionUnitFee string
+	executionCount   int
+	executionFee     string
 }
 
 func NewFixedItemDataSizeExecutionFeeReceipt(
 	currencyID CurrencyID,
-	totalAmount common.Big,
-	baseAmount common.Big,
+	totalFee common.Big,
+	baseFee common.Big,
+	itemUnitFee common.Big,
 	itemCount int,
-	itemFeeAmount common.Big,
 	itemFee common.Big,
-	dataSize int,
+	dataSizeUnitFee common.Big,
 	dataSizeUnit int64,
-	dataSizeFeeAmount common.Big,
+	dataSize int,
 	dataSizeFee common.Big,
-	executionFeeAmount common.Big,
+	executionUnitFee common.Big,
+	executionCount int,
 	executionFee common.Big,
 ) FixedItemDataSizeExecutionFeeReceipt {
 	return FixedItemDataSizeExecutionFeeReceipt{
-		BaseHinter:         hint.NewBaseHinter(FixedItemDataSizeExecutionFeeReceiptHint),
-		CurrencyID:         currencyID,
-		TotalAmount:        totalAmount.String(),
-		BaseAmount:         baseAmount.String(),
-		ItemCount:          itemCount,
-		ItemFeeAmount:      itemFeeAmount.String(),
-		ItemFee:            itemFee.String(),
-		DataSize:           dataSize,
-		DataSizeUnit:       dataSizeUnit,
-		DataSizeFeeAmount:  dataSizeFeeAmount.String(),
-		DataSizeFee:        dataSizeFee.String(),
-		ExecutionFeeAmount: executionFeeAmount.String(),
-		ExecutionFee:       executionFee.String(),
+		BaseHinter:       hint.NewBaseHinter(FixedItemDataSizeExecutionFeeReceiptHint),
+		currencyID:       currencyID,
+		totalFee:         totalFee.String(),
+		baseFee:          baseFee.String(),
+		itemUnitFee:      itemUnitFee.String(),
+		itemCount:        itemCount,
+		itemFee:          itemFee.String(),
+		dataSizeUnitFee:  dataSizeUnitFee.String(),
+		dataSizeUnit:     dataSizeUnit,
+		dataSize:         dataSize,
+		dataSizeFee:      dataSizeFee.String(),
+		executionUnitFee: executionUnitFee.String(),
+		executionCount:   executionCount,
+		executionFee:     executionFee.String(),
 	}
 }
 
 func (r FixedItemDataSizeExecutionFeeReceipt) Currency() CurrencyID {
-	return r.CurrencyID
+	return r.currencyID
+}
+
+func (r FixedItemDataSizeExecutionFeeReceipt) CurrencyID() CurrencyID {
+	return r.currencyID
 }
 
 func (r FixedItemDataSizeExecutionFeeReceipt) FeeAmount() string {
-	return r.TotalAmount
+	return r.totalFee
+}
+
+func (r FixedItemDataSizeExecutionFeeReceipt) TotalFee() string {
+	return r.totalFee
+}
+
+func (r FixedItemDataSizeExecutionFeeReceipt) BaseFee() string {
+	return r.baseFee
+}
+
+func (r FixedItemDataSizeExecutionFeeReceipt) ItemUnitFee() string {
+	return r.itemUnitFee
+}
+
+func (r FixedItemDataSizeExecutionFeeReceipt) ItemCount() int {
+	return r.itemCount
+}
+
+func (r FixedItemDataSizeExecutionFeeReceipt) ItemFee() string {
+	return r.itemFee
+}
+
+func (r FixedItemDataSizeExecutionFeeReceipt) DataSizeUnitFee() string {
+	return r.dataSizeUnitFee
+}
+
+func (r FixedItemDataSizeExecutionFeeReceipt) DataSizeUnit() int64 {
+	return r.dataSizeUnit
+}
+
+func (r FixedItemDataSizeExecutionFeeReceipt) DataSize() int {
+	return r.dataSize
+}
+
+func (r FixedItemDataSizeExecutionFeeReceipt) DataSizeFee() string {
+	return r.dataSizeFee
+}
+
+func (r FixedItemDataSizeExecutionFeeReceipt) ExecutionCount() int {
+	return r.executionCount
+}
+
+func (r FixedItemDataSizeExecutionFeeReceipt) ExecutionUnitFee() string {
+	return r.executionUnitFee
+}
+
+func (r FixedItemDataSizeExecutionFeeReceipt) ExecutionFee() string {
+	return r.executionFee
 }
 
 func (r FixedItemDataSizeExecutionFeeReceipt) IsValid([]byte) error {
@@ -162,59 +226,96 @@ func (r FixedItemDataSizeExecutionFeeReceipt) IsValid([]byte) error {
 		return err
 	}
 
-	if r.ItemCount < 0 {
+	if err := r.currencyID.IsValid(nil); err != nil {
+		return err
+	}
+
+	if r.itemCount < 0 {
 		return util.ErrInvalid.Errorf("item count under zero")
 	}
 
-	if r.DataSize < 0 {
+	if r.dataSize < 0 {
 		return util.ErrInvalid.Errorf("data size under zero")
 	}
 
-	if r.DataSizeUnit < 0 {
+	if r.dataSizeUnit < 0 {
 		return util.ErrInvalid.Errorf("data size unit under zero")
 	}
 
-	amounts, err := receiptAmountsByField(
-		r.CurrencyID,
-		map[string]string{
-			"total_amount":          r.TotalAmount,
-			"base_amount":           r.BaseAmount,
-			"item_fee_amount":       r.ItemFeeAmount,
-			"item_fee":              r.ItemFee,
-			"data_size_fee_amount":  r.DataSizeFeeAmount,
-			"data_size_fee":         r.DataSizeFee,
-			"execution_fee_amount":  r.ExecutionFeeAmount,
-			"execution_fee":         r.ExecutionFee,
-		},
-	)
+	if r.executionCount < 0 {
+		return util.ErrInvalid.Errorf("execution count under zero")
+	}
+
+	totalFee, err := parseReceiptAmount("total_fee", r.totalFee)
 	if err != nil {
 		return err
 	}
 
-	expectedItemFee := amounts["item_fee_amount"].MulInt64(int64(r.ItemCount))
-	if !expectedItemFee.Equal(amounts["item_fee"]) {
-		return util.ErrInvalid.Errorf("item_fee does not match item_count * item_fee_amount")
-	}
-
-	expectedDataSizeFee, err := validateDataSizeFee(r.DataSize, r.DataSizeUnit, amounts["data_size_fee_amount"])
+	baseFee, err := parseReceiptAmount("base_fee", r.baseFee)
 	if err != nil {
 		return err
 	}
 
-	if !expectedDataSizeFee.Equal(amounts["data_size_fee"]) {
+	itemUnitFee, err := parseReceiptAmount("item_unit_fee", r.itemUnitFee)
+	if err != nil {
+		return err
+	}
+
+	itemFee, err := parseReceiptAmount("item_fee", r.itemFee)
+	if err != nil {
+		return err
+	}
+
+	dataSizeUnitFee, err := parseReceiptAmount("data_size_unit_fee", r.dataSizeUnitFee)
+	if err != nil {
+		return err
+	}
+
+	dataSizeFee, err := parseReceiptAmount("data_size_fee", r.dataSizeFee)
+	if err != nil {
+		return err
+	}
+
+	executionUnitFee, executionUnitFeeFound, err := parseOptionalReceiptAmount("execution_unit_fee", r.executionUnitFee)
+	if err != nil {
+		return err
+	}
+
+	executionFee, executionFeeFound, err := parseOptionalReceiptAmount("execution_fee", r.executionFee)
+	if err != nil {
+		return err
+	}
+
+	if executionUnitFeeFound != executionFeeFound {
+		return util.ErrInvalid.Errorf("execution_fee and execution_unit_fee must both be set or both be empty")
+	}
+
+	expectedItemFee := itemUnitFee.MulInt64(int64(r.itemCount))
+	if !expectedItemFee.Equal(itemFee) {
+		return util.ErrInvalid.Errorf("item_fee does not match item_count * item_unit_fee")
+	}
+
+	expectedDataSizeFee, err := validateDataSizeFee(r.dataSize, r.dataSizeUnit, dataSizeUnitFee)
+	if err != nil {
+		return err
+	}
+
+	if !expectedDataSizeFee.Equal(dataSizeFee) {
 		return util.ErrInvalid.Errorf("data_size_fee does not match data_size fee formula")
 	}
 
-	if !amounts["execution_fee_amount"].Equal(amounts["execution_fee"]) {
-		return util.ErrInvalid.Errorf("execution_fee does not match execution_fee_amount")
+	if executionUnitFeeFound && !executionUnitFee.Equal(executionFee) {
+		return util.ErrInvalid.Errorf("execution_fee does not match execution_unit_fee")
 	}
 
-	expectedTotal := amounts["base_amount"].
-		Add(amounts["item_fee"]).
-		Add(amounts["data_size_fee"]).
-		Add(amounts["execution_fee"])
-	if !expectedTotal.Equal(amounts["total_amount"]) {
-		return util.ErrInvalid.Errorf("total_amount does not match fee breakdown")
+	expectedTotal := baseFee.
+		Add(itemFee).
+		Add(dataSizeFee)
+	if executionFeeFound {
+		expectedTotal = expectedTotal.Add(executionFee)
+	}
+	if !expectedTotal.Equal(totalFee) {
+		return util.ErrInvalid.Errorf("total_fee does not match fee breakdown")
 	}
 
 	return nil
@@ -236,47 +337,49 @@ func NewFeeReceiptFromFeeer(
 			return nil, common.ZeroBig
 		}
 
-		baseAmount := fa.Fee()
+		baseFee := fa.Fee()
 		itemFee := fa.ItemFee(itemCount)
 		dataSizeFee := fa.DataSizeFee(dataSize)
 		executionFee := fa.ExecutionFee()
-		totalAmount := baseAmount.Add(itemFee).Add(dataSizeFee).Add(executionFee)
+		totalFee := baseFee.Add(itemFee).Add(dataSizeFee).Add(executionFee)
 
 		return NewFixedItemDataSizeExecutionFeeReceipt(
 			currencyID,
-			totalAmount,
-			baseAmount,
-			itemCount,
+			totalFee,
+			baseFee,
 			fa.itemFeeAmount,
+			itemCount,
 			itemFee,
-			dataSize,
-			fa.DataSizeUnit(),
 			fa.dataSizeFeeAmount,
+			fa.DataSizeUnit(),
+			dataSize,
 			dataSizeFee,
 			fa.executionFeeAmount,
+			0,
 			executionFee,
-		), totalAmount
+		), totalFee
 	case FixedItemDataSizeExecutionFeeer:
-		baseAmount := fa.Fee()
+		baseFee := fa.Fee()
 		itemFee := fa.ItemFee(itemCount)
 		dataSizeFee := fa.DataSizeFee(dataSize)
 		executionFee := fa.ExecutionFee()
-		totalAmount := baseAmount.Add(itemFee).Add(dataSizeFee).Add(executionFee)
+		totalFee := baseFee.Add(itemFee).Add(dataSizeFee).Add(executionFee)
 
 		return NewFixedItemDataSizeExecutionFeeReceipt(
 			currencyID,
-			totalAmount,
-			baseAmount,
-			itemCount,
+			totalFee,
+			baseFee,
 			fa.itemFeeAmount,
+			itemCount,
 			itemFee,
-			dataSize,
-			fa.DataSizeUnit(),
 			fa.dataSizeFeeAmount,
+			fa.DataSizeUnit(),
+			dataSize,
 			dataSizeFee,
 			fa.executionFeeAmount,
+			0,
 			executionFee,
-		), totalAmount
+		), totalFee
 	case *FixedFeeer:
 		if fa == nil {
 			return nil, common.ZeroBig
@@ -298,16 +401,22 @@ func NewFeeReceiptFromFeeer(
 
 type CurrencyOperationReceipt struct {
 	hint.BaseHinter
+	feeer   string
 	Fee     FeeReceipt `json:"fee,omitempty" bson:"fee,omitempty"`
 	GasUsed *uint64    `json:"gas_used,omitempty" bson:"gas_used,omitempty"`
 }
 
-func NewCurrencyOperationReceipt(fee FeeReceipt, gasUsed *uint64) CurrencyOperationReceipt {
+func NewCurrencyOperationReceipt(feeer string, fee FeeReceipt, gasUsed *uint64) CurrencyOperationReceipt {
 	return CurrencyOperationReceipt{
 		BaseHinter: hint.NewBaseHinter(CurrencyOperationReceiptHint),
+		feeer:      feeer,
 		Fee:        fee,
 		GasUsed:    gasUsed,
 	}
+}
+
+func (r CurrencyOperationReceipt) Feeer() string {
+	return r.feeer
 }
 
 func (r CurrencyOperationReceipt) IsValid([]byte) error {
@@ -316,6 +425,10 @@ func (r CurrencyOperationReceipt) IsValid([]byte) error {
 	}
 
 	if r.Fee != nil {
+		if len(r.feeer) < 1 {
+			return util.ErrInvalid.Errorf("empty feeer")
+		}
+
 		if err := r.Fee.IsValid(nil); err != nil {
 			return err
 		}
@@ -324,53 +437,42 @@ func (r CurrencyOperationReceipt) IsValid([]byte) error {
 	return nil
 }
 
-func validateReceiptAmounts(currencyID CurrencyID, amounts ...string) error {
-	_, err := receiptAmountsByField(currencyID, toUnnamedReceiptAmountMap(amounts))
-
-	return err
-}
-
-func receiptAmountsByField(currencyID CurrencyID, amounts map[string]string) (map[string]common.Big, error) {
-	if err := currencyID.IsValid(nil); err != nil {
-		return nil, err
+func parseReceiptAmount(field, amountString string) (common.Big, error) {
+	amount, err := common.NewBigFromString(amountString)
+	if err != nil {
+		return common.ZeroBig, util.ErrInvalid.Errorf("invalid %s: %v", field, err)
 	}
 
-	parsed := make(map[string]common.Big, len(amounts))
-	for field, amountString := range amounts {
-		amount, err := common.NewBigFromString(amountString)
-		if err != nil {
-			return nil, util.ErrInvalid.Errorf("invalid %s: %v", field, err)
-		}
-
-		if !amount.OverNil() {
-			return nil, util.ErrInvalid.Errorf("%s under zero", field)
-		}
-
-		parsed[field] = amount
+	if !amount.OverNil() {
+		return common.ZeroBig, util.ErrInvalid.Errorf("%s under zero", field)
 	}
 
-	return parsed, nil
+	return amount, nil
 }
 
-func toUnnamedReceiptAmountMap(amounts []string) map[string]string {
-	m := make(map[string]string, len(amounts))
-	for i := range amounts {
-		m[fmt.Sprintf("amount[%d]", i)] = amounts[i]
+func parseOptionalReceiptAmount(field, amountString string) (common.Big, bool, error) {
+	if amountString == "" {
+		return common.ZeroBig, false, nil
 	}
 
-	return m
+	amount, err := parseReceiptAmount(field, amountString)
+	if err != nil {
+		return common.ZeroBig, false, err
+	}
+
+	return amount, true, nil
 }
 
-func validateDataSizeFee(dataSize int, dataSizeUnit int64, dataSizeFeeAmount common.Big) (common.Big, error) {
-	if dataSizeFeeAmount.IsZero() {
+func validateDataSizeFee(dataSize int, dataSizeUnit int64, dataSizeUnitFee common.Big) (common.Big, error) {
+	if dataSizeUnitFee.IsZero() {
 		return common.ZeroBig, nil
 	}
 
 	if dataSizeUnit < 1 {
-		return common.ZeroBig, util.ErrInvalid.Errorf("data_size_unit under one for non-zero data_size_fee_amount")
+		return common.ZeroBig, util.ErrInvalid.Errorf("data_size_unit under one for non-zero data_size_unit_fee")
 	}
 
 	bucket := (int64(dataSize) + dataSizeUnit - 1) / dataSizeUnit
 
-	return dataSizeFeeAmount.MulInt64(bucket), nil
+	return dataSizeUnitFee.MulInt64(bucket), nil
 }

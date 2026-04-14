@@ -11,8 +11,8 @@ func (r BaseFeeReceipt) MarshalBSON() ([]byte, error) {
 	return bsonenc.Marshal(
 		bson.M{
 			"_hint":       r.Hint().String(),
-			"currency_id": r.CurrencyID,
-			"amount":      r.Amount,
+			"currency_id": r.currencyID,
+			"total_fee":   r.totalFee,
 		},
 	)
 }
@@ -20,7 +20,7 @@ func (r BaseFeeReceipt) MarshalBSON() ([]byte, error) {
 type BaseFeeReceiptBSONUnmarshaler struct {
 	Hint       string     `bson:"_hint"`
 	CurrencyID CurrencyID `bson:"currency_id"`
-	Amount     string     `bson:"amount"`
+	Amount     string     `bson:"total_fee"`
 }
 
 func (r *BaseFeeReceipt) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
@@ -41,8 +41,8 @@ func (r *BaseFeeReceipt) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 	}
 
 	r.BaseHinter = hint.NewBaseHinter(ht)
-	r.CurrencyID = u.CurrencyID
-	r.Amount = u.Amount
+	r.currencyID = u.CurrencyID
+	r.totalFee = u.Amount
 
 	return nil
 }
@@ -51,9 +51,9 @@ func (r FixedFeeReceipt) MarshalBSON() ([]byte, error) {
 	return bsonenc.Marshal(
 		bson.M{
 			"_hint":       r.Hint().String(),
-			"currency_id": r.CurrencyID,
-			"amount":      r.Amount,
-			"base_amount": r.BaseAmount,
+			"currency_id": r.currencyID,
+			"total_fee":   r.totalFee,
+			"base_fee":    r.baseFee,
 		},
 	)
 }
@@ -61,8 +61,8 @@ func (r FixedFeeReceipt) MarshalBSON() ([]byte, error) {
 type FixedFeeReceiptBSONUnmarshaler struct {
 	Hint       string     `bson:"_hint"`
 	CurrencyID CurrencyID `bson:"currency_id"`
-	Amount     string     `bson:"amount"`
-	BaseAmount string     `bson:"base_amount"`
+	TotalFee   string     `bson:"total_fee"`
+	BaseFee    string     `bson:"base_fee"`
 }
 
 func (r *FixedFeeReceipt) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
@@ -83,47 +83,58 @@ func (r *FixedFeeReceipt) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 	}
 
 	r.BaseHinter = hint.NewBaseHinter(ht)
-	r.CurrencyID = u.CurrencyID
-	r.Amount = u.Amount
-	r.BaseAmount = u.BaseAmount
+	r.currencyID = u.CurrencyID
+	r.totalFee = u.TotalFee
+	r.baseFee = u.BaseFee
 
 	return nil
 }
 
 func (r FixedItemDataSizeExecutionFeeReceipt) MarshalBSON() ([]byte, error) {
-	return bsonenc.Marshal(
-		bson.M{
-			"_hint":                 r.Hint().String(),
-			"currency_id":           r.CurrencyID,
-			"total_amount":          r.TotalAmount,
-			"base_amount":           r.BaseAmount,
-			"item_count":            r.ItemCount,
-			"item_fee_amount":       r.ItemFeeAmount,
-			"item_fee":              r.ItemFee,
-			"data_size":             r.DataSize,
-			"data_size_unit":        r.DataSizeUnit,
-			"data_size_fee_amount":  r.DataSizeFeeAmount,
-			"data_size_fee":         r.DataSizeFee,
-			"execution_fee_amount":  r.ExecutionFeeAmount,
-			"execution_fee":         r.ExecutionFee,
-		},
-	)
+	m := bson.M{
+		"_hint":              r.Hint().String(),
+		"currency_id":        r.currencyID,
+		"total_fee":          r.totalFee,
+		"base_fee":           r.baseFee,
+		"item_unit_fee":      r.itemUnitFee,
+		"item_count":         r.itemCount,
+		"item_fee":           r.itemFee,
+		"data_size_unit_fee": r.dataSizeUnitFee,
+		"data_size_unit":     r.dataSizeUnit,
+		"data_size":          r.dataSize,
+		"data_size_fee":      r.dataSizeFee,
+	}
+
+	if r.executionCount != 0 {
+		m["execution_count"] = r.executionCount
+	}
+
+	if r.executionUnitFee != "" {
+		m["execution_unit_fee"] = r.executionUnitFee
+	}
+
+	if r.executionFee != "" {
+		m["execution_fee"] = r.executionFee
+	}
+
+	return bsonenc.Marshal(m)
 }
 
 type FixedItemDataSizeExecutionFeeReceiptBSONUnmarshaler struct {
-	Hint               string     `bson:"_hint"`
-	CurrencyID         CurrencyID `bson:"currency_id"`
-	TotalAmount        string     `bson:"total_amount"`
-	BaseAmount         string     `bson:"base_amount"`
-	ItemCount          int        `bson:"item_count"`
-	ItemFeeAmount      string     `bson:"item_fee_amount"`
-	ItemFee            string     `bson:"item_fee"`
-	DataSize           int        `bson:"data_size"`
-	DataSizeUnit       int64      `bson:"data_size_unit"`
-	DataSizeFeeAmount  string     `bson:"data_size_fee_amount"`
-	DataSizeFee        string     `bson:"data_size_fee"`
-	ExecutionFeeAmount string     `bson:"execution_fee_amount"`
-	ExecutionFee       string     `bson:"execution_fee"`
+	Hint             string     `bson:"_hint"`
+	CurrencyID       CurrencyID `bson:"currency_id"`
+	TotalFee         string     `bson:"total_fee"`
+	BaseFee          string     `bson:"base_fee"`
+	ItemUnitFee      string     `bson:"item_unit_fee"`
+	ItemCount        int        `bson:"item_count"`
+	ItemFee          string     `bson:"item_fee"`
+	DataSizeUnitFee  string     `bson:"data_size_unit_fee"`
+	DataSizeUnit     int64      `bson:"data_size_unit"`
+	DataSize         int        `bson:"data_size"`
+	DataSizeFee      string     `bson:"data_size_fee"`
+	ExecutionCount   int        `bson:"execution_count"`
+	ExecutionUnitFee string     `bson:"execution_unit_fee"`
+	ExecutionFee     string     `bson:"execution_fee"`
 }
 
 func (r *FixedItemDataSizeExecutionFeeReceipt) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
@@ -144,18 +155,19 @@ func (r *FixedItemDataSizeExecutionFeeReceipt) DecodeBSON(b []byte, enc *bsonenc
 	}
 
 	r.BaseHinter = hint.NewBaseHinter(ht)
-	r.CurrencyID = u.CurrencyID
-	r.TotalAmount = u.TotalAmount
-	r.BaseAmount = u.BaseAmount
-	r.ItemCount = u.ItemCount
-	r.ItemFeeAmount = u.ItemFeeAmount
-	r.ItemFee = u.ItemFee
-	r.DataSize = u.DataSize
-	r.DataSizeUnit = u.DataSizeUnit
-	r.DataSizeFeeAmount = u.DataSizeFeeAmount
-	r.DataSizeFee = u.DataSizeFee
-	r.ExecutionFeeAmount = u.ExecutionFeeAmount
-	r.ExecutionFee = u.ExecutionFee
+	r.currencyID = u.CurrencyID
+	r.totalFee = u.TotalFee
+	r.baseFee = u.BaseFee
+	r.itemUnitFee = u.ItemUnitFee
+	r.itemCount = u.ItemCount
+	r.itemFee = u.ItemFee
+	r.dataSizeUnitFee = u.DataSizeUnitFee
+	r.dataSizeUnit = u.DataSizeUnit
+	r.dataSize = u.DataSize
+	r.dataSizeFee = u.DataSizeFee
+	r.executionCount = u.ExecutionCount
+	r.executionUnitFee = u.ExecutionUnitFee
+	r.executionFee = u.ExecutionFee
 
 	return nil
 }
@@ -163,6 +175,10 @@ func (r *FixedItemDataSizeExecutionFeeReceipt) DecodeBSON(b []byte, enc *bsonenc
 func (r CurrencyOperationReceipt) MarshalBSON() ([]byte, error) {
 	m := bson.M{
 		"_hint": r.Hint().String(),
+	}
+
+	if r.feeer != "" {
+		m["feeer"] = r.feeer
 	}
 
 	if r.Fee != nil {
@@ -178,6 +194,7 @@ func (r CurrencyOperationReceipt) MarshalBSON() ([]byte, error) {
 
 type CurrencyOperationReceiptBSONUnmarshaler struct {
 	Hint    string   `bson:"_hint"`
+	Feeer   string   `bson:"feeer"`
 	Fee     bson.Raw `bson:"fee"`
 	GasUsed *uint64  `bson:"gas_used"`
 }
@@ -200,6 +217,7 @@ func (r *CurrencyOperationReceipt) DecodeBSON(b []byte, enc *bsonenc.Encoder) er
 	}
 
 	r.BaseHinter = hint.NewBaseHinter(ht)
+	r.feeer = u.Feeer
 	r.GasUsed = u.GasUsed
 
 	if len(u.Fee) < 1 {

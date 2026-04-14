@@ -239,19 +239,19 @@ func (fa FixedItemDataSizeExecutionFeeer) IsValid([]byte) error {
 	}
 
 	if !fa.amount.OverNil() {
-		return util.ErrInvalid.Errorf("fixed item feeer amount under zero")
+		return util.ErrInvalid.Errorf("amount of fixed item data size execution feeer is under zero")
 	}
 
 	if !fa.itemFeeAmount.OverNil() {
-		return util.ErrInvalid.Errorf("fixed item feeer item amount under zero")
+		return util.ErrInvalid.Errorf("item amount of fixed item data size execution feeer is under zero")
 	}
 
 	if !fa.dataSizeFeeAmount.OverNil() {
-		return util.ErrInvalid.Errorf("fixed item feeer data size amount under zero")
+		return util.ErrInvalid.Errorf("data size amount of fixed item feeer is under zero")
 	}
 
 	if fa.dataSizeFeeAmount.OverZero() && fa.dataSizeUnit < 1 {
-		return util.ErrInvalid.Errorf("fixed item feeer data size unit under one")
+		return util.ErrInvalid.Errorf("data size unit of fixed item feeer  under one")
 	}
 
 	if !fa.executionFeeAmount.OverNil() {

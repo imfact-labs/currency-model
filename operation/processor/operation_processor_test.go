@@ -140,8 +140,12 @@ func TestOperationProcessorSetsAndResetsReceipt(t *testing.T) {
 		t.Fatalf("unexpected fee receipt type: %T", receipt.Fee)
 	}
 
-	if fee.CurrencyID != tp.GenesisCurrency || fee.Amount != "10" || fee.BaseAmount != "10" {
+	if fee.Currency() != tp.GenesisCurrency || fee.FeeAmount() != "10" || fee.BaseFee() != "10" {
 		t.Fatalf("unexpected fee receipt: %+v", fee)
+	}
+
+	if receipt.Feeer() != types.FixedFeeerHint.String() {
+		t.Fatalf("unexpected feeer hint receipt: %+v", fee)
 	}
 
 	if receipt.GasUsed != nil {
@@ -258,20 +262,28 @@ func TestOperationProcessorSetsDetailedFeeReceiptForFixedItemDataSizeExecutionFe
 		t.Fatalf("unexpected fee receipt type: %T", receipt.Fee)
 	}
 
-	if fee.CurrencyID != tp.GenesisCurrency || fee.TotalAmount != expectedTotal.String() || fee.BaseAmount != feeer.Fee().String() {
+	if fee.CurrencyID() != tp.GenesisCurrency || fee.TotalFee() != expectedTotal.String() || fee.BaseFee() != feeer.Fee().String() {
 		t.Fatalf("unexpected total/base fee receipt: %+v", fee)
 	}
 
-	if fee.ItemCount != itemCount || fee.ItemFeeAmount != common.NewBig(2).String() || fee.ItemFee != expectedItemFee.String() {
+	if receipt.Feeer() != types.FixedItemDataSizeExecutionFeeerHint.String() {
+		t.Fatalf("unexpected feeer hint receipt: %+v", fee)
+	}
+
+	if fee.ItemUnitFee() != common.NewBig(2).String() || fee.ItemCount() != itemCount || fee.ItemFee() != expectedItemFee.String() {
 		t.Fatalf("unexpected item fee receipt: %+v", fee)
 	}
 
-	if fee.DataSize != dataSize || fee.DataSizeUnit != feeer.DataSizeUnit() ||
-		fee.DataSizeFeeAmount != common.NewBig(3).String() || fee.DataSizeFee != expectedDataSizeFee.String() {
+	if fee.DataSizeUnitFee() != common.NewBig(3).String() || fee.DataSizeUnit() != feeer.DataSizeUnit() ||
+		fee.DataSize() != dataSize || fee.DataSizeFee() != expectedDataSizeFee.String() {
 		t.Fatalf("unexpected data size fee receipt: %+v", fee)
 	}
 
-	if fee.ExecutionFeeAmount != common.NewBig(5).String() || fee.ExecutionFee != expectedExecutionFee.String() {
+	if fee.ExecutionCount() != 0 {
+		t.Fatalf("unexpected execution count receipt: %+v", fee)
+	}
+
+	if fee.ExecutionUnitFee() != common.NewBig(5).String() || fee.ExecutionFee() != expectedExecutionFee.String() {
 		t.Fatalf("unexpected execution fee receipt: %+v", fee)
 	}
 }

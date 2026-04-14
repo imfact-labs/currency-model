@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/imfact-labs/currency-model/app/runtime/steps"
@@ -46,7 +47,7 @@ func requireFixedFeeReceipt(t *testing.T, fee types.FeeReceipt, cid types.Curren
 		t.Fatalf("unexpected fee receipt type: %T", fee)
 	}
 
-	if got.CurrencyID != cid || got.Amount != amount || got.BaseAmount != amount {
+	if got.Currency() != cid || got.FeeAmount() != amount || got.BaseFee() != amount {
 		t.Fatalf("unexpected fixed fee receipt: %+v", got)
 	}
 }
@@ -68,23 +69,27 @@ func requireFixedItemDataSizeExecutionFeeReceipt(t *testing.T, fee types.FeeRece
 		t.Fatalf("unexpected fee receipt type: %T", fee)
 	}
 
-	if got.CurrencyID != types.CurrencyID("MCC") {
-		t.Fatalf("unexpected currency id: %v", got.CurrencyID)
+	if got.CurrencyID() != types.CurrencyID("MCC") {
+		t.Fatalf("unexpected currency id: %v", got.CurrencyID())
 	}
 
-	if got.TotalAmount != "18" || got.BaseAmount != "10" {
+	if got.TotalFee() != "18" || got.BaseFee() != "10" {
 		t.Fatalf("unexpected total/base amount: %+v", got)
 	}
 
-	if got.ItemCount != 2 || got.ItemFeeAmount != "2" || got.ItemFee != "4" {
+	if got.ItemUnitFee() != "2" || got.ItemCount() != 2 || got.ItemFee() != "4" {
 		t.Fatalf("unexpected item fee detail: %+v", got)
 	}
 
-	if got.DataSize != 30 || got.DataSizeUnit != 10 || got.DataSizeFeeAmount != "1" || got.DataSizeFee != "3" {
+	if got.DataSizeUnitFee() != "1" || got.DataSizeUnit() != 10 || got.DataSize() != 30 || got.DataSizeFee() != "3" {
 		t.Fatalf("unexpected data size fee detail: %+v", got)
 	}
 
-	if got.ExecutionFeeAmount != "1" || got.ExecutionFee != "1" {
+	if got.ExecutionCount() != 0 {
+		t.Fatalf("unexpected execution count: %+v", got)
+	}
+
+	if got.ExecutionUnitFee() != "1" || got.ExecutionFee() != "1" {
 		t.Fatalf("unexpected execution fee detail: %+v", got)
 	}
 }
@@ -95,11 +100,13 @@ func TestCurrencyOperationReceiptRoundTrip(t *testing.T) {
 
 	tests := []struct {
 		name   string
+		feeer  string
 		fee    types.FeeReceipt
 		assert func(*testing.T, types.FeeReceipt)
 	}{
 		{
-			name: "fixed",
+			name:  "fixed",
+			feeer: types.FixedFeeerHint.String(),
 			fee: types.NewFixedFeeReceipt(
 				types.CurrencyID("MCC"),
 				common.NewBig(10),
@@ -109,19 +116,21 @@ func TestCurrencyOperationReceiptRoundTrip(t *testing.T) {
 			},
 		},
 		{
-			name: "fixed-item-data-size-execution",
+			name:  "fixed-item-data-size-execution",
+			feeer: types.FixedItemDataSizeExecutionFeeerHint.String(),
 			fee: types.NewFixedItemDataSizeExecutionFeeReceipt(
 				types.CurrencyID("MCC"),
 				common.NewBig(18),
 				common.NewBig(10),
-				2,
 				common.NewBig(2),
+				2,
 				common.NewBig(4),
-				30,
-				10,
 				common.NewBig(1),
+				10,
+				30,
 				common.NewBig(3),
 				common.NewBig(1),
+				0,
 				common.NewBig(1),
 			),
 			assert: requireFixedItemDataSizeExecutionFeeReceipt,
@@ -130,7 +139,7 @@ func TestCurrencyOperationReceiptRoundTrip(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name+"-json", func(t *testing.T) {
-			receipt := types.NewCurrencyOperationReceipt(tc.fee, &gasUsed)
+			receipt := types.NewCurrencyOperationReceipt(tc.feeer, tc.fee, &gasUsed)
 
 			b, err := encs.JSON().Marshal(receipt)
 			if err != nil {
@@ -155,6 +164,10 @@ func TestCurrencyOperationReceiptRoundTrip(t *testing.T) {
 				t.Fatal("expected json fee receipt")
 			}
 
+			if got.Feeer() != tc.feeer {
+				t.Fatalf("unexpected json feeer: %v", got.Feeer())
+			}
+
 			tc.assert(t, got.Fee)
 
 			if got.GasUsed == nil || *got.GasUsed != gasUsed {
@@ -163,7 +176,7 @@ func TestCurrencyOperationReceiptRoundTrip(t *testing.T) {
 		})
 
 		t.Run(tc.name+"-bson", func(t *testing.T) {
-			receipt := types.NewCurrencyOperationReceipt(tc.fee, &gasUsed)
+			receipt := types.NewCurrencyOperationReceipt(tc.feeer, tc.fee, &gasUsed)
 
 			b, err := benc.Marshal(receipt)
 			if err != nil {
@@ -188,6 +201,10 @@ func TestCurrencyOperationReceiptRoundTrip(t *testing.T) {
 				t.Fatal("expected bson fee receipt")
 			}
 
+			if got.Feeer() != tc.feeer {
+				t.Fatalf("unexpected bson feeer: %v", got.Feeer())
+			}
+
 			tc.assert(t, got.Fee)
 
 			if got.GasUsed == nil || *got.GasUsed != gasUsed {
@@ -198,8 +215,15 @@ func TestCurrencyOperationReceiptRoundTrip(t *testing.T) {
 }
 
 func TestFixedFeeReceiptValidationRejectsMismatchedAmounts(t *testing.T) {
-	receipt := types.NewFixedFeeReceipt(types.CurrencyID("MCC"), common.NewBig(10))
-	receipt.Amount = "11"
+	encs, _ := newTestEncoders(t)
+
+	var receipt types.FixedFeeReceipt
+	if err := receipt.DecodeJSON(
+		[]byte(`{"_hint":"currency-fixed-fee-receipt-v0.0.1","currency_id":"MCC","total_fee":"11","base_fee":"10"}`),
+		encs.JSON(),
+	); err != nil {
+		t.Fatalf("decode fixed fee receipt: %v", err)
+	}
 
 	if err := receipt.IsValid(nil); err == nil {
 		t.Fatal("expected fixed fee receipt validation error")
@@ -212,14 +236,15 @@ func TestFixedItemDataSizeExecutionFeeReceiptValidationRejectsInconsistentBreakd
 			types.CurrencyID("MCC"),
 			common.NewBig(18),
 			common.NewBig(10),
-			2,
 			common.NewBig(2),
+			2,
 			common.NewBig(5),
-			30,
-			10,
 			common.NewBig(1),
+			10,
+			30,
 			common.NewBig(3),
 			common.NewBig(1),
+			0,
 			common.NewBig(1),
 		)
 
@@ -233,14 +258,15 @@ func TestFixedItemDataSizeExecutionFeeReceiptValidationRejectsInconsistentBreakd
 			types.CurrencyID("MCC"),
 			common.NewBig(17),
 			common.NewBig(10),
-			2,
 			common.NewBig(2),
+			2,
 			common.NewBig(4),
-			30,
-			10,
 			common.NewBig(1),
+			10,
+			30,
 			common.NewBig(3),
 			common.NewBig(1),
+			0,
 			common.NewBig(1),
 		)
 
@@ -248,4 +274,49 @@ func TestFixedItemDataSizeExecutionFeeReceiptValidationRejectsInconsistentBreakd
 			t.Fatal("expected total amount validation error")
 		}
 	})
+}
+
+func TestFixedItemDataSizeExecutionFeeReceiptJSONOmitsEmptyExecutionFields(t *testing.T) {
+	encs, _ := newTestEncoders(t)
+
+	payload := []byte(`{
+		"_hint":"currency-fixed-item-data-size-execution-fee-receipt-v0.0.1",
+		"currency_id":"MCC",
+		"total_fee":"17",
+		"base_fee":"10",
+		"item_unit_fee":"2",
+		"item_count":2,
+		"item_fee":"4",
+		"data_size_unit_fee":"1",
+		"data_size_unit":10,
+		"data_size":30,
+		"data_size_fee":"3"
+	}`)
+
+	var receipt types.FixedItemDataSizeExecutionFeeReceipt
+	if err := receipt.DecodeJSON(payload, encs.JSON()); err != nil {
+		t.Fatalf("decode receipt: %v", err)
+	}
+
+	if err := receipt.IsValid(nil); err != nil {
+		t.Fatalf("validate receipt: %v", err)
+	}
+
+	if receipt.ExecutionCount() != 0 || receipt.ExecutionUnitFee() != "" || receipt.ExecutionFee() != "" {
+		t.Fatalf("unexpected execution fields after decode: %+v", receipt)
+	}
+
+	b, err := encs.JSON().Marshal(receipt)
+	if err != nil {
+		t.Fatalf("marshal receipt: %v", err)
+	}
+
+	s := string(b)
+	if strings.Contains(s, "execution_count") || strings.Contains(s, "execution_unit_fee") || strings.Contains(s, "execution_fee") {
+		t.Fatalf("expected execution fields to be omitted: %s", s)
+	}
+
+	if strings.Contains(s, `"feeer"`) {
+		t.Fatalf("expected fee receipt not to marshal feeer: %s", s)
+	}
 }

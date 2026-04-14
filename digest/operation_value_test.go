@@ -55,6 +55,7 @@ func TestOperationValueBSONRoundTripWithReceipt(t *testing.T) {
 	}
 
 	receipt := types.NewCurrencyOperationReceipt(
+		types.FixedFeeerHint.String(),
 		types.NewFixedFeeReceipt(tp.GenesisCurrency, common.NewBig(10)),
 		nil,
 	)
@@ -111,7 +112,11 @@ func TestOperationValueBSONRoundTripWithReceipt(t *testing.T) {
 		t.Fatalf("unexpected decoded fee receipt type: %T", decodedReceipt.Fee)
 	}
 
-	if fee.CurrencyID != tp.GenesisCurrency || fee.Amount != "10" || fee.BaseAmount != "10" {
+	if fee.Currency() != tp.GenesisCurrency || fee.FeeAmount() != "10" || fee.BaseFee() != "10" {
 		t.Fatalf("unexpected decoded fee receipt: %+v", fee)
+	}
+
+	if decodedReceipt.Feeer() != types.FixedFeeerHint.String() {
+		t.Fatalf("unexpected decoded feeer hint: %+v", decodedReceipt)
 	}
 }
