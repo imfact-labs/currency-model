@@ -75,9 +75,9 @@ func (opp *UpdateKeyProcessor) PreProcess(
 	} else if ac, err := currency.LoadAccountStateValue(aState); err != nil {
 		return ctx, base.NewBaseOperationProcessReasonError(
 			common.ErrMPreProcess.Wrap(common.ErrMStateValInvalid).Errorf("%v: sender %v", err, fact.Sender())), nil
-		//} else if _, ok := ac.Keys().(types.NilAccountKeys); ok {
-		//	return ctx, base.NewBaseOperationProcessReasonError(
-		//		common.ErrMPreProcess.Wrap(common.ErrMValueInvalid).Errorf("sender %v must be multi-sig account", fact.Sender())), nil
+	} else if _, ok := ac.Keys().(types.NilAccountKeys); ok {
+		return ctx, base.NewBaseOperationProcessReasonError(
+			common.ErrMPreProcess.Wrap(common.ErrMValueInvalid).Errorf("sender %v must be multi-sig account", fact.Sender())), nil
 	} else if ac.Keys().Equal(fact.Keys()) {
 		return ctx, base.NewBaseOperationProcessReasonError(
 			common.ErrMPreProcess.Wrap(common.ErrMValueInvalid).Errorf("sender keys is same with keys to update, keys hash %v", fact.keys.Hash())), nil
