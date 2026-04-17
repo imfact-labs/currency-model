@@ -10,13 +10,17 @@ import (
 )
 
 func (s BaseState) BSONM() bson.M {
+	var ops []string
+	for _, v := range s.ops {
+		ops = append(ops, v.String())
+	}
 	return bson.M{
 		"_hint":      s.Hint().String(),
 		"hash":       s.h,
 		"previous":   s.previous,
 		"value":      s.v,
 		"key":        s.k,
-		"operations": s.ops,
+		"operations": ops,
 		"height":     s.height,
 	}
 }
@@ -28,13 +32,13 @@ func (s BaseState) MarshalBSON() ([]byte, error) {
 }
 
 type BaseStateBSONUnmarshaler struct {
-	Hint       string            `bson:"_hint"`
-	Hash       valuehash.Bytes   `bson:"hash"`
-	Previous   valuehash.Bytes   `bson:"previous"`
-	Key        string            `bson:"key"`
-	Value      bson.Raw          `bson:"value"`
-	Operations []valuehash.Bytes `bson:"operations"`
-	Height     base.Height       `bson:"height"`
+	Hint       string          `bson:"_hint"`
+	Hash       valuehash.Bytes `bson:"hash"`
+	Previous   valuehash.Bytes `bson:"previous"`
+	Key        string          `bson:"key"`
+	Value      bson.Raw        `bson:"value"`
+	Operations []string        `bson:"operations"`
+	Height     base.Height     `bson:"height"`
 }
 
 func (s *BaseState) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
@@ -57,7 +61,7 @@ func (s *BaseState) DecodeBSON(b []byte, enc *bsonenc.Encoder) error {
 	s.ops = make([]util.Hash, len(u.Operations))
 
 	for i := range u.Operations {
-		s.ops[i] = u.Operations[i]
+		s.ops[i] = valuehash.NewBytesFromString(u.Operations[i])
 	}
 
 	switch i, err := DecodeStateValue(u.Value, enc); {
