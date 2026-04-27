@@ -129,7 +129,6 @@ func (fact RegisterModelFact) InActiveContractOwnerHandlerOnly() [][2]base.Addre
 
 func (fact RegisterModelFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
 	r := make(map[types.DuplicationKeyType][]string)
-	r[extras.DuplicationKeyTypeSender] = []string{fact.sender.String()}
 	r[extras.DuplicationKeyTypeContractStatus] = []string{fact.contract.String()}
 
 	return r, nil
@@ -137,6 +136,20 @@ func (fact RegisterModelFact) DupKey() (map[types.DuplicationKeyType][]string, e
 
 type RegisterModel struct {
 	extras.ExtendedOperation
+}
+
+func (op RegisterModel) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+
+	var payer base.Address
+	payer, err := extras.FetchPayerHelper(op)
+	if err != nil {
+		return nil, err
+	}
+
+	r[extras.DuplicationKeyTypeSender] = []string{payer.String()}
+
+	return r, nil
 }
 
 func NewRegisterModel(fact RegisterModelFact) (RegisterModel, error) {

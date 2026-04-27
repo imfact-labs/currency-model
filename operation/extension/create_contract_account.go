@@ -181,7 +181,6 @@ func (fact CreateContractAccountFact) FactUser() base.Address {
 
 func (fact CreateContractAccountFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
 	r := make(map[types.DuplicationKeyType][]string)
-	r[extras.DuplicationKeyTypeSender] = []string{fact.sender.String()}
 	addrs, err := fact.Targets()
 	if err != nil {
 		return nil, err
@@ -209,6 +208,20 @@ func (fact CreateContractAccountFact) Rebuild() CreateContractAccountFact {
 
 type CreateContractAccount struct {
 	extras.ExtendedOperation
+}
+
+func (op CreateContractAccount) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+
+	var payer base.Address
+	payer, err := extras.FetchPayerHelper(op)
+	if err != nil {
+		return nil, err
+	}
+
+	r[extras.DuplicationKeyTypeSender] = []string{payer.String()}
+
+	return r, nil
 }
 
 func NewCreateContractAccount(fact CreateContractAccountFact) (CreateContractAccount, error) {

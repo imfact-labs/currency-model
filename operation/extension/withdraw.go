@@ -181,7 +181,6 @@ func (fact WithdrawFact) ContractOwnerOnly() [][2]base.Address {
 
 func (fact WithdrawFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
 	r := make(map[types.DuplicationKeyType][]string)
-	r[extras.DuplicationKeyTypeSender] = []string{fact.sender.String()}
 	for _, item := range fact.items {
 		r[extras.DuplicationKeyTypeContractWithdraw] = append(r[extras.DuplicationKeyTypeContractWithdraw], item.Target().String())
 	}
@@ -191,6 +190,20 @@ func (fact WithdrawFact) DupKey() (map[types.DuplicationKeyType][]string, error)
 
 type Withdraw struct {
 	extras.ExtendedOperation
+}
+
+func (op Withdraw) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+
+	var payer base.Address
+	payer, err := extras.FetchPayerHelper(op)
+	if err != nil {
+		return nil, err
+	}
+
+	r[extras.DuplicationKeyTypeSender] = []string{payer.String()}
+
+	return r, nil
 }
 
 func NewWithdraw(fact WithdrawFact) (Withdraw, error) {

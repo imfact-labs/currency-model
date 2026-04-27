@@ -157,7 +157,6 @@ func (fact UpdateRecipientFact) ContractOwnerOnly() [][2]base.Address {
 
 func (fact UpdateRecipientFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
 	r := make(map[types.DuplicationKeyType][]string)
-	r[extras.DuplicationKeyTypeSender] = []string{fact.sender.String()}
 	r[extras.DuplicationKeyTypeContractStatus] = []string{fact.Contract().String()}
 
 	return r, nil
@@ -165,6 +164,20 @@ func (fact UpdateRecipientFact) DupKey() (map[types.DuplicationKeyType][]string,
 
 type UpdateRecipient struct {
 	extras.ExtendedOperation
+}
+
+func (op UpdateRecipient) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+
+	var payer base.Address
+	payer, err := extras.FetchPayerHelper(op)
+	if err != nil {
+		return nil, err
+	}
+
+	r[extras.DuplicationKeyTypeSender] = []string{payer.String()}
+
+	return r, nil
 }
 
 func NewUpdateRecipient(fact UpdateRecipientFact) (UpdateRecipient, error) {

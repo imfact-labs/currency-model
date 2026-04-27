@@ -591,6 +591,45 @@ type DeDupeKeyer interface {
 	DupKey() (map[types.DuplicationKeyType][]string, error)
 }
 
+func FetchPayerHelper(op base.Operation) (base.Address, error) {
+	t, ok := op.Fact().(FeeAble)
+	if !ok {
+		return nil, errors.Errorf("%T does not implement FeeAble", op.Fact())
+	}
+	payer := t.FeePayer()
+
+	if extOp, ok := op.(OperationExtensions); ok {
+		iAuth := extOp.Extension(AuthenticationExtensionType)
+		iSettlement := extOp.Extension(SettlementExtensionType)
+		iProxyPayer := extOp.Extension(ProxyPayerExtensionType)
+		if iAuth != nil && iSettlement != nil {
+			settlement, ok := iSettlement.(Settlement)
+			if !ok {
+				return nil, errors.New(common.ErrMTypeMismatch.
+					Errorf("expected Settlement, but %T", iSettlement))
+			}
+			opSender := settlement.OpSender()
+			if opSender == nil {
+				return nil, errors.Errorf("failed to get op sender from settlement, empty op sender")
+			}
+			payer = opSender
+		}
+		if iProxyPayer != nil {
+			proxyPayer, ok := iProxyPayer.(ProxyPayer)
+			if !ok {
+				return nil, errors.New(common.ErrMTypeMismatch.
+					Errorf("expected ProxyPayer, but %T", iProxyPayer))
+			}
+
+			if proxyPayer := proxyPayer.ProxyPayer(); proxyPayer != nil {
+				payer = proxyPayer
+			}
+		}
+	}
+
+	return payer, nil
+}
+
 // FeeAble is an interface type for fee calculation. Operations than requires fee must implement this interface.
 type FeeAble interface {
 	FeeBase() (types.CurrencyID, int, int, bool)
