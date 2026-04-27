@@ -120,15 +120,18 @@ func (fact UpdateKeyFact) FactUser() base.Address {
 	return fact.sender
 }
 
-func (fact UpdateKeyFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
-	r := make(map[types.DuplicationKeyType][]string)
-	r[extras.DuplicationKeyTypeSender] = []string{fact.sender.String()}
-
-	return r, nil
-}
-
 type UpdateKey struct {
 	extras.ExtendedOperation
+}
+
+func (op UpdateKey) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+
+	if err := extras.AddOperationFeePayerDupKeys(r, op); err != nil {
+		return nil, err
+	}
+
+	return r, nil
 }
 
 func NewUpdateKey(fact UpdateKeyFact) (UpdateKey, error) {

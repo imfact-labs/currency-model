@@ -2,6 +2,7 @@ package extras
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/imfact-labs/currency-model/common"
@@ -589,6 +590,96 @@ const (
 
 type DeDupeKeyer interface {
 	DupKey() (map[types.DuplicationKeyType][]string, error)
+}
+
+type FeePayerType uint8
+
+const (
+	FeePayerNone FeePayerType = iota
+	FeePayerSender
+	FeePayerOpSender
+	FeePayerProxyPayer
+)
+
+func FetchFeePayerHelper(op base.Operation) (base.Address, FeePayerType, types.CurrencyID, error) {
+	t, ok := op.Fact().(FeeAble)
+	if !ok {
+		return nil, FeePayerNone, "", errors.Errorf("%T does not implement FeeAble", op.Fact())
+	}
+	var feePayerType FeePayerType
+
+	payer := t.FeePayer()
+	feePayerType = FeePayerSender
+	cid, _, _, _ := t.FeeBase()
+	if extOp, ok := op.(OperationExtensions); ok {
+		iAuth := extOp.Extension(AuthenticationExtensionType)
+		iSettlement := extOp.Extension(SettlementExtensionType)
+		iProxyPayer := extOp.Extension(ProxyPayerExtensionType)
+		if iAuth != nil && iSettlement != nil {
+			settlement, ok := iSettlement.(Settlement)
+			if !ok {
+				return nil, feePayerType, "", errors.New(common.ErrMTypeMismatch.
+					Errorf("expected Settlement, but %T", iSettlement))
+			}
+			opSender := settlement.OpSender()
+			if opSender == nil {
+				return nil, feePayerType, "", errors.Errorf("failed to get op sender from settlement, empty op sender")
+			}
+			payer = opSender
+			feePayerType = FeePayerOpSender
+		}
+		if iProxyPayer != nil {
+			proxyPayer, ok := iProxyPayer.(ProxyPayer)
+			if !ok {
+				return nil, feePayerType, "", errors.New(common.ErrMTypeMismatch.
+					Errorf("expected ProxyPayer, but %T", iProxyPayer))
+			}
+
+			if proxyPayer := proxyPayer.ProxyPayer(); proxyPayer != nil {
+				payer = proxyPayer
+				feePayerType = FeePayerProxyPayer
+			}
+		}
+	}
+
+	return payer, feePayerType, cid, nil
+}
+
+func AddOperationFeePayerDupKeys(
+	r map[types.DuplicationKeyType][]string,
+	op base.Operation,
+) error {
+	if r == nil {
+		return errors.Errorf("nil dup key map")
+	}
+
+	payer, feePayerType, cid, err := FetchFeePayerHelper(op)
+	if err != nil {
+		return err
+	}
+
+	key := fmt.Sprintf("%s:%s", payer.String(), cid.String())
+
+	switch feePayerType {
+	case FeePayerNone, FeePayerSender:
+		return nil
+	case FeePayerOpSender:
+		AddDupKey(r, DuplicationKeyTypeSender, key)
+		return nil
+	case FeePayerProxyPayer:
+		AddDupKey(r, DuplicationKeyTypeContractWithdraw, key)
+		return nil
+	default:
+		return errors.Errorf("unknown FeePayerType, %v", feePayerType)
+	}
+}
+
+func AddDupKey(
+	r map[types.DuplicationKeyType][]string,
+	t types.DuplicationKeyType,
+	values ...string,
+) {
+	r[t] = append(r[t], values...)
 }
 
 // FeeAble is an interface type for fee calculation. Operations than requires fee must implement this interface.

@@ -123,7 +123,6 @@ func (fact CreateDIDFact) ActiveContract() []base.Address {
 
 func (fact CreateDIDFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
 	r := make(map[types.DuplicationKeyType][]string)
-	r[extras.DuplicationKeyTypeSender] = []string{fact.sender.String()}
 	r[extras.DuplicationKeyTypeDIDAccount] = []string{fmt.Sprintf("%s:%s", fact.Contract().String(), fact.Sender())}
 
 	return r, nil
@@ -131,6 +130,16 @@ func (fact CreateDIDFact) DupKey() (map[types.DuplicationKeyType][]string, error
 
 type CreateDID struct {
 	extras.ExtendedOperation
+}
+
+func (op CreateDID) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+
+	if err := extras.AddOperationFeePayerDupKeys(r, op); err != nil {
+		return nil, err
+	}
+
+	return r, nil
 }
 
 func NewCreateDID(fact CreateDIDFact) (CreateDID, error) {

@@ -1,6 +1,8 @@
 package extension
 
 import (
+	"fmt"
+
 	"github.com/imfact-labs/currency-model/common"
 	"github.com/imfact-labs/currency-model/operation/currency"
 	"github.com/imfact-labs/currency-model/operation/extras"
@@ -181,9 +183,11 @@ func (fact WithdrawFact) ContractOwnerOnly() [][2]base.Address {
 
 func (fact WithdrawFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
 	r := make(map[types.DuplicationKeyType][]string)
-	r[extras.DuplicationKeyTypeSender] = []string{fact.sender.String()}
 	for _, item := range fact.items {
-		r[extras.DuplicationKeyTypeContractWithdraw] = append(r[extras.DuplicationKeyTypeContractWithdraw], item.Target().String())
+		r[extras.DuplicationKeyTypeContractWithdraw] = append(
+			r[extras.DuplicationKeyTypeContractWithdraw],
+			fmt.Sprintf("%s:%s", item.Target().String(), fact.currency.String()),
+		)
 	}
 
 	return r, nil
@@ -191,6 +195,16 @@ func (fact WithdrawFact) DupKey() (map[types.DuplicationKeyType][]string, error)
 
 type Withdraw struct {
 	extras.ExtendedOperation
+}
+
+func (op Withdraw) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+
+	if err := extras.AddOperationFeePayerDupKeys(r, op); err != nil {
+		return nil, err
+	}
+
+	return r, nil
 }
 
 func NewWithdraw(fact WithdrawFact) (Withdraw, error) {

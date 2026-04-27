@@ -1,6 +1,8 @@
 package currency
 
 import (
+	"fmt"
+
 	"github.com/imfact-labs/currency-model/common"
 	"github.com/imfact-labs/currency-model/operation/extras"
 	"github.com/imfact-labs/currency-model/types"
@@ -176,13 +178,23 @@ func (fact TransferFact) FactUser() base.Address {
 
 func (fact TransferFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
 	r := make(map[types.DuplicationKeyType][]string)
-	r[extras.DuplicationKeyTypeSender] = []string{fact.sender.String()}
+	r[extras.DuplicationKeyTypeSender] = []string{fmt.Sprintf("%s:%s", fact.sender.String(), fact.currency.String())}
 
 	return r, nil
 }
 
 type Transfer struct {
 	extras.ExtendedOperation
+}
+
+func (op Transfer) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+
+	if err := extras.AddOperationFeePayerDupKeys(r, op); err != nil {
+		return nil, err
+	}
+
+	return r, nil
 }
 
 func NewTransfer(fact base.Fact) (Transfer, error) {

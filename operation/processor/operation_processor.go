@@ -334,39 +334,11 @@ func (opr *OperationProcessor) Process(
 	case extras.FeeAble:
 		cid, items, dSize, _ := i.FeeBase()
 		payer = i.FeePayer()
-		switch k := op.(type) {
-		case extras.OperationExtensions:
-			iAuth := k.Extension(extras.AuthenticationExtensionType)
-			iSettlement := k.Extension(extras.SettlementExtensionType)
-			iProxyPayer := k.Extension(extras.ProxyPayerExtensionType)
-			if iAuth != nil && iSettlement != nil {
-				settlement, ok := iSettlement.(extras.Settlement)
-				if !ok {
-					return nil, base.NewBaseOperationProcessReasonError(
-						common.ErrMPreProcess.Wrap(common.ErrMTypeMismatch).
-							Errorf("expected Settlement, but %T", iSettlement)), nil
-				}
-				opSender := settlement.OpSender()
-				if opSender == nil {
-					return nil, base.NewBaseOperationProcessReasonError(
-						common.ErrMPreProcess.
-							Errorf("failed to get op sender, empty op sender")), nil
-				}
-				payer = opSender
-			}
-			if iProxyPayer != nil {
-				proxyPayer, ok := iProxyPayer.(extras.ProxyPayer)
-				if !ok {
-					return nil, base.NewBaseOperationProcessReasonError(
-						common.ErrMPreProcess.Wrap(common.ErrMTypeMismatch).
-							Errorf("expected ProxyPayer, but %T", iProxyPayer)), nil
-				}
 
-				if proxyPayer := proxyPayer.ProxyPayer(); proxyPayer != nil {
-					payer = proxyPayer
-				}
-			}
-		default:
+		if p, _, _, err := extras.FetchFeePayerHelper(op); err != nil {
+			return nil, base.NewBaseOperationProcessReasonError(common.ErrPreProcess.Wrap(err).Error()), nil
+		} else {
+			payer = p
 		}
 
 		policy, err := state.ExistsCurrencyPolicy(cid, getStateFunc)
@@ -516,25 +488,52 @@ func CheckDuplication(opr *OperationProcessor, op base.Operation) error {
 
 	dupKeySet := NewDupKeySet()
 
-	switch t := op.Fact().(type) {
-	case extras.DeDupeKeyer:
-		dkSet, err := t.DupKey()
+	addDupKeys := func(k extras.DeDupeKeyer) error {
+		dkSet, err := k.DupKey()
 		if err != nil {
 			return err
 		}
+
 		for k, v := range dkSet {
 			for _, dk := range v {
 				dupKeySet.Add(k, dk)
 			}
 		}
-	case isaacoperation.NetworkPolicyFact, isaacoperation.GenesisNetworkPolicyFact,
-		isaacoperation.SuffrageCandidateFact, isaacoperation.SuffrageDisjoinFact,
-		isaacoperation.SuffrageGenesisJoinFact, isaacoperation.SuffrageJoinFact,
-		base.SuffrageExpelFact:
-	default:
-		return errors.Errorf(
-			"%T not implemented DeDupeKeyer", t,
-		)
+
+		return nil
+	}
+
+	factKeyer, factOK := op.Fact().(extras.DeDupeKeyer)
+	opKeyer, opOK := op.(extras.DeDupeKeyer)
+
+	if factOK {
+		if err := addDupKeys(factKeyer); err != nil {
+			return err
+		}
+	}
+
+	if opOK {
+		if err := addDupKeys(opKeyer); err != nil {
+			return err
+		}
+	}
+
+	if !factOK && !opOK {
+		switch op.Fact().(type) {
+		case isaacoperation.NetworkPolicyFact,
+			isaacoperation.GenesisNetworkPolicyFact,
+			isaacoperation.SuffrageCandidateFact,
+			isaacoperation.SuffrageDisjoinFact,
+			isaacoperation.SuffrageGenesisJoinFact,
+			isaacoperation.SuffrageJoinFact,
+			base.SuffrageExpelFact:
+			// allowed
+		default:
+			return errors.Errorf(
+				"%T and %T not implemented DeDupeKeyer",
+				op.Fact(), op,
+			)
+		}
 	}
 
 	pending := make(map[string]struct{})

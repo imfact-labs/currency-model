@@ -1,6 +1,8 @@
 package extension
 
 import (
+	"fmt"
+
 	"github.com/imfact-labs/currency-model/common"
 	"github.com/imfact-labs/currency-model/operation/currency"
 	"github.com/imfact-labs/currency-model/operation/extras"
@@ -181,7 +183,7 @@ func (fact CreateContractAccountFact) FactUser() base.Address {
 
 func (fact CreateContractAccountFact) DupKey() (map[types.DuplicationKeyType][]string, error) {
 	r := make(map[types.DuplicationKeyType][]string)
-	r[extras.DuplicationKeyTypeSender] = []string{fact.sender.String()}
+	r[extras.DuplicationKeyTypeSender] = []string{fmt.Sprintf("%s:%s", fact.sender.String(), fact.currency.String())}
 	addrs, err := fact.Targets()
 	if err != nil {
 		return nil, err
@@ -209,6 +211,16 @@ func (fact CreateContractAccountFact) Rebuild() CreateContractAccountFact {
 
 type CreateContractAccount struct {
 	extras.ExtendedOperation
+}
+
+func (op CreateContractAccount) DupKey() (map[types.DuplicationKeyType][]string, error) {
+	r := make(map[types.DuplicationKeyType][]string)
+
+	if err := extras.AddOperationFeePayerDupKeys(r, op); err != nil {
+		return nil, err
+	}
+
+	return r, nil
 }
 
 func NewCreateContractAccount(fact CreateContractAccountFact) (CreateContractAccount, error) {
