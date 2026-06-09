@@ -155,11 +155,6 @@ func (hd *Handlers) buildDIDDataHal(
 }
 
 func HandleDIDDocument(hd *Handlers, w http.ResponseWriter, r *http.Request) {
-	cacheKey := CacheKeyPath(r)
-	if err := LoadFromCache(hd.cache, cacheKey, w); err == nil {
-		return
-	}
-
 	contract, err, status := ParseRequest(w, r, "contract")
 	if err != nil {
 		HTTP2ProblemWithError(w, err, status)
@@ -169,6 +164,11 @@ func HandleDIDDocument(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	did := ParseStringQuery(r.URL.Query().Get("did"))
 	if len(did) < 1 {
 		HTTP2ProblemWithError(w, errors.Errorf("invalid DID"), http.StatusBadRequest)
+		return
+	}
+
+	cacheKey := didDocumentCacheKey(r, did)
+	if err := LoadFromCache(hd.cache, cacheKey, w); err == nil {
 		return
 	}
 
@@ -183,6 +183,10 @@ func HandleDIDDocument(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 			HTTP2WriteCache(w, cacheKey, hd.expireShortLived)
 		}
 	}
+}
+
+func didDocumentCacheKey(r *http.Request, did string) string {
+	return CacheKey(r.URL.Path, stringDIDQuery(did))
 }
 
 func handleDIDDocumentInGroup(hd *Handlers, contract, key string) ([]byte, error) {

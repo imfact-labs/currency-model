@@ -129,6 +129,10 @@ func stringHashesQuery(hashes string) string {
 	return fmt.Sprintf("hashes=%s", hashes)
 }
 
+func stringDIDQuery(did string) string {
+	return fmt.Sprintf("did=%s", did)
+}
+
 func ParseBoolQuery(s string) bool {
 	return s == "1" || s == "true"
 }
