@@ -243,6 +243,21 @@ func (opr *OperationProcessor) PreProcess(ctx context.Context, op base.Operation
 						common.ErrMPreProcess.Wrap(common.ErrMTypeMismatch).
 							Errorf("expected Signer but %T", fact)), nil
 			}
+			proxyPayer := extOp.Extension(extras.ProxyPayerExtensionType)
+			if proxyPayer != nil {
+				if err := proxyPayer.IsValid(nil); err != nil {
+					return ctx,
+						base.NewBaseOperationProcessReasonError(
+							common.ErrMPreProcess.Wrap(common.ErrMValueInvalid).
+								Errorf("proxy payer is invalid: %v", err)), nil
+				}
+				if err := proxyPayer.Verify(op, getStateFunc); err != nil {
+					return ctx,
+						base.NewBaseOperationProcessReasonError(
+							common.ErrMPreProcess.Wrap(common.ErrMValueInvalid).
+								Errorf("proxy payer is invalid: %v", err)), nil
+				}
+			}
 		}
 	}
 

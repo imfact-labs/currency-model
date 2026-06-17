@@ -14,7 +14,6 @@ import (
 type BaseAuthenticationJSONMarshaler struct {
 	hint.BaseHinter
 	Contract         base.Address `json:"contract"`
-	DID              string       `json:"did"`
 	AuthenticationID string       `json:"authentication_id"`
 	ProofData        string       `json:"proof_data"`
 }

@@ -84,7 +84,7 @@ type OperationExtensionFlags struct {
 	IsPrivateKey       bool           `name:"is-privatekey" help:"proor-data is private key, not signature"`
 	OpSender           AddressFlag    `name:"settlement-op-sender" help:"op sender account for settlement"`
 	OpSenderPrivatekey PrivatekeyFlag `name:"settlement-op-sender-privatekey" help:"op sender privatekey for settlement"`
-	ProxyPayer         AddressFlag    `name:"settlement-proxy-payer" help:"proxy payer account for settlement"`
+	ProxyPayer         AddressFlag    `name:"proxy-payer" help:"proxy payer account for settlement"`
 	didContract        base.Address
 	proxyPayer         base.Address
 	opSender           base.Address
@@ -102,7 +102,7 @@ func (op *OperationExtensionFlags) parseFlags(encoder encoder.Encoder) error {
 	if len(op.OpSender.String()) > 0 {
 		a, err := op.OpSender.Encode(encoder)
 		if err != nil {
-			return errors.Wrapf(err, "invalid proxy payer format, %v", op.ProxyPayer.String())
+			return errors.Wrapf(err, "invalid op sender format, %v", op.OpSender.String())
 		}
 		op.opSender = a
 	}
