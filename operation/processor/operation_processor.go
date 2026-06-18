@@ -220,6 +220,13 @@ func (opr *OperationProcessor) PreProcess(ctx context.Context, op base.Operation
 	if extOp, ok := op.(extras.OperationExtensions); ok {
 		auth := extOp.Extension(extras.AuthenticationExtensionType)
 		settlement := extOp.Extension(extras.SettlementExtensionType)
+
+		if (auth == nil) != (settlement == nil) {
+			return ctx, base.NewBaseOperationProcessReasonError(
+				common.ErrMPreProcess.Errorf(
+					"auth and settlement must be present together")), nil
+		}
+
 		if settlement != nil && auth != nil {
 			if err := extOp.Verify(op, getStateFunc); err != nil {
 				return ctx, base.NewBaseOperationProcessReasonError(

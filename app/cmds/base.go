@@ -81,7 +81,7 @@ type OperationExtensionFlags struct {
 	DIDContract        AddressFlag    `name:"authentication-contract" help:"contract account for authentication"`
 	AuthenticationID   string         `name:"authentication-id" help:"auth id for authentication"`
 	Proof              string         `name:"authentication-proof" help:"data for proof authentication"`
-	IsPrivateKey       bool           `name:"is-privatekey" help:"proor-data is private key, not signature"`
+	IsPrivateKey       bool           `name:"authentication-proof-is-privatekey" help:"proor-data is private key, not signature"`
 	OpSender           AddressFlag    `name:"settlement-op-sender" help:"op sender account for settlement"`
 	OpSenderPrivatekey PrivatekeyFlag `name:"settlement-op-sender-privatekey" help:"op sender privatekey for settlement"`
 	ProxyPayer         AddressFlag    `name:"proxy-payer" help:"proxy payer account for settlement"`
