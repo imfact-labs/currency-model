@@ -143,7 +143,9 @@ func PNetworkHandlers(pctx context.Context) (context.Context, error) {
 
 	launch.EnsureHandlerAdd(pctx, &gerror,
 		isaacnetwork.HandlerNameNodeInfo,
-		isaacnetwork.QuicstreamHandlerNodeInfo(launch.QuicstreamHandlerGetNodeInfoFunc(encs.Default(), nodeinfo)), nil)
+		isaacnetwork.QuicstreamHandlerNodeInfo(
+			launch.QuicstreamHandlerGetNodeInfoFunc(encs.Default(), nodeinfo, params.Network),
+		), nil)
 
 	launch.EnsureHandlerAdd(pctx, &gerror,
 		isaacnetwork.HandlerNameNodeMetrics,
