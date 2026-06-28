@@ -94,6 +94,7 @@ func sendOperation(hd *Handlers, v interface{}) (Hal, error) {
 	for _, c := range nodeList {
 		connInfo[c.String()] = c
 	}
+	requiredTargets := operationFanoutRequiredTargets(nodeList)
 
 	//sent, err := client.SendOperation(ctx, nodeList[0], op)
 	//if err != nil {
@@ -104,6 +105,7 @@ func sendOperation(hd *Handlers, v interface{}) (Hal, error) {
 
 	errCh := make(chan error, len(connInfo))
 	sentCh := make(chan bool, len(connInfo))
+	requiredSentCh := make(chan bool, len(connInfo))
 	for _, ci := range connInfo {
 		wg.Add(1)
 		go func(node quicstream.ConnInfo) {
@@ -111,10 +113,16 @@ func sendOperation(hd *Handlers, v interface{}) (Hal, error) {
 
 			sent, err := client.SendOperation(ctx, node, op)
 			if err != nil {
+
 				errCh <- err
 			}
 			if sent {
+
 				sentCh <- sent
+				if isOperationFanoutRequiredTarget(requiredTargets, node) {
+					requiredSentCh <- true
+				}
+			} else if err == nil {
 			}
 		}(ci)
 	}
@@ -122,10 +130,12 @@ func sendOperation(hd *Handlers, v interface{}) (Hal, error) {
 		wg.Wait()
 		close(errCh)
 		close(sentCh)
+		close(requiredSentCh)
 	}()
 
 	var errList []error
 	var sentList []bool
+	var requiredSentList []bool
 loop:
 	for {
 		select {
@@ -141,22 +151,48 @@ loop:
 			} else if sent {
 				sentList = append(sentList, sent)
 			}
+		case sent, ok := <-requiredSentCh:
+			if !ok {
+				requiredSentCh = nil
+			} else if sent {
+				requiredSentList = append(requiredSentList, sent)
+			}
 		}
 
-		if errCh == nil && sentCh == nil {
+		if errCh == nil && sentCh == nil && requiredSentCh == nil {
 			break loop
 		}
 	}
 
 	if len(sentList) < 1 {
+
 		if len(errList) > 0 {
 			return nil, errList[0]
 		} else {
 			return nil, errors.Errorf("Failed to send operation to node")
 		}
 	}
+	if len(requiredTargets) > 0 && len(requiredSentList) < 1 {
+
+		return nil, errors.Errorf("failed to send operation to consensus node")
+	}
 
 	return buildSealHal(op)
+}
+
+func operationFanoutRequiredTargets(nodeList []quicstream.ConnInfo) map[string]struct{} {
+	targets := make(map[string]struct{}, len(nodeList))
+	for _, ci := range nodeList {
+		targets[ci.String()] = struct{}{}
+	}
+
+	return targets
+}
+
+func isOperationFanoutRequiredTarget(targets map[string]struct{}, ci quicstream.ConnInfo) bool {
+	_, found := targets[ci.String()]
+
+	return found
 }
 
 func buildSealHal(op base.Operation) (Hal, error) {

@@ -294,25 +294,59 @@ func (sv *HTTP2Server) sendOperation(v interface{}) error {
 		for _, c := range nodeList {
 			connInfo[c.String()] = c
 		}
+		requiredTargets := operationFanoutRequiredTargets(nodeList)
+
 		errCh := make(chan error, len(connInfo))
+		sentCh := make(chan bool, len(connInfo))
+		requiredSentCh := make(chan bool, len(connInfo))
 		for _, ci := range connInfo {
 			wg.Add(1)
 			go func(node quicstream.ConnInfo) {
 				defer wg.Done()
 
-				_, err := client.SendOperation(ctx, node, op)
+				sent, err := client.SendOperation(ctx, node, op)
 				if err != nil {
+
 					errCh <- err
+					return
+				}
+
+				if sent {
+					sentCh <- true
+					if isOperationFanoutRequiredTarget(requiredTargets, node) {
+						requiredSentCh <- true
+					}
 				}
 			}(ci)
 		}
 		wg.Wait()
 		close(errCh)
+		close(sentCh)
+		close(requiredSentCh)
+
+		var sent int
+		for range sentCh {
+			sent++
+		}
+		var requiredSent int
+		for range requiredSentCh {
+			requiredSent++
+		}
+
+		var errs []error
 
 		for err := range errCh {
 			if err != nil {
-				return err
+				errs = append(errs, err)
 			}
+		}
+
+		if len(requiredTargets) > 0 && requiredSent < 1 {
+			return errors.Errorf("failed to send operation to consensus node")
+		}
+
+		if len(errs) > 0 {
+			return errs[0]
 		}
 	}
 
