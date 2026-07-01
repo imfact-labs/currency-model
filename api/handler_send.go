@@ -83,7 +83,7 @@ func sendOperation(hd *Handlers, v interface{}) (Hal, error) {
 	}()
 
 	var wg sync.WaitGroup
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
 
 	connInfo := make(map[string]quicstream.ConnInfo)
@@ -111,18 +111,23 @@ func sendOperation(hd *Handlers, v interface{}) (Hal, error) {
 		go func(node quicstream.ConnInfo) {
 			defer wg.Done()
 
-			sent, err := client.SendOperation(ctx, node, op)
+			_, err := client.SendOperation(ctx, node, op)
 			if err != nil {
-
-				errCh <- err
+				// The remote response carries errors as strings, so transport and
+				// remote rejection errors cannot be classified reliably here. Retry
+				// once to confirm an otherwise ambiguous delivery failure.
+				_, err = client.SendOperation(ctx, node, op)
 			}
-			if sent {
+			if err != nil {
+				errCh <- err
+				return
+			}
 
-				sentCh <- sent
-				if isOperationFanoutRequiredTarget(requiredTargets, node) {
-					requiredSentCh <- true
-				}
-			} else if err == nil {
+			// added=false with no error means the node already has the operation.
+			// It is therefore a confirmed delivery, not a fan-out failure.
+			sentCh <- true
+			if isOperationFanoutRequiredTarget(requiredTargets, node) {
+				requiredSentCh <- true
 			}
 		}(ci)
 	}
