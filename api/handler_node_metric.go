@@ -56,11 +56,8 @@ func collectNodeMetrics(hd *Handlers, self bool) ([]nodeMetricResult, error) {
 	client := isaacnetwork.NewBaseClient( //nolint:gomnd //...
 		hd.encs, hd.enc,
 		connectionPool.Dial,
-		connectionPool.CloseAll,
+		func() error { return nil },
 	)
-	defer func() {
-		_ = client.Close()
-	}()
 
 	connInfo := make(map[string]quicstream.ConnInfo)
 
@@ -596,10 +593,6 @@ func NodeMetric(client *isaacnetwork.BaseClient, connInfo quicstream.ConnInfo) (
 	if err != nil {
 		return nil, err
 	}
-
-	defer func() {
-		_ = client.Close()
-	}()
 
 	header := isaacnetwork.NewNodeMetricsRequestHeader("1m")
 

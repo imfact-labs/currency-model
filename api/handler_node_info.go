@@ -57,11 +57,8 @@ func collectNodeInfo(hd *Handlers, self bool) ([]nodeInfoResult, error) {
 	client := isaacnetwork.NewBaseClient( //nolint:gomnd //...
 		hd.encs, hd.enc,
 		connectionPool.Dial,
-		connectionPool.CloseAll,
+		func() error { return nil },
 	)
-	defer func() {
-		_ = client.Close()
-	}()
 
 	connInfo := make(map[string]quicstream.ConnInfo)
 
@@ -325,10 +322,6 @@ func NodeInfo(client *isaacnetwork.BaseClient, connInfo quicstream.ConnInfo) (*i
 	if err != nil {
 		return nil, err
 	}
-
-	defer func() {
-		_ = client.Close()
-	}()
 
 	header := isaacnetwork.NewNodeInfoRequestHeader()
 

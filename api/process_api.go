@@ -85,7 +85,7 @@ func ProcessAPI(ctx context.Context) (context.Context, error) {
 	client := isaacnetwork.NewBaseClient( //nolint:gomnd //...
 		encs, encs.JSON(),
 		connectionPool.Dial,
-		connectionPool.CloseAll,
+		func() error { return nil },
 	)
 
 	var nt *HTTP2Server

@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,6 +18,12 @@ import (
 	"github.com/imfact-labs/mitum2/network/quicstream"
 	"github.com/pkg/errors"
 )
+
+type operationFanoutError struct {
+	node    string
+	attempt int
+	err     error
+}
 
 func HandleQueueSend(hd *Handlers, w http.ResponseWriter, r *http.Request) {
 	body := &bytes.Buffer{}
@@ -76,15 +84,15 @@ func sendOperation(hd *Handlers, v interface{}) (Hal, error) {
 	client := isaacnetwork.NewBaseClient( //nolint:gomnd //...
 		hd.encs, hd.enc,
 		connectionPool.Dial,
-		connectionPool.CloseAll,
+		func() error { return nil },
 	)
-	defer func() {
-		_ = client.Close()
-	}()
 
 	var wg sync.WaitGroup
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
-	defer cancel()
+	overallCtx, overallCancel := context.WithTimeout(
+		context.Background(),
+		3*time.Second,
+	)
+	defer overallCancel()
 
 	connInfo := make(map[string]quicstream.ConnInfo)
 	memberList.Members(func(node quicmemberlist.Member) bool {
@@ -96,14 +104,7 @@ func sendOperation(hd *Handlers, v interface{}) (Hal, error) {
 	}
 	requiredTargets := operationFanoutRequiredTargets(nodeList)
 
-	//sent, err := client.SendOperation(ctx, nodeList[0], op)
-	//if err != nil {
-	//	return nil, err
-	//} else if !sent {
-	//	return nil, errors.Errorf("failed to send operation")
-	//}
-
-	errCh := make(chan error, len(connInfo))
+	errCh := make(chan operationFanoutError, len(connInfo)*2)
 	sentCh := make(chan bool, len(connInfo))
 	requiredSentCh := make(chan bool, len(connInfo))
 	for _, ci := range connInfo {
@@ -111,15 +112,27 @@ func sendOperation(hd *Handlers, v interface{}) (Hal, error) {
 		go func(node quicstream.ConnInfo) {
 			defer wg.Done()
 
-			_, err := client.SendOperation(ctx, node, op)
+			attemptCtx, attemptCancel := context.WithTimeout(
+				overallCtx,
+				time.Second,
+			)
+			_, err := client.SendOperation(attemptCtx, node, op)
+			attemptCancel()
 			if err != nil {
+				errCh <- operationFanoutError{node: node.String(), attempt: 1, err: err}
+
 				// The remote response carries errors as strings, so transport and
 				// remote rejection errors cannot be classified reliably here. Retry
 				// once to confirm an otherwise ambiguous delivery failure.
-				_, err = client.SendOperation(ctx, node, op)
+				retryCtx, retryCancel := context.WithTimeout(
+					overallCtx,
+					time.Second,
+				)
+				_, err = client.SendOperation(retryCtx, node, op)
+				retryCancel()
 			}
 			if err != nil {
-				errCh <- err
+				errCh <- operationFanoutError{node: node.String(), attempt: 2, err: err}
 				return
 			}
 
@@ -138,17 +151,17 @@ func sendOperation(hd *Handlers, v interface{}) (Hal, error) {
 		close(requiredSentCh)
 	}()
 
-	var errList []error
+	var errList []operationFanoutError
 	var sentList []bool
 	var requiredSentList []bool
 loop:
 	for {
 		select {
-		case err, ok := <-errCh:
+		case senderr, ok := <-errCh:
 			if !ok {
 				errCh = nil
-			} else if err != nil {
-				errList = append(errList, err)
+			} else if senderr.err != nil {
+				errList = append(errList, senderr)
 			}
 		case sent, ok := <-sentCh:
 			if !ok {
@@ -170,19 +183,49 @@ loop:
 	}
 
 	if len(sentList) < 1 {
-
 		if len(errList) > 0 {
-			return nil, errList[0]
+			return nil, errors.Errorf(
+				"failed to send operation to node: %s",
+				formatOperationFanoutErrors(errList),
+			)
 		} else {
-			return nil, errors.Errorf("Failed to send operation to node")
+			return nil, errors.Errorf("failed to send operation to node")
 		}
 	}
 	if len(requiredTargets) > 0 && len(requiredSentList) < 1 {
-
-		return nil, errors.Errorf("failed to send operation to consensus node")
+		return nil, errors.Errorf(
+			"failed to send operation to the consensus node: %s",
+			formatOperationFanoutErrors(errList),
+		)
 	}
 
 	return buildSealHal(op)
+}
+
+func formatOperationFanoutErrors(errs []operationFanoutError) string {
+	if len(errs) < 1 {
+		return "no node error response"
+	}
+
+	sort.Slice(errs, func(i, j int) bool {
+		if errs[i].node == errs[j].node {
+			return errs[i].attempt < errs[j].attempt
+		}
+
+		return errs[i].node < errs[j].node
+	})
+
+	formatted := make([]string, len(errs))
+	for i := range errs {
+		formatted[i] = errors.Errorf(
+			"node=%s attempt=%d error=%v",
+			errs[i].node,
+			errs[i].attempt,
+			errs[i].err,
+		).Error()
+	}
+
+	return strings.Join(formatted, "; ")
 }
 
 func operationFanoutRequiredTargets(nodeList []quicstream.ConnInfo) map[string]struct{} {
