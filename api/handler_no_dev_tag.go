@@ -6,7 +6,7 @@ package api
 import "net/http"
 
 func SetHandlers(hd *Handlers, digest bool) {
-	post := 5
+	post := 30
 	postQueue := 10000
 	get := 1000
 
