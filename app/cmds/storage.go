@@ -7,5 +7,6 @@ type Storage struct { //nolint:govet //...
 	Clean          launchcmd.CleanCommand         `cmd:"" help:"clean storage"`
 	ValidateBlocks ValidateBlocksCommand          `cmd:"" help:"validate blocks in storage"`
 	Status         launchcmd.StorageStatusCommand `cmd:"" help:"storage status"`
+	RepairFrontier StorageRepairFrontierCommand   `cmd:"" name:"repair-frontier" help:"repair storage frontier"`
 	Database       launchcmd.DatabaseCommand      `cmd:"" help:""`
 }
