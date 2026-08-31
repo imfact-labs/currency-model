@@ -15,7 +15,7 @@ require (
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/memberlist v0.5.1
-	github.com/imfact-labs/mitum2 v0.0.0-20260708073601-fe9f6d1d092c
+	github.com/imfact-labs/mitum2 v0.0.0-20260709110501-62322414b54d
 	github.com/json-iterator/go v1.1.12
 	github.com/justinas/alice v1.2.0
 	github.com/multiformats/go-multibase v0.2.0
