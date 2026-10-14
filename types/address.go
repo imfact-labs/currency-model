@@ -88,6 +88,74 @@ func (ad Address) IsValid([]byte) error {
 	return nil
 }
 
+// Canonical20Bytes returns a copied canonical 20-byte address body.
+//
+// It validates the address hint, canonical representation, and checksum before
+// decoding. The zero address is not a valid account-origin address.
+func (ad Address) Canonical20Bytes() ([AddressLength]byte, error) {
+	var out [AddressLength]byte
+
+	if err := ad.IsValid(nil); err != nil {
+		return out, util.ErrInvalid.Errorf(
+			"invalid canonical currency address: %v", err)
+	}
+
+	s, _, err := hint.ParseFixedTypedString(ad.String(), base.AddressTypeSize)
+	if err != nil {
+		return out, util.ErrInvalid.Errorf(
+			"invalid canonical currency address: %v", err)
+	}
+
+	if IsZeroAddress(s) {
+		return out, util.ErrInvalid.Errorf(
+			"invalid canonical currency address: zero address")
+	}
+
+	const prefix = "0x"
+	if !strings.HasPrefix(s, prefix) ||
+		len(s) != len(prefix)+(AddressLength*2) {
+		return out, util.ErrInvalid.Errorf(
+			"invalid canonical currency address: invalid length")
+	}
+
+	b, err := hex.DecodeString(s[len(prefix):])
+	if err != nil {
+		return out, util.ErrInvalid.Errorf(
+			"invalid canonical currency address: %v", err)
+	}
+	if len(b) != AddressLength {
+		return out, util.ErrInvalid.Errorf(
+			"invalid canonical currency address: invalid decoded length")
+	}
+
+	copy(out[:], b)
+
+	return out, nil
+}
+
+// Canonical20BytesOf returns the canonical 20-byte body of a currency Address.
+//
+// It rejects arbitrary base.Address implementations rather than interpreting
+// their display-string representation as a currency address.
+func Canonical20BytesOf(ad base.Address) ([AddressLength]byte, error) {
+	var out [AddressLength]byte
+
+	switch v := ad.(type) {
+	case Address:
+		return v.Canonical20Bytes()
+	case *Address:
+		if v == nil {
+			return out, util.ErrInvalid.Errorf(
+				"invalid canonical currency address: nil address")
+		}
+
+		return v.Canonical20Bytes()
+	default:
+		return out, util.ErrInvalid.Errorf(
+			"invalid canonical currency address: expected currency Address, got %T", ad)
+	}
+}
+
 // ChecksumHex return the hex in the manner of EIP55
 func ChecksumHex(buf [42]byte) []byte {
 	// compute checksum
